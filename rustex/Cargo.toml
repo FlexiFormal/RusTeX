@@ -9,7 +9,16 @@ repository = "https://github.com/FlexiFormal/RusTeX/tree/main/tex-glyphs"
 keywords = ["tex", "latex", "rustex"]
 readme = "README.md"
 categories = ["encoding", "data-structures"]
-exclude = [".idea/*", "build.rs", "resources/*", "target/*"]
+exclude = [
+    ".idea/*",
+    "build.rs",
+    "resources/*",
+    "target/*",
+    ".vscode",
+    "lib",
+    "pgo",
+    "opt.sh",
+]
 
 [lib]
 crate-type = ["lib"]
