@@ -44,7 +44,7 @@ jobs:
       - name: build
         run: cd rustex && cargo build --release
       - name: docs
-        run: RUSTDOCFLAGS="--cfg docsrs -Zunstable-options --enable-index-page" cargo +nightly doc --no-deps --all-features && cd tex_glyphs && cargo +nightly doc --no-deps --all-features
+        run: RUSTDOCFLAGS="--cfg docsrs -Zunstable-options --enable-index-page" cargo +nightly doc --no-deps --all-features && cd tex-glyphs && cargo +nightly doc --no-deps --all-features
       - name: upload docs
         uses: actions/upload-pages-artifact@v3
         with:
