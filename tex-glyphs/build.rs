@@ -65,8 +65,9 @@ impl State {
     }
 
     fn do_name_code(&mut self, glyphname: String, glyphcode: String) {
-        self.glyphlist.push_str(&format!(",{glyphcode:?}"));
-        self.glyphnames.push_str(&format!(",{glyphname:?}"));
+        use std::fmt::Write;
+        let _ = write!(&mut self.glyphlist, ",{glyphcode:?}");
+        let _ = write!(&mut self.glyphnames, ",{glyphname:?}");
         if !self.done_glyphs.contains(&glyphcode) {
             self.done_glyphs.push(glyphcode.clone());
             self.glyphlookup.entry(glyphcode, &format!("{}", self.idx));
@@ -321,26 +322,26 @@ fn main() {
         st.idx + 1,
         st.glyphlist
     )
-    .unwrap();
+    .expect("infallible");
     writeln!(
         &mut file,
         "static GLYPH_NAMES: [&str;{}] = {}];",
         st.idx + 1,
         st.glyphnames
     )
-    .unwrap();
+    .expect("infallible");
     writeln!(
         &mut file,
         "static GLYPH_MAP: phf::Map<&'static str, u16> = {};",
         st.glyphmap.build()
     )
-    .unwrap();
+    .expect("infallible");
     writeln!(
         &mut file,
         "static GLYPH_LOOKUP: phf::Map<&'static str, u16> = {};",
         st.glyphlookup.build()
     )
-    .unwrap();
+    .expect("infallible");
 
     let parser = TableParser::get(st.build_map, st.build_glyphlist);
 
@@ -364,7 +365,7 @@ fn main() {
                 .0),
             val.fontmap
         )
-        .unwrap();
+        .expect("infallible");
     }
     writeln!(&mut patchfile, "}}").unwrap_or_else(|_| unreachable!());
 

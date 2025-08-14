@@ -1,5 +1,7 @@
 name: Test
-on: [push]
+on:
+  push:
+    branches: [main]
 jobs:
   test_tex_engine:
     runs-on: ubuntu-latest
@@ -7,12 +9,12 @@ jobs:
       - uses: actions/checkout@v3
       - name: TeXLive
         run: sudo apt update && sudo apt install texlive-full
-  #    - name: Packages
-  #      run: tlmgr init-usertree && tlmgr install article geometry xcolor amsmath graphicx stex wrapfig mdframed listings tcolorbox
+      #    - name: Packages
+      #      run: tlmgr init-usertree && tlmgr install article geometry xcolor amsmath graphicx stex wrapfig mdframed listings tcolorbox
       - name: rustup
         run: rustup update && rustup toolchain install nightly
       - name: Test tex_engine
-        run: cd tex_engine && cargo test --release --features pdflatex
+        run: cd tex_engine && cargo test --features pdflatex
   test_tex_tfm:
     runs-on: ubuntu-latest
     steps:
@@ -20,7 +22,7 @@ jobs:
       - name: TeXLive
         run: sudo apt update && sudo apt install texlive-base
       - name: Test tex-glyphs
-        run: cd tex-glyphs && cargo test --release
+        run: cd tex-glyphs && cargo test
   test_rustex:
     runs-on: ubuntu-latest
     steps:
@@ -30,4 +32,114 @@ jobs:
       - name: rustup
         run: rustup update
       - name: Test rustex
-        run: cd rustex && cargo test --release
+        run: cd rustex && cargo test
+  linux:
+    needs: [test_tex_engine, test_tex_tfm, test_rustex]
+    runs-on: ubuntu-22.04
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: rustup
+        run: rustup update && rustup toolchain install nightly
+      - name: build
+        run: cd rustex && cargo build --release
+      - name: docs
+        run: RUSTDOCFLAGS="--cfg docsrs -Zunstable-options --enable-index-page" cargo +nightly doc --no-deps --all-features && cd tex_glyphs && cargo +nightly doc --no-deps --all-features
+      - name: upload docs
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: target/doc
+      - name: upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: target/release/RusTeX
+  windows:
+    needs: [test_tex_engine, test_tex_tfm, test_rustex]
+    runs-on: windows-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: rustup
+        run: rustup update && rustup toolchain install nightly
+      - name: build
+        run: cd rustex && cargo build --release
+      - name: upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: target/release/RusTeX.exe
+  mac_aarch64:
+    needs: [test_tex_engine, test_tex_tfm, test_rustex]
+    runs-on: macos-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - name: rustup
+        run: rustup update && rustup toolchain install nightly
+      - name: build
+        run: cd rustex && cargo build --release
+      - name: upload binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac
+          path: target/release/RusTeX
+  release:
+    needs: [linux, windows, mac_aarch64]
+    runs-on: ubuntu-22.04
+    environment: production
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux
+          path: ./linux
+      - name: Set executable
+        run: chmod +x ./linux/RusTeX
+      - uses: actions/download-artifact@v4
+        with:
+          name: windows
+          path: ./windows
+      - uses: actions/download-artifact@v4
+        with:
+          name: mac_aarch64
+          path: ./mac
+      - name: Set executable
+        run: chmod +x ./mac/RusTeX
+      - uses: vimtor/action-zip@v1
+        with:
+          files: linux/
+          dest: linux.zip
+      - uses: vimtor/action-zip@v1
+      - uses: vimtor/action-zip@v1
+        with:
+          files: windows/
+          dest: windows.zip
+      - uses: vimtor/action-zip@v1
+        with:
+          files: mac/
+          dest: mac.zip
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          automatic_release_tag: "latest"
+          title: main
+          files: |
+            ./linux.zip
+            ./windows.zip
+            ./mac.zip
+  deploy-docs:
+    needs: linux
+    permissions:
+      pages: write # to deploy to Pages
+      id-token: write # to verify the deployment originates from an appropriate source
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
