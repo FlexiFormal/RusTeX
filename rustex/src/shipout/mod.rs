@@ -1192,7 +1192,7 @@ fn get_page_hbox(children: Box<[HNode<Types>]>, ret: &mut Vec<VNode<Types>>, lis
             HNode::Box(TeXBox::H { children, .. }) if hbox_works(&children) => {
                 get_page_hbox(children, ret, list)
             }
-            HNode::Box(b) => list.prefix(vec![VNode::Box(b)]),
+            HNode::Box(b) => ret.push(VNode::Box(b)), //list.prefix(vec![VNode::Box(b)]),
             _ => unreachable!(),
         }
     }
@@ -1219,8 +1219,8 @@ fn hbox_works(children: &[HNode<Types>]) -> bool {
                         | PDFNode::Obj(..)
                         | PDFNode::PDFOutline(_)
                 ))
-                | HNode::Custom(RusTeXNode::PDFNode(PDFNode::Color(_)))
-                | HNode::Custom(RusTeXNode::FontChange(..) | RusTeXNode::FontChangeEnd)
+                //| HNode::Custom(RusTeXNode::PDFNode(PDFNode::Color(_)))
+                //| HNode::Custom(RusTeXNode::FontChange(..) | RusTeXNode::FontChangeEnd)
                 | HNode::Box(TeXBox::H { .. })
                 | HNode::Box(TeXBox::V { .. })
         )
