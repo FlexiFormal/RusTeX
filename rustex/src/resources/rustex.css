@@ -261,6 +261,7 @@ span {display:contents;}
 .rustex-math {
     line-height: inherit;
     font-size: inherit;
+    align-self: center;
     font-family:
         Latin Modern Math,
         math;

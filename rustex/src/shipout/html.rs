@@ -943,6 +943,7 @@ impl CompilationDisplay<'_, '_> {
             }
         }
         let inner = move |s: &mut Self| {
+            s.f.write_str("​");
             node!(s <math class="rustex-math" ref=sref {
             node!(s !<mrow {
                 for c in children {
@@ -1415,30 +1416,30 @@ impl CompilationDisplay<'_, '_> {
             } => {
                 let inner = move |s: &mut Self| {
                     node!(s !<mfrac ref=sref "linethickness"=sep.map(Self::dim_to_string).unwrap_or_default(); {
-                    node!(s !<mrow {
-                        for c in top.iter() {
-                            s.do_math(c,None/*,cramped*/)?;
-                        }
+                        node!(s !<mrow {
+                            for c in top.iter() {
+                                s.do_math(c,None/*,cramped*/)?;
+                            }
+                        }/>);
+                        node!(s !<mrow {
+                            for c in bottom.iter() {
+                                s.do_math(c,None/*,cramped*/)?;
+                            }
+                        }/>);
                     }/>);
-                    node!(s !<mrow {
-                        for c in bottom.iter() {
-                            s.do_math(c,None/*,cramped*/)?;
-                        }
-                    }/>);
-                }/>);
                     Ok::<_, std::fmt::Error>(())
                 };
                 match (left, right) {
                     (None, None) => inner(self)?,
                     _ => node!(self !<mrow {
-                    if let Some(Ok(c)) = left {
-                        node!(self !<mo "lspace"="0"; "rspace"="0"; class="rustex-math-open" "stretchy"="true"; {Display::fmt(&Escaped(&c.into()),self.f)?} />);
-                    }
-                    inner(self)?;
-                    if let Some(Ok(c)) = right {
-                        node!(self !<mo "lspace"="0"; "rspace"="0"; class="rustex-math-close" "stretchy"="true"; {Display::fmt(&Escaped(&c.into()),self.f)?} />);
-                    }
-                }/>),
+                        if let Some(Ok(c)) = left {
+                            node!(self !<mo "lspace"="0"; "rspace"="0"; class="rustex-math-open" "stretchy"="true"; {Display::fmt(&Escaped(&c.into()),self.f)?} />);
+                        }
+                        inner(self)?;
+                        if let Some(Ok(c)) = right {
+                            node!(self !<mo "lspace"="0"; "rspace"="0"; class="rustex-math-close" "stretchy"="true"; {Display::fmt(&Escaped(&c.into()),self.f)?} />);
+                        }
+                    }/>),
                 }
                 Ok(())
             }
