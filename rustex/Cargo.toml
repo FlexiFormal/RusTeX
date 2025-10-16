@@ -1,7 +1,7 @@
 [package]
 name = "rustex_lib"
 version = "0.1.2"
-edition = "2021"
+edition = "2024"
 authors = ["Dennis Müller <d.mueller@kwarc.info>"]
 description = "A crate for converting TeX/pdfTeX to HTML"
 license = "GPL-3.0-or-later"

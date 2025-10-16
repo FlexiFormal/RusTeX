@@ -1,15 +1,15 @@
 use crate::engine::extension::CSS;
 use crate::engine::nodes::RusTeXNode;
 use crate::engine::stomach::RusTeXStomach;
-use crate::engine::{register_command, Refs, Res, Types};
+use crate::engine::{Refs, Res, Types, register_command};
 use crate::utils::{VecMap, VecSet};
 use tex_engine::add_node;
 use tex_engine::commands::primitives::{register_simple_expandable, register_unexpandable};
 use tex_engine::commands::{CommandScope, PrimitiveCommand};
+use tex_engine::engine::DefaultEngine;
 use tex_engine::engine::mouth::Mouth;
 use tex_engine::engine::state::State;
 use tex_engine::engine::stomach::Stomach;
-use tex_engine::engine::DefaultEngine;
 use tex_engine::prelude::*;
 use tex_engine::tex::nodes::horizontal::HNode;
 use tex_engine::tex::nodes::math::{
@@ -310,25 +310,19 @@ fn annot_end(engine: Refs, _token: CompactToken) -> Res<()> {
 pub const CLOSE_FONT: &str = "!\"$%&/(closefont)\\&%$\"!";
 pub fn close_font(engine: Refs, _token: CompactToken) -> Res<()> {
     match engine.stomach.data_mut().open_lists.last_mut() {
-        Some(NodeList::Vertical {
-            ref mut children, ..
-        }) => match children.last() {
+        Some(NodeList::Vertical { children, .. }) => match children.last() {
             Some(VNode::Custom(RusTeXNode::FontChange(_, _))) => {
                 children.pop();
             }
             _ => children.push(VNode::Custom(RusTeXNode::FontChangeEnd)),
         },
-        Some(NodeList::Horizontal {
-            ref mut children, ..
-        }) => match children.last() {
+        Some(NodeList::Horizontal { children, .. }) => match children.last() {
             Some(HNode::Custom(RusTeXNode::FontChange(_, _))) => {
                 children.pop();
             }
             _ => children.push(HNode::Custom(RusTeXNode::FontChangeEnd)),
         },
-        Some(NodeList::Math {
-            ref mut children, ..
-        }) => match children.list_mut().last() {
+        Some(NodeList::Math { children, .. }) => match children.list_mut().last() {
             Some(MathNode::Custom(RusTeXNode::FontChange(_, _))) => {
                 children.list_mut().pop();
             }

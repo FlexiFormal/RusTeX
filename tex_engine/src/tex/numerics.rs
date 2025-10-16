@@ -52,6 +52,7 @@ pub trait Numeric<I: TeXInt>:
     + Debug
     + Display
 {
+    #[must_use]
     fn scale(&self, times: I, div: I) -> Self;
 }
 
@@ -219,10 +220,11 @@ impl From<Dim32> for i64 {
 }
 
 impl TeXDimen for Dim32 {
-    #[inline(always)]
+    #[inline]
+    #[allow(clippy::cast_possible_truncation)]
     fn scale_float(&self, times: f64) -> Self {
         let times = (times * 65536.0).round() as i64;
-        Self(((self.0 as i64) * times / 65536) as i32)
+        Self((i64::from(self.0) * times / 65536) as i32)
     }
     fn from_sp(sp: i32) -> Self {
         Self(sp)
@@ -235,14 +237,14 @@ impl TeXDimen for Dim32 {
         match dim {
             b"sp" => Self(1).scale_float(float),
             b"pt" => Self(65536).scale_float(float),
-            b"pc" => Self(786432).scale_float(float),
-            b"in" => Self(4736286).scale_float(float),
-            b"bp" => Self(65781).scale_float(float),
-            b"px" => Self(65781).scale_float(float),
-            b"cm" => Self(1864679).scale_float(float),
-            b"mm" => Self(186467).scale_float(float),
-            b"dd" => Self(70124).scale_float(float),
-            b"cc" => Self(841489).scale_float(float),
+            b"pc" => Self(786_432).scale_float(float),
+            b"in" => Self(4_736_286).scale_float(float),
+            b"bp" => Self(65_781).scale_float(float),
+            b"px" => Self(65_781).scale_float(float),
+            b"cm" => Self(1_864_679).scale_float(float),
+            b"mm" => Self(186_467).scale_float(float),
+            b"dd" => Self(70_124).scale_float(float),
+            b"cc" => Self(841_489).scale_float(float),
             b"em" => {
                 let f = engine.state.get_current_font();
                 let em = f.get_dim(5);

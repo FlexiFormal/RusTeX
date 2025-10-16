@@ -53,7 +53,7 @@ lazy_static = "1"
 log = { version = "0.4", features = ["kv_unstable"] }
 #ahash = "0.8"
 rustc-hash = "2"
-string-interner = "0.18"
+string-interner = "0.19"
 chrono = "0.4"
 array-init = "2"
 arrayvec = "0.7"
@@ -68,9 +68,9 @@ either = "1"
 md-5 = { version = "0.10", optional = true }
 image = { version = "0.25", optional = true }
 regex = { version = "1.10", optional = true }
-pdfium-render = { version = "=0.8.29", features = [
+pdfium-render = { version = "=0.8.35", features = [
     "image_025",
-    "pdfium_6996",
+    "pdfium_7350",
 ], optional = true }
 
 reqwest = { version = "0.12", features = ["blocking"], optional = true }

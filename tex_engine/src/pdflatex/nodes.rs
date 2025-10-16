@@ -8,6 +8,8 @@ use crate::utils::errors::{TeXError, TeXResult};
 use std::fmt::Formatter;
 use std::path::{Path, PathBuf};
 
+const PDFIUM_VERSION: &str = "7350";
+
 #[derive(Clone, Debug)]
 pub enum PDFNode<ET: EngineTypes> {
     Obj(PDFObj),
@@ -468,11 +470,10 @@ const PDFIUM_NAME: &str = "pdfium.dll";
 const PDFIUM_NAME: &str = "libpdfium.so";
 
 #[cfg(feature = "pdfium")]
-static PDFIUM_LOCK : std::sync::Mutex<()> = std::sync::Mutex::new(());
+static PDFIUM_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
 
 #[cfg(feature = "pdfium")]
 fn download_pdfium(lib_dir: &std::path::Path) {
-    const PDFIUM_VERSION: &str = "6996";
     const BASE_URL: &str =
         "https://github.com/bblanchon/pdfium-binaries/releases/download/chromium";
 
@@ -493,8 +494,9 @@ fn download_pdfium(lib_dir: &std::path::Path) {
     let download_url = format!("{BASE_URL}/{PDFIUM_VERSION}/pdfium-{PLATFORM}.tgz");
     let archive_path = lib_dir.join("pdfium.tgz");
     let Ok(mut response) = reqwest::blocking::get(download_url) else {
-        log::warn!("Could not download pdfium"); return 
-    };//.expect("Could not download pdfium");
+        log::warn!("Could not download pdfium");
+        return;
+    }; //.expect("Could not download pdfium");
     let Ok(mut dest) = std::fs::File::create(&archive_path) else {
         return;
     };
@@ -547,9 +549,9 @@ pub trait PDFExtension<ET: EngineTypes>: EngineExtension<ET> {
         match self.pdfium_direct() {
             Some(p) => p.as_ref(),
             r => {
-                let Ok(lock )= PDFIUM_LOCK.lock() else {
+                let Ok(lock) = PDFIUM_LOCK.lock() else {
                     log::warn!("Could not lock PDFium lock");
-                    return None
+                    return None;
                 };
                 let pdfium = Pdfium::bind_to_system_library().ok().or_else(|| {
                     std::env::current_exe().ok().and_then(|d| {
@@ -558,9 +560,14 @@ pub trait PDFExtension<ET: EngineTypes>: EngineExtension<ET> {
                         if !lib_path.exists() {
                             download_pdfium(&lib_dir);
                         }
-                        Pdfium::bind_to_library(&lib_path).map_err(|e|
-                            log::warn!("Could not bind to pdfium at {}: {e}",lib_path.display())
-                        ).ok()
+                        Pdfium::bind_to_library(&lib_path)
+                            .map_err(|e| {
+                                log::warn!(
+                                    "Could not bind to pdfium at {}: {e}",
+                                    lib_path.display()
+                                );
+                            })
+                            .ok()
                     })
                 });
                 *r = Some(pdfium.map(Pdfium::new));
@@ -728,7 +735,7 @@ pub fn pdf_as_image<ET: EngineTypes, E: PDFExtension<ET>>(path: &Path, ext: &mut
         return PDFImage::None;
     };
     let Ok(pdf) = pdfium.load_pdf_from_file(&path, None) else {
-        log::warn!("Failed to load PDF file {}",path.display());
+        log::warn!("Failed to load PDF file {}", path.display());
         return PDFImage::None;
     };
     let cfg = PdfRenderConfig::new().scale_page_by_factor(5.0);
@@ -737,7 +744,7 @@ pub fn pdf_as_image<ET: EngineTypes, E: PDFExtension<ET>>(path: &Path, ext: &mut
         let img = bmp.as_image();
         PDFImage::PDF(img)
     } else {
-        log::warn!("Failed to render PDF file {}",path.display());
+        log::warn!("Failed to render PDF file {}", path.display());
         PDFImage::None
     };
     r

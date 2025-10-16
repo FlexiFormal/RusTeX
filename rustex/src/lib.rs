@@ -5,7 +5,7 @@ pub mod utils;
 pub use shipout::html::ImageOptions;
 
 pub const RUSTEX_CSS_URL: &str =
-    "https://raw.githack.com/Jazzpirate/RusTeX/main/rustex/src/resources/rustex.css";
+    "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex.css";
 
 #[cfg(test)]
 mod tests {

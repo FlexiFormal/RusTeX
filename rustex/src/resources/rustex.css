@@ -9,11 +9,6 @@ a {
     color: inherit;
     text-decoration: inherit;
 }
-/*
-* { position: static;z-index: auto }
-span {display:contents;}
-* { position:relative; line-height: 1.0}
- */
 
 .rustex-missing {
     color: red;
@@ -38,10 +33,10 @@ span {display:contents;}
     );
     min-width: var(--rustex-this-width);
     max-width: var(--rustex-this-width);
-    > span {
-        display: contents;
-        --rustex-curr-width: var(--rustex-this-width);
-    }
+}
+.rustex-setwidth {
+    display: contents;
+    --rustex-curr-width: var(--rustex-this-width);
 }
 
 .rustex-body {
@@ -89,27 +84,122 @@ span {display:contents;}
 
 .rustex-reset-font,
 .rustex-body {
-    /*font-family: Latin Modern, STIXgeneral, Times, Times New Roman,Symbol, cmr10, CMSY10, CMEX10, serif;*/
     font-style: normal;
     font-weight: 400;
     font-variant: normal;
 }
 
-/* ---------------------------------------------------- Boxes ------------------------------------------------------- */
+/* ------------------------------------------------- Paragraphs ------------------------------------------------------- */
 
 .rustex-paragraph {
     text-align: justify;
     white-space: normal;
-    display: inline-block;
-    margin-top: auto;
-    /*span { position:relative; display:contents; }*/
+    display: block;
+    /*margin-top: auto;*/
 }
 .rustex-parindent {
     display: inline-block;
 }
 
-.rustex-hbox {
+/* ---------------------------------------------------- Boxes ------------------------------------------------------- */
+
+.rustex-space-in-hbox {
+    display: inline-block;
+    line-height: 0;
+    &:before {
+        content: " ";
+    }
+}
+
+.rustex-box-vhc,
+.rustex-box-hhc {
+    width: fit-content;
+    align-items: last baseline;
+    flex-direction: row;
+}
+
+.rustex-box-hh,
+.rustex-box-vh {
+    flex-direction: row;
+    white-space: pre;
+    width: min-content;
+    height: min-content;
+    align-items: last baseline;
+    overflow: visible;
+    text-align: left;
+    vertical-align: baseline;
+    justify-content: start;
+}
+
+.rustex-box-hh,
+.rustex-box-hhc {
     display: inline-flex;
+}
+.rustex-box-vh,
+.rustex-box-vhc {
+    display: flex;
+}
+
+.rustex-box-hv,
+.rustex-box-vv,
+.rustex-box-ht,
+.rustex-box-vt {
+    flex-direction: column;
+    height: min-content;
+}
+.rustex-vbox-to {
+    display: flex;
+    flex-direction: column;
+    > .rustex-paragraph {
+        margin-top: auto;
+    }
+}
+
+.rustex-box-after-v {
+    margin-top: auto;
+    height: 0;
+    display: block;
+}
+
+.rustex-box-hv,
+.rustex-box-ht {
+    display: inline-flex;
+    width: fit-content;
+}
+.rustex-box-vv,
+.rustex-box-vt {
+    display: flex;
+    width: 100%;
+}
+
+.rustex-box-hv,
+.rustex-box-vv {
+    vertical-align: bottom;
+}
+.rustex-box-ht,
+.rustex-box-vt {
+    vertical-align: top;
+    position: relative;
+}
+
+.rustex-vcenter {
+    display: block;
+    width: 100%;
+    height: min-content;
+    white-space: initial;
+    > div {
+        height: min-content;
+        width: min-content;
+        display: inline-flex;
+        flex-direction: column;
+        vertical-align: middle;
+    }
+}
+
+/*
+.rustex-hbox {
+    display: flex;
+    flex-direction: row;
     white-space: pre;
     width: min-content;
     height: min-content;
@@ -118,27 +208,32 @@ span {display:contents;}
     text-align: left;
     vertical-align: baseline;
     justify-content: start;
-    /*span { position:relative; display: contents; }*/
 }
 
 .rustex-hbox-container {
-    display: inline-flex;
+    display: flex;
     flex-direction: column;
     width: min-content;
     height: min-content;
     justify-content: end;
     vertical-align: baseline;
 }
-
-.rustex-space-in-hbox {
-    display: inline-block;
-    /*margin-left: auto;
-    margin-right: auto;*/
-    line-height: 0;
-    &:before {
-        content: " ";
-    }
+.rustex-hbox .rustex-hbox-container {
+    display: inline-flex;
 }
+.rustex-paragraph .rustex-hbox-container {
+    display: inline-flex;
+}
+.rustex-vbox .rustex-hbox-container {
+    display: flex;
+}
+.rustex-vtop .rustex-hbox-container {
+    display: flex;
+}
+.rustex-vcenter-container .rustex-hbox-container {
+    display: flex;
+}
+
 
 .rustex-vbox,
 .rustex-vtop {
@@ -155,39 +250,82 @@ span {display:contents;}
 }
 
 .rustex-vbox-height-container {
-    display: inline-block;
-    width: 100%;
+    display: block;
     white-space: initial;
-    vertical-align: bottom;
 }
 .rustex-vtop-height-container {
-    display: inline-block;
+    display: block;
     white-space: initial;
-    width: 100%;
     position: relative;
     z-index: auto;
 }
+.rustex-hbox .rustex-vbox-height-container {
+    display: inline-block;
+    vertical-align: bottom;
+}
+.rustex-hbox .rustex-vtop-height-container {
+    display: inline-block;
+}
+.rustex-paragraph .rustex-vbox-height-container {
+    display: inline-block;
+    vertical-align: bottom;
+}
+.rustex-paragraph .rustex-vtop-height-container {
+    display: inline-block;
+}
+.rustex-vbox .rustex-vbox-height-container {
+    display: block;
+}
+.rustex-vbox .rustex-vtop-height-container {
+    display: block;
+}
+.rustex-vtop .rustex-vbox-height-container {
+    display: block;
+}
+.rustex-vtop .rustex-vtop-height-container {
+    display: block;
+}
+.rustex-vcenter-container .rustex-vbox-height-container {
+    display: block;
+}
+.rustex-vcenter-container .rustex-vtop-height-container {
+    display: block;
+}
+
 .rustex-vbox-container,
 .rustex-vtop-container {
-    display: inline-block;
+    display: block;
     width: min-content;
     height: min-content;
     white-space: initial;
+    position: relative;
 }
-.rustex-vcenter-container {
+.rustex-hbox .rustex-vbox-container {
     display: inline-block;
-    width: 100%;
-    height: min-content;
-    white-space: initial;
-    vertical-align: middle;
-    > div {
-        height: min-content;
-        width: min-content;
-        display: inline-flex;
-        flex-direction: column;
-        vertical-align: middle;
-    }
 }
+.rustex-hbox .rustex-vtop-container {
+    display: inline-block;
+}
+.rustex-paragraph .rustex-vbox-container {
+    display: inline-block;
+}
+.rustex-paragraph .rustex-vtop-container {
+    display: inline-block;
+}
+.rustex-vbox .rustex-vbox-container {
+    display: block;
+}
+.rustex-vbox .rustex-vtop-container {
+    display: block;
+}
+.rustex-vtop .rustex-vbox-container {
+    display: block;
+}
+.rustex-vtop .rustex-vtop-container {
+    display: block;
+}
+
+*/
 
 /* ---------------------------------------------------- Rules ------------------------------------------------------- */
 

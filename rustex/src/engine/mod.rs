@@ -153,7 +153,7 @@ impl CompilationResult {
         use std::io::Write;
         let mut f = std::fs::File::create(path)?;
         let mut f = BufWriter::new(&mut f);
-        write!(f, "{}", self)?;
+        write!(f, "{self}")?;
         f.flush()
     }
 }

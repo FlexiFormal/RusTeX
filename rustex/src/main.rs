@@ -8,6 +8,7 @@ use clap::Parser;
 use rustex_lib::engine::files::RusTeXFileSystem;
 use rustex_lib::engine::output::RusTeXOutput;
 use rustex_lib::engine::Types;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use tex_engine::engine::{DefaultEngine, TeXEngine};
 use tex_engine::pdflatex::commands::register_pdftex_primitives;
@@ -20,8 +21,8 @@ thesis  0:15
 fn main() {
     //profile()
     //thesis()
-    run()
-    //test()
+    //run()
+    test()
     //temp_test()
     //notes()
     //test2()
@@ -161,10 +162,15 @@ fn test() {
             insert_font_info: true,
         },
     );
-    ret.write_out(Path::new(
+    let s = ret.to_string().replace(
+        "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex.css",
+        "file:///home/jazzpirate/work/Software/sTeX/RusTeXNew/rustex/src/resources/rustex.css",
+    );
+    let mut f = std::fs::File::create(Path::new(
         "/home/jazzpirate/work/Software/sTeX/RusTeXNew/test/test.html",
     ))
-    .unwrap();
+    .expect("bug");
+    f.write_all(s.as_bytes()).expect("bug");
 }
 
 fn temp_test() {

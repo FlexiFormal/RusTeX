@@ -68,52 +68,52 @@ impl std::fmt::Debug for CategoryCode {
 }
 impl std::fmt::Display for CategoryCode {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        use CategoryCode::*;
+        use CategoryCode as CC;
         write!(
             f,
             "{}",
             match self {
-                Escape => "escape",
-                BeginGroup => "begin group",
-                EndGroup => "end group",
-                MathShift => "math shift",
-                AlignmentTab => "alignment",
-                EOL => "end of line",
-                Parameter => "parameter",
-                Superscript => "superscript",
-                Subscript => "subscript",
-                Ignored => "ignored",
-                Space => "space",
-                Letter => "letter",
-                Other => "other",
-                Active => "active",
-                Comment => "comment",
-                Invalid => "invalid",
+                CC::Escape => "escape",
+                CC::BeginGroup => "begin group",
+                CC::EndGroup => "end group",
+                CC::MathShift => "math shift",
+                CC::AlignmentTab => "alignment",
+                CC::EOL => "end of line",
+                CC::Parameter => "parameter",
+                CC::Superscript => "superscript",
+                CC::Subscript => "subscript",
+                CC::Ignored => "ignored",
+                CC::Space => "space",
+                CC::Letter => "letter",
+                CC::Other => "other",
+                CC::Active => "active",
+                CC::Comment => "comment",
+                CC::Invalid => "invalid",
             }
         )
     }
 }
 
 impl From<CategoryCode> for u8 {
-    fn from(cc: CategoryCode) -> u8 {
-        use CategoryCode::*;
+    fn from(cc: CategoryCode) -> Self {
+        use CategoryCode as CC;
         match cc {
-            Escape => 0,
-            BeginGroup => 1,
-            EndGroup => 2,
-            MathShift => 3,
-            AlignmentTab => 4,
-            EOL => 5,
-            Parameter => 6,
-            Superscript => 7,
-            Subscript => 8,
-            Ignored => 9,
-            Space => 10,
-            Letter => 11,
-            Other => 12,
-            Active => 13,
-            Comment => 14,
-            Invalid => 15,
+            CC::Escape => 0,
+            CC::BeginGroup => 1,
+            CC::EndGroup => 2,
+            CC::MathShift => 3,
+            CC::AlignmentTab => 4,
+            CC::EOL => 5,
+            CC::Parameter => 6,
+            CC::Superscript => 7,
+            CC::Subscript => 8,
+            CC::Ignored => 9,
+            CC::Space => 10,
+            CC::Letter => 11,
+            CC::Other => 12,
+            CC::Active => 13,
+            CC::Comment => 14,
+            CC::Invalid => 15,
         }
     }
 }
@@ -121,24 +121,24 @@ impl From<CategoryCode> for u8 {
 impl TryFrom<u8> for CategoryCode {
     type Error = ();
     fn try_from(value: u8) -> Result<Self, Self::Error> {
-        use CategoryCode::*;
+        use CategoryCode as CC;
         Ok(match value {
-            0 => Escape,
-            1 => BeginGroup,
-            2 => EndGroup,
-            3 => MathShift,
-            4 => AlignmentTab,
-            5 => EOL,
-            6 => Parameter,
-            7 => Superscript,
-            8 => Subscript,
-            9 => Ignored,
-            10 => Space,
-            11 => Letter,
-            12 => Other,
-            13 => Active,
-            14 => Comment,
-            15 => Invalid,
+            0 => CC::Escape,
+            1 => CC::BeginGroup,
+            2 => CC::EndGroup,
+            3 => CC::MathShift,
+            4 => CC::AlignmentTab,
+            5 => CC::EOL,
+            6 => CC::Parameter,
+            7 => CC::Superscript,
+            8 => CC::Subscript,
+            9 => CC::Ignored,
+            10 => CC::Space,
+            11 => CC::Letter,
+            12 => CC::Other,
+            13 => CC::Active,
+            14 => CC::Comment,
+            15 => CC::Invalid,
             _ => return Err(()),
         })
     }
