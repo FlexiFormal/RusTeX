@@ -5,9 +5,9 @@ static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 use rustex_lib::engine::{RusTeXEngine, RusTeXEngineT, Settings};
 
 use clap::Parser;
+use rustex_lib::engine::Types;
 use rustex_lib::engine::files::RusTeXFileSystem;
 use rustex_lib::engine::output::RusTeXOutput;
-use rustex_lib::engine::Types;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use tex_engine::engine::{DefaultEngine, TeXEngine};
@@ -21,8 +21,8 @@ thesis  0:15
 fn main() {
     //profile()
     //thesis()
-    //run()
-    test()
+    run()
+    //test()
     //temp_test()
     //notes()
     //test2()

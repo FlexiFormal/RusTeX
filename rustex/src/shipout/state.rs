@@ -784,6 +784,7 @@ impl<'a, 'b, Mode: VLike> Shipout<'a, 'b, Mode> {
     #[inline(always)]
     pub(crate) fn in_halign<R>(
         &mut self,
+        line_skip: LineSkip,
         f: impl FnOnce(&mut Shipout<Table>) -> Result<R, Option<VNode<Types>>>,
     ) -> Result<R, Option<VNode<Types>>> {
         let ((r, num_cols), nodes, uses_color, uses_font) = self.do_in(
@@ -798,6 +799,7 @@ impl<'a, 'b, Mode: VLike> Shipout<'a, 'b, Mode> {
             uses_color,
             uses_font,
             num_cols,
+            line_skip,
         });
         r
     }
@@ -929,6 +931,7 @@ impl<'a, 'b> Shipout<'a, 'b, Row> {
         &mut self,
         start: SRef,
         end: SRef,
+        height: Dim32,
         spans: u8,
         f: impl FnOnce(&mut Shipout<H>) -> Result<(), Option<HNode<Types>>>,
     ) -> Result<(), Option<HNode<Types>>> {
@@ -938,6 +941,7 @@ impl<'a, 'b> Shipout<'a, 'b, Row> {
             sref: SourceRef::new(start, end, self.engine),
             spans: spans + 1,
             children: nodes,
+            height,
             uses_color,
             uses_font,
         });
@@ -1751,6 +1755,7 @@ pub(crate) enum ShipoutNodeV {
         uses_color: bool,
         uses_font: bool,
         num_cols: u8,
+        line_skip: LineSkip,
     },
     Common(Common<Self>),
 }
@@ -2229,6 +2234,7 @@ pub(crate) enum ShipoutNodeHRow {
         sref: SourceRef,
         spans: u8,
         children: Vec<ShipoutNodeH>,
+        height: Dim32,
         uses_color: bool,
         uses_font: bool,
     },

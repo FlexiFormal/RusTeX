@@ -4,8 +4,7 @@
 /* ----------------------------------------------------- CSS -------------------------------------------------------- */
 /* ------------------------------------------------------------------------------------------------------------------ */
 
-/* TODO remove this */
-a {
+.rustex-link {
     color: inherit;
     text-decoration: inherit;
 }
@@ -196,137 +195,6 @@ a {
     }
 }
 
-/*
-.rustex-hbox {
-    display: flex;
-    flex-direction: row;
-    white-space: pre;
-    width: min-content;
-    height: min-content;
-    align-items: baseline;
-    overflow: visible;
-    text-align: left;
-    vertical-align: baseline;
-    justify-content: start;
-}
-
-.rustex-hbox-container {
-    display: flex;
-    flex-direction: column;
-    width: min-content;
-    height: min-content;
-    justify-content: end;
-    vertical-align: baseline;
-}
-.rustex-hbox .rustex-hbox-container {
-    display: inline-flex;
-}
-.rustex-paragraph .rustex-hbox-container {
-    display: inline-flex;
-}
-.rustex-vbox .rustex-hbox-container {
-    display: flex;
-}
-.rustex-vtop .rustex-hbox-container {
-    display: flex;
-}
-.rustex-vcenter-container .rustex-hbox-container {
-    display: flex;
-}
-
-
-.rustex-vbox,
-.rustex-vtop {
-    height: min-content;
-    width: 100%;
-    display: inline-flex;
-    flex-direction: column;
-}
-.rustex-vbox {
-    vertical-align: bottom;
-}
-.rustex-vtop {
-    vertical-align: baseline;
-}
-
-.rustex-vbox-height-container {
-    display: block;
-    white-space: initial;
-}
-.rustex-vtop-height-container {
-    display: block;
-    white-space: initial;
-    position: relative;
-    z-index: auto;
-}
-.rustex-hbox .rustex-vbox-height-container {
-    display: inline-block;
-    vertical-align: bottom;
-}
-.rustex-hbox .rustex-vtop-height-container {
-    display: inline-block;
-}
-.rustex-paragraph .rustex-vbox-height-container {
-    display: inline-block;
-    vertical-align: bottom;
-}
-.rustex-paragraph .rustex-vtop-height-container {
-    display: inline-block;
-}
-.rustex-vbox .rustex-vbox-height-container {
-    display: block;
-}
-.rustex-vbox .rustex-vtop-height-container {
-    display: block;
-}
-.rustex-vtop .rustex-vbox-height-container {
-    display: block;
-}
-.rustex-vtop .rustex-vtop-height-container {
-    display: block;
-}
-.rustex-vcenter-container .rustex-vbox-height-container {
-    display: block;
-}
-.rustex-vcenter-container .rustex-vtop-height-container {
-    display: block;
-}
-
-.rustex-vbox-container,
-.rustex-vtop-container {
-    display: block;
-    width: min-content;
-    height: min-content;
-    white-space: initial;
-    position: relative;
-}
-.rustex-hbox .rustex-vbox-container {
-    display: inline-block;
-}
-.rustex-hbox .rustex-vtop-container {
-    display: inline-block;
-}
-.rustex-paragraph .rustex-vbox-container {
-    display: inline-block;
-}
-.rustex-paragraph .rustex-vtop-container {
-    display: inline-block;
-}
-.rustex-vbox .rustex-vbox-container {
-    display: block;
-}
-.rustex-vbox .rustex-vtop-container {
-    display: block;
-}
-.rustex-vtop .rustex-vbox-container {
-    display: block;
-}
-.rustex-vtop .rustex-vtop-container {
-    display: block;
-}
-
-*/
-
 /* ---------------------------------------------------- Rules ------------------------------------------------------- */
 
 .rustex-vrule {
@@ -369,8 +237,6 @@ a {
     display: block;
 }
 
-/*.rustex-mskip {}*/
-
 .rustex-vss {
     display: block;
     margin-top: auto;
@@ -399,7 +265,6 @@ a {
 .rustex-math {
     line-height: inherit;
     font-size: inherit;
-    align-self: center;
     font-family:
         Latin Modern Math,
         math;
@@ -420,12 +285,6 @@ a {
     &:has(+ .rustex-math-ord) {
         padding-right: 0.15em;
     }
-    /*padding-left: 0.15em;
-    padding-right: 0.15em;
-    + .rustex-math-op { padding-left: 0; }
-    &:has(+ .rustex-math-op) { padding-right: 0; }
-    &:first-child { padding-left: 0; }
-    &:last-child { padding-right: 0; }*/
 }
 .rustex-math-ord,
 .rustex-math-open,
@@ -467,12 +326,6 @@ a {
     + .rustex-math-rel {
         padding-left: 0.2em;
     }
-    /*padding-left: 0.15em;
-    padding-right: 0.15em;
-    + .rustex-math-bin { padding-left: 0; }
-    &:has(+ .rustex-math-bin) { padding-right: 0; }
-    &:first-child { padding-left: 0; }
-    &:last-child { padding-right: 0; }*/
 }
 .rustex-math-rel {
     &:has(+ .rustex-math-ord) {
@@ -500,12 +353,6 @@ a {
     + .rustex-math-bin {
         padding-left: 0.15em;
     }
-    /*padding-left: 0.2em;
-    padding-right: 0.2em;
-    + .rustex-math-rel { padding-left: 0; }
-    &:has(+ .rustex-math-rel) { padding-right: 0; }
-    &:first-child { padding-left: 0; }
-    &:last-child { padding-right: 0; }*/
 }
 .rustex-math-punct {
     &:has(+ .rustex-math-ord) {
@@ -536,10 +383,6 @@ a {
     + .rustex-math-rel {
         padding-left: 0.2em;
     }
-    /*padding-left: 0;
-    padding-right: 0.15em;
-    &:has(+ .rustex-math-punct) { padding-right: 0; }
-    &:last-child { padding-right: 0; }*/
 }
 
 * + .rustex-mkern {
@@ -559,7 +402,6 @@ a {
 
 .rustex-math-escape {
     display: inline-flex;
-    /*width: 100%;*/
     text-align: center;
     justify-content: center;
     letter-spacing: initial;
@@ -569,37 +411,6 @@ a {
         writing-mode: initial;
     }
 }
-/*
-munder > :not(:first-child) {
-    math-depth: inherit;
-    math-style: inherit;
-}
-
-mover > :not(:first-child) {
-    math-depth: inherit;
-    math-style: inherit;
-}
-
-munderover > :not(:first-child) {
-    math-depth: inherit;
-    math-style: inherit;
-}
-
-msub > :not(:first-child) {
-    math-depth: inherit;
-    math-style: inherit;
-}
-
-msup > :not(:first-child) {
-    math-depth: inherit;
-    math-style: inherit;
-}
-
-msubsup > :not(:first-child) {
-    math-depth: inherit;
-    math-style: inherit;
-}
-*/
 
 /* --------------------------------------------------- Tables ------------------------------------------------------- */
 
@@ -628,10 +439,6 @@ msubsup > :not(:first-child) {
     padding: 0;
     width: 100%;
     height: 100%;
-    > .rustex-hbox {
-        width: 100%;
-        height: 100%;
-    }
 }
 .rustex-noalign {
     display: inline-flex;

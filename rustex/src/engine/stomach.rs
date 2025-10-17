@@ -7,17 +7,17 @@ use tex_engine::engine::filesystem::{File, SourceReference};
 use tex_engine::engine::mouth::Mouth;
 use tex_engine::engine::state::{GroupType, State};
 use tex_engine::engine::stomach::methods::{
-    insert_afterassignment, split_paragraph_roughly, ParLine, ParLineSpec, SplitResult,
+    ParLine, ParLineSpec, SplitResult, insert_afterassignment, split_paragraph_roughly,
 };
 use tex_engine::engine::stomach::{Stomach, StomachData};
 use tex_engine::engine::{EngineAux, EngineReferences, EngineTypes};
 use tex_engine::prelude::*;
+use tex_engine::tex::nodes::NodeList;
+use tex_engine::tex::nodes::NodeTrait;
 use tex_engine::tex::nodes::boxes::{BoxType, ToOrSpread};
 use tex_engine::tex::nodes::horizontal::{HNode, HorizontalNodeListType};
 use tex_engine::tex::nodes::math::{MathAtom, MathNode, MathNucleus};
 use tex_engine::tex::nodes::vertical::{VNode, VerticalNodeListType};
-use tex_engine::tex::nodes::NodeList;
-use tex_engine::tex::nodes::NodeTrait;
 use tex_engine::tex::numerics::Dim32;
 use tex_engine::tex::numerics::Skip;
 use tex_engine::tex::numerics::TeXDimen;
@@ -178,7 +178,8 @@ impl Stomach<Types> for RusTeXStomach {
                     children: vec![],
                 }
             });
-        Self::add_node_v(engine, VNode::Custom(RusTeXNode::HAlignBegin)).unwrap()
+        let lineskip = LineSkip::get(engine.state);
+        Self::add_node_v(engine, VNode::Custom(RusTeXNode::HAlignBegin { lineskip })).unwrap()
     }
     fn close_align(engine: &mut EngineReferences<Types>) -> Res<()> {
         Self::add_node_v(engine, VNode::Custom(RusTeXNode::HAlignEnd))?;

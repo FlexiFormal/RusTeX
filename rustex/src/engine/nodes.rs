@@ -26,11 +26,11 @@ impl LineSkip {
     pub fn factor(&self, font: &Font) -> f32 {
         use tex_engine::engine::fontsystem::Font;
         let at = font.get_at().0 as f32;
-        if self.baselineskip >= (self.lineskiplimit + at) {
+        (if self.baselineskip >= (self.lineskiplimit + at) {
             self.baselineskip
         } else {
             at + self.lineskip
-        }
+        }) / 655360.0
     }
 }
 
@@ -47,7 +47,9 @@ pub enum RusTeXNode {
         lineskip: LineSkip,
     },
     ParagraphEnd,
-    HAlignBegin,
+    HAlignBegin {
+        lineskip: LineSkip,
+    },
     HAlignEnd,
     Br,
     PGFGBegin {

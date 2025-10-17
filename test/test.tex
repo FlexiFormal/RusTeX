@@ -88,12 +88,17 @@ Sed facilisis eget enim in varius.}
 
 \usepackage{ded}
 
+\title{Foo Bar}
+\author{Hans Dampf\\Dampfgasse 17\\hans@dampf.com}
+
 % ------------------------------------------------------------------
 
 \begin{document}
 \ifx\rustexBREAK\undefined
   \let\rustexBREAK\relax
 \fi
+
+\maketitle
 
 \section{ridiculousness}
 \dimen0=1px \the\dimen0
@@ -666,6 +671,18 @@ Sed facilisis eget enim in varius.}
 
   \halign{$>$#$<$&$>$#$<$\cr
   a& b\cr c& d\cr\omit&\omit\cr e&f\cr
+  }
+}}
+
+\block{mixed Line heights}{{
+	\def\setht{
+		\lineskiplimit-\maxdimen
+		\baselineskip0pt\relax
+		\lineskip0pt\relax
+	}
+
+  \halign{$>$#$<$&$>$#$<$\cr\setht
+  a&\setht b\cr c& d\cr\omit&\omit\cr e&f\cr
   }
 }}
 

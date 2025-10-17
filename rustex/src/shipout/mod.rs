@@ -7,20 +7,20 @@ pub(crate) mod utils;
 use crate::engine::nodes::{LineSkip, RusTeXNode};
 use crate::engine::{Refs, Res, SRef, Types};
 use crate::shipout::state::{
-    Common, HLike, Math, ModeKind, Row, Shipout, ShipoutNodeH, ShipoutNodeM, ShipoutNodeT,
-    ShipoutNodeTable, ShipoutNodeV, ShipoutState, VLike, SVG,
+    Common, HLike, Math, ModeKind, Row, SVG, Shipout, ShipoutNodeH, ShipoutNodeM, ShipoutNodeT,
+    ShipoutNodeTable, ShipoutNodeV, ShipoutState, VLike,
 };
 use crate::shipout::utils::{HNodes, MNode, MNodes, VNodes};
 use crate::utils::{Flex, Margin};
 use tex_engine::engine::stomach::methods::ParLineSpec;
 use tex_engine::pdflatex::nodes::{PDFDest, PDFNode};
+use tex_engine::tex::nodes::NodeTrait;
 use tex_engine::tex::nodes::boxes::{HBoxInfo, TeXBox, ToOrSpread, VBoxInfo};
 use tex_engine::tex::nodes::horizontal::HNode;
 use tex_engine::tex::nodes::math::{
     MathAtom, MathFontStyle, MathGroup, MathKernel, MathNode, MathNucleus, MathStyle, MathStyleType,
 };
 use tex_engine::tex::nodes::vertical::VNode;
-use tex_engine::tex::nodes::NodeTrait;
 use tex_engine::tex::numerics::{Dim32, Skip};
 use tex_engine::utils::errors::TeXError;
 /*
@@ -161,7 +161,9 @@ impl<Mode: VLike> Shipout<'_, '_, Mode> {
                     parskip,
                 }) => self.do_par(children, specs, start, end, lineskip, parskip)?,
                 // empty = false
-                VNode::Custom(RusTeXNode::HAlignBegin) => self.do_halign(children)?,
+                VNode::Custom(RusTeXNode::HAlignBegin { lineskip }) => {
+                    self.do_halign(children, lineskip)?
+                }
                 // empty = false
                 // ----------------------------------------------------------
                 /*VNode::Box(TeXBox::H {info:HBoxInfo::HAlignRow,children,start,end,..}) => {
@@ -233,6 +235,7 @@ impl<Mode: VLike> Shipout<'_, '_, Mode> {
                                         num_cols,
                                         uses_color,
                                         uses_font,
+                                        ..
                                     } => {
                                         chs.push(ShipoutNodeTable::NoAlign {
                                             uses_font: redos
@@ -402,8 +405,12 @@ impl<Mode: VLike> Shipout<'_, '_, Mode> {
         Ok(())
     }
 
-    fn do_halign(&mut self, children: &mut VNodes) -> Result<(), Option<VNode<Types>>> {
-        self.in_halign(move |state| {
+    fn do_halign(
+        &mut self,
+        children: &mut VNodes,
+        lineskip: LineSkip,
+    ) -> Result<(), Option<VNode<Types>>> {
+        self.in_halign(lineskip, move |state| {
             while let Some(row) = children.next() {
                 match row {
                     VNode::Custom(RusTeXNode::HAlignEnd) => break,
@@ -468,9 +475,17 @@ impl Shipout<'_, '_, Row> {
                     end,
                     ..
                 }) => self
-                    .in_cell(start, end, spans, |state| {
-                        state.do_hlist(&mut children.into())
-                    })
+                    .in_cell(
+                        start,
+                        end,
+                        children
+                            .iter()
+                            .max_by_key(|e| e.height().0 + e.depth().0)
+                            .map(|e| e.height() + e.depth())
+                            .unwrap_or_default(),
+                        spans,
+                        |state| state.do_hlist(&mut children.into()),
+                    )
                     .map_err(|_| None)?,
                 _ => todo!(),
             }
