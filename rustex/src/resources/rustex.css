@@ -145,6 +145,7 @@
 .rustex-box-vt {
     flex-direction: column;
     height: min-content;
+    white-space: collapse;
 }
 .rustex-vbox-to {
     display: flex;
