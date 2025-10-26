@@ -1075,9 +1075,27 @@ impl CompilationDisplay<'_, '_> {
                         cramped = cramped && *c;
                         char
                     });
+                    thread_local! {
+                        static MAPSTO : std::cell::LazyCell<tex_glyphs::Glyph> = std::cell::LazyCell::new(|| tex_glyphs::Glyph::get("mapsto"));
+                        static ARROWS: std::cell::LazyCell<[tex_glyphs::Glyph;3]> = std::cell::LazyCell::new(|| [
+                            tex_glyphs::Glyph::get("a161"),
+                            tex_glyphs::Glyph::get("arrowright"),
+                            tex_glyphs::Glyph::get("shortrightarrow"),
+                        ]);
+                    }
                     // TODO optimize
                     while let Some(glyph) = glyphs.next() {
-                        if let Some(comb) = glyph.as_combinator() {
+                        if MAPSTO.with(|v| glyph.glyph == **v) {
+                            if let Some(next) = glyphs.next() {
+                                if ARROWS.with(|a| a.contains(&next.glyph)) {
+                                    write!(&mut string, "{glyph}")?;
+                                } else {
+                                    write!(&mut string, "{glyph}{next}")?;
+                                }
+                            } else {
+                                write!(&mut string, "{glyph}")?;
+                            }
+                        } else if let Some(comb) = glyph.as_combinator() {
                             if let Some(next) = glyphs.next() {
                                 let mut s = comb.apply_glyph(&next.glyph);
                                 if let Some(m) = next.modifiers {

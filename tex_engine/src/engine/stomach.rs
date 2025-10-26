@@ -9,6 +9,7 @@ use crate::engine::gullet::Gullet;
 use crate::engine::mouth::Mouth;
 use crate::engine::state::{GroupType, State};
 use crate::engine::stomach::methods::{ParLine, ParLineSpec, SplitResult};
+use crate::engine::utils::outputs::Outputs;
 use crate::engine::{EngineAux, EngineReferences, EngineTypes};
 use crate::tex::catcodes::CommandCode;
 use crate::tex::nodes::boxes::{BoxInfo, BoxType, HBoxInfo, TeXBox, ToOrSpread};
@@ -362,6 +363,19 @@ pub trait Stomach<ET: EngineTypes /*<Stomach = Self>*/> {
         code: CommandCode,
     ) -> TeXResult<(), ET> {
         methods::do_char(engine, token, char, code)
+    }
+
+    /// Processes a character depending on the current [`TeXMode`] and its [`CommandCode`]
+    fn do_defed_char(
+        engine: &mut EngineReferences<ET>,
+        token: ET::Token,
+        char: ET::Char,
+    ) -> TeXResult<(), ET> {
+        if engine.stomach.data_mut().mode().is_math() {
+            Self::do_char_in_math(engine, char)
+        } else {
+            methods::do_char(engine, token, char, CommandCode::Other)
+        }
     }
     fn do_char_in_math(engine: &mut EngineReferences<ET>, char: ET::Char) -> TeXResult<(), ET> {
         ET::Stomach::add_node_m(

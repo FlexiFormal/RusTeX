@@ -544,7 +544,7 @@ fn read_align_preamble<ET: EngineTypes>(
             _ => (),
         }
         match ET::Gullet::char_or_primitive(engine.state, &next) {
-            Some(CharOrPrimitive::Char(_, CommandCode::Parameter)) => {
+            Some(CharOrPrimitive::Char(_, Some(CommandCode::Parameter))) => {
                 if cols.in_v {
                     return Err(TeXError::General(
                         "Unexpected # in alignment\nTODO: Better error message".to_string(),
@@ -553,7 +553,7 @@ fn read_align_preamble<ET: EngineTypes>(
                 cols.in_v = true;
                 cols.ingroups = ingroups;
             }
-            Some(CharOrPrimitive::Char(_, CommandCode::AlignmentTab)) => {
+            Some(CharOrPrimitive::Char(_, Some(CommandCode::AlignmentTab))) => {
                 if ingroups != 0 {
                     return Err(TeXError::General(
                         "Unbalanced number of braces in alignment\nTODO: Better error message"

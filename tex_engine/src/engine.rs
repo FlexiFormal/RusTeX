@@ -491,7 +491,7 @@ macro_rules! do_cmd {
         match $cmd {
             /*$crate::commands::TeXCommand::CharDef(char) if <$ET as EngineTypes>::Stomach::data_mut($engine.stomach).mode().is_math() =>
                 <$ET as EngineTypes>::Stomach::do_char_in_math($engine, *char)?,*/
-            $crate::commands::TeXCommand::CharDef(char)  => <$ET as EngineTypes>::Stomach::do_char($engine, $token, *char, CommandCode::Other)?,
+            $crate::commands::TeXCommand::CharDef(char)  => <$ET as EngineTypes>::Stomach::do_defed_char($engine, $token, *char)?,
             $crate::commands::TeXCommand::Primitive{name,cmd:$crate::commands::PrimitiveCommand::Unexpandable { scope, apply }} =>
                 <$ET as EngineTypes>::Stomach::do_unexpandable($engine, *name, *scope,$token, *apply)?,
             $crate::commands::TeXCommand::Primitive{name,cmd:$crate::commands::PrimitiveCommand::Assignment(assign)} =>
@@ -546,7 +546,7 @@ macro_rules! do_cmd {
                 TeXError::not_allowed_in_mode($engine.aux,$engine.state,$engine.mouth,*name,
                     <$ET as EngineTypes>::Stomach::data_mut($engine.stomach).mode()
                 )?,
-            $crate::commands::TeXCommand::MathChar(_) => 
+            $crate::commands::TeXCommand::MathChar(_) =>
                 TeXError::not_allowed_in_mode($engine.aux,$engine.state,$engine.mouth,
                     $crate::commands::primitives::PRIMITIVES.mathchar,
                     <$ET as EngineTypes>::Stomach::data_mut($engine.stomach).mode()

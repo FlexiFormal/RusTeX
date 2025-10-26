@@ -21,7 +21,7 @@ thesis  0:15
 fn main() {
     //profile()
     //thesis()
-    run()
+    run();
     //test()
     //temp_test()
     //notes()
@@ -153,7 +153,7 @@ fn test_all() {
 fn test() {
     //env_logger::builder().filter_level(log::LevelFilter::Info).try_init();
     let ret = RusTeXEngine::do_file(
-        "/home/jazzpirate/work/Software/sTeX/RusTeXNew/test/test.tex",
+        "/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/test.tex",
         Settings {
             verbose: false,
             log: true,
@@ -164,10 +164,10 @@ fn test() {
     );
     let s = ret.to_string().replace(
         "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex.css",
-        "file:///home/jazzpirate/work/Software/sTeX/RusTeXNew/rustex/src/resources/rustex.css",
+        "file:///home/jazzpirate/work/Software/FlexiFormal/RusTeX/rustex/src/resources/rustex.css",
     );
     let mut f = std::fs::File::create(Path::new(
-        "/home/jazzpirate/work/Software/sTeX/RusTeXNew/test/test.html",
+        "/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/test.html",
     ))
     .expect("bug");
     f.write_all(s.as_bytes()).expect("bug");
@@ -175,11 +175,11 @@ fn test() {
 
 fn temp_test() {
     //env_logger::builder().filter_level(log::LevelFilter::Info).try_init();
-    //let ret = RusTeXEngine::do_file("/home/jazzpirate/work/Software/sTeX/RusTeXNew/test/numtest.tex",false,true,true);
+    //let ret = RusTeXEngine::do_file("/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/numtest.tex",false,true,true);
     let ret = RusTeXEngine::do_file(
         //"/home/jazzpirate/work/MathHub/courses/UMR/GdMA/course/source/course/sec/Vorwort.de.tex",
         "/home/jazzpirate/work/MathHub/Papers/25-CICM-MathMap/source/paper.tex",
-        //"/home/jazzpirate/work/Software/sTeX/RusTeXNew/test/tmptest.tex",
+        //"/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/tmptest.tex",
         Settings {
             verbose: true,
             log: true,
@@ -189,11 +189,11 @@ fn temp_test() {
         },
     );
     //let ret = RusTeXEngine::do_file("/home/jazzpirate/work/LaTeX/Papers/17 - Alignment Translation/macros/kwarc/workplan/workplan-template.tex",true,true,true);
-    //std::fs::write("/home/jazzpirate/work/Software/sTeX/RusTeXNew/test/numtest.html", &ret.out).unwrap();
+    //std::fs::write("/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/numtest.html", &ret.out).unwrap();
     ret.write_out(Path::new(
         //"/home/jazzpirate/rustex.out.html"
         "/home/jazzpirate/work/MathHub/Papers/25-CICM-MathMap/source/paper.html",
-        //"/home/jazzpirate/work/Software/sTeX/RusTeXNew/test/tmptest.html", //"/home/jazzpirate/work/MathHub/courses/UMR/GdMA/course/source/course/sec/Vorwort.de.tex.html"
+        //"/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/tmptest.html", //"/home/jazzpirate/work/MathHub/courses/UMR/GdMA/course/source/course/sec/Vorwort.de.tex.html"
     ))
     .unwrap();
 }
@@ -211,7 +211,7 @@ fn thesis() {
         },
     );
     ret.write_out(Path::new(
-        "/home/jazzpirate/work/Software/sTeX/RusTeXNew/test/thesis.html",
+        "/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/thesis.html",
     ))
     .unwrap();
 }
@@ -231,7 +231,7 @@ fn notes() {
     );
     //let ret = RusTeXEngine::do_file("/home/jazzpirate/work/MathHub/MiKoMH/CompLog/source/kr/tikz/axioms2.tex",true,true,true);
     ret.write_out(Path::new(
-        "/home/jazzpirate/work/Software/sTeX/RusTeXNew/test/ainotes.html",
+        "/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/ainotes.html",
     ))
     .unwrap();
 }
@@ -282,7 +282,7 @@ struct Parameters {
     sourcerefs: bool,
 
     /// insert glyph attributes (for debugging)
-    #[clap(short, long, default_value_t = true)]
+    #[clap(short, long, default_value_t = false)]
     glyph_debug: bool,
 
     /// console log

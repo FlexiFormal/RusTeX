@@ -39,7 +39,7 @@ pub enum ResolvedToken<'a, ET: EngineTypes> {
 /// See [`Gullet::char_or_primitive`](crate::engine::gullet::Gullet::char_or_primitive).
 #[derive(Debug)]
 pub enum CharOrPrimitive<ET: EngineTypes> {
-    Char(ET::Char, CommandCode),
+    Char(ET::Char, Option<CommandCode>),
     Primitive(PrimitiveIdentifier),
 }
 

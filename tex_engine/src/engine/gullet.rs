@@ -328,17 +328,21 @@ pub trait Gullet<ET: EngineTypes> {
             StandardToken::Primitive(id) => Some(CharOrPrimitive::Primitive(id)),
             StandardToken::Character(c, CommandCode::Active) => match state.get_ac_command(c) {
                 Some(TeXCommand::Primitive { name, .. }) => Some(CharOrPrimitive::Primitive(*name)),
-                Some(TeXCommand::Char { char, code }) => Some(CharOrPrimitive::Char(*char, *code)),
-                Some(TeXCommand::CharDef(c)) => Some(CharOrPrimitive::Char(*c, CommandCode::Other)),
+                Some(TeXCommand::Char { char, code }) => {
+                    Some(CharOrPrimitive::Char(*char, Some(*code)))
+                }
+                Some(TeXCommand::CharDef(c)) => Some(CharOrPrimitive::Char(*c, None)),
                 _ => None,
             },
             StandardToken::ControlSequence(cs) => match state.get_command(&cs) {
                 Some(TeXCommand::Primitive { name, .. }) => Some(CharOrPrimitive::Primitive(*name)),
-                Some(TeXCommand::Char { char, code }) => Some(CharOrPrimitive::Char(*char, *code)),
-                Some(TeXCommand::CharDef(c)) => Some(CharOrPrimitive::Char(*c, CommandCode::Other)),
+                Some(TeXCommand::Char { char, code }) => {
+                    Some(CharOrPrimitive::Char(*char, Some(*code)))
+                }
+                Some(TeXCommand::CharDef(c)) => Some(CharOrPrimitive::Char(*c, None)),
                 _ => None,
             },
-            StandardToken::Character(c, code) => Some(CharOrPrimitive::Char(c, code)),
+            StandardToken::Character(c, code) => Some(CharOrPrimitive::Char(c, Some(code))),
         }
     }
 

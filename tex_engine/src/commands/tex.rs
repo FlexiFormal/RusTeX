@@ -1584,7 +1584,7 @@ pub fn ignorespaces<ET: EngineTypes>(
     while let Some(next) = engine.mouth.get_next(engine.aux, engine.state)? {
         if next.command_code() != CommandCode::Space {
             match ET::Gullet::char_or_primitive(engine.state, &next) {
-                Some(CharOrPrimitive::Char(_, CommandCode::Space)) => (),
+                Some(CharOrPrimitive::Char(_, Some(CommandCode::Space))) => (),
                 _ => {
                     engine.mouth.requeue(next);
                     break;
