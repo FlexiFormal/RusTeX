@@ -278,6 +278,10 @@ impl CompilationDisplay<'_, '_> {
             .to_string()
     }
     #[inline(always)]
+    fn dim_to_int(d: i32) -> String {
+        (((d as f32) / 65536.0 * 1.5).round() as i32).to_string()
+    }
+    #[inline(always)]
     fn dim_to_string(d: i32) -> String {
         Self::dim_to_num(d) + "px"
     }
@@ -511,7 +515,7 @@ impl CompilationDisplay<'_, '_> {
                 match n {
                     NumOrName::Name(s) => node!(self !<a "id"=s;/>),
                     NumOrName::Num(n) => {
-                        node!(self !<a "id"=format_args!("NUM_{}",n); "name"=format_args!("NUM_{}",n);/>)
+                        node!(self !<a "id"=format_args!("NUM_{}",n);/>)
                     }
                 }
                 Ok(())
@@ -662,9 +666,9 @@ impl CompilationDisplay<'_, '_> {
         match c {
             ShipoutNodeH::Common(Common::WithColor {
                 color, children, ..
-            }) => self.do_color("span", color, children, |s, n| s.do_h(n, in_para, escape)),
+            }) => self.do_color("div", color, children, |s, n| s.do_h(n, in_para, escape)),
             ShipoutNodeH::Common(Common::WithFont { font, children, .. }) => {
-                self.do_font("span", font, children, |s, n| s.do_h(n, in_para, escape))
+                self.do_font("div", font, children, |s, n| s.do_h(n, in_para, escape))
             }
             ShipoutNodeH::Common(Common::WithAnnotation {
                 attrs,
@@ -674,7 +678,7 @@ impl CompilationDisplay<'_, '_> {
                 tag,
                 ..
             }) => self.do_annotations(
-                tag.as_ref().map_or("span", |s| s.as_str()),
+                tag.as_ref().map_or("div", |s| s.as_str()),
                 attrs,
                 styles,
                 &classes.inner,
@@ -711,9 +715,9 @@ impl CompilationDisplay<'_, '_> {
             }
             ShipoutNodeH::Common(Common::PDFDest(n)) => {
                 match n {
-                    NumOrName::Name(s) => node!(self <a "id"=s; "name"=s;/>),
+                    NumOrName::Name(s) => node!(self <a "id"=s;/>),
                     NumOrName::Num(n) => {
-                        node!(self <a "id"=format_args!("NUM_{}",n); "name"=format_args!("NUM_{}",n);/>)
+                        node!(self <a "id"=format_args!("NUM_{}",n);/>)
                     }
                 }
                 Ok(())
@@ -846,8 +850,8 @@ impl CompilationDisplay<'_, '_> {
                     let path = format!("{}-rustex.png", img.filepath.display());
 
                     node!(self <img "src"=path;
-                        "width"=Self::dim_to_string(width);
-                        "height"=Self::dim_to_string(height);
+                        "width"=Self::dim_to_int(width);
+                        "height"=Self::dim_to_int(height);
                     />>);
                     if !std::path::Path::new(&path).exists() {
                         let _ = imgfile.save_with_format(path, image::ImageFormat::Png);
@@ -858,8 +862,8 @@ impl CompilationDisplay<'_, '_> {
                     let width = img.width().0;
                     let height = img.height().0;
                     node!(self <img "src"=img.filepath.display();
-                        "width"=Self::dim_to_string(width);
-                        "height"=Self::dim_to_string(height);
+                        "width"=Self::dim_to_int(width);
+                        "height"=Self::dim_to_int(height);
                     />>);
                     Ok(())
                 }
@@ -867,8 +871,8 @@ impl CompilationDisplay<'_, '_> {
                     let width = img.width().0;
                     let height = img.height().0;
                     node!(self <img "src"=f(&img.filepath);
-                        "width"=Self::dim_to_string(width);
-                        "height"=Self::dim_to_string(height);
+                        "width"=Self::dim_to_int(width);
+                        "height"=Self::dim_to_int(height);
                     />>);
                     Ok(())
                 }
@@ -1027,9 +1031,9 @@ impl CompilationDisplay<'_, '_> {
             }
             ShipoutNodeM::Common(Common::PDFDest(n)) => {
                 match n {
-                    NumOrName::Name(s) => node!(self !<mspace "id"=s; "name"=s;/>),
+                    NumOrName::Name(s) => node!(self !<mspace "id"=s;/>),
                     NumOrName::Num(n) => {
-                        node!(self !<mspace "id"=format_args!("NUM_{}",n); "name"=format_args!("NUM_{}",n);/>)
+                        node!(self !<mspace "id"=format_args!("NUM_{}",n);/>)
                     }
                 }
                 Ok(())
@@ -1552,8 +1556,8 @@ impl CompilationDisplay<'_, '_> {
                     let path = format!("{}-rustex.png", img.filepath.display());
 
                     node!(self <img "src"=path;
-                        "width"=Self::dim_to_string(width);
-                        "height"=Self::dim_to_string(height);
+                        "width"=Self::dim_to_int(width);
+                        "height"=Self::dim_to_int(height);
                     />>);
                     if !std::path::Path::new(&path).exists() {
                         let _ = imgfile.save_with_format(path, image::ImageFormat::Png);
@@ -1563,16 +1567,16 @@ impl CompilationDisplay<'_, '_> {
                     let width = img.width().0;
                     let height = img.height().0;
                     node!(self <img "src"=img.filepath.display();
-                    "width"=Self::dim_to_string(width);
-                    "height"=Self::dim_to_string(height);
+                    "width"=Self::dim_to_int(width);
+                    "height"=Self::dim_to_int(height);
                 />>);
                 }
                 (ImageOptions::ModifyURL(f), _) => {
                     let width = img.width().0;
                     let height = img.height().0;
                     node!(self <img "src"=f(&img.filepath);
-                    "width"=Self::dim_to_string(width);
-                    "height"=Self::dim_to_string(height);
+                    "width"=Self::dim_to_int(width);
+                    "height"=Self::dim_to_int(height);
                 />>);
                 }
                 _ => todo!(),
