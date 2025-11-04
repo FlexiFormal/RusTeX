@@ -297,11 +297,21 @@ pub(in crate::commands) fn get_if_token<ET: EngineTypes>(
             exp = false;
             continue;
         }
+        if !exp {
+            if let crate::tex::tokens::StandardToken::Character(c, CommandCode::Active) =
+                token.to_enum()
+            {
+                return Ok((Some(c), CommandCode::Active));
+            }
+        }
         match engine.resolve(&token) {
             ResolvedToken::Tk { char, code } => return Ok((Some(char), code)),
             ResolvedToken::Cmd(cmd) => match cmd {
                 Some(TeXCommand::Macro(m)) if exp => {
-                    ET::Gullet::do_macro(engine, m.clone(), token)?
+                    ET::Gullet::do_macro(engine, m.clone(), token)?;
+                }
+                Some(TeXCommand::Primitive { name, .. }) if exp && *name == PRIMITIVES.noexpand => {
+                    exp = false;
                 }
                 Some(TeXCommand::Primitive {
                     name,

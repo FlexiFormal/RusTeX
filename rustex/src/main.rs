@@ -380,7 +380,7 @@ fn test_latex_ltx() {
     engine.initialize_etex_primitives();
     register_pdftex_primitives(&mut engine);
     engine.init_file("pdftexconfig.tex").unwrap();
-    let _ = engine.load_latex();
+    let _ = engine.load_latex().expect("Errored");
 }
 
 fn kpse(log: bool, path: String) {

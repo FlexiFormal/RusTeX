@@ -16,6 +16,7 @@ use crate::engine::stomach::TeXMode;
 use crate::engine::{EngineReferences, EngineTypes, TeXEngine};
 use crate::pdflatex::{FileWithMD5, FontWithLpRp};
 use crate::prelude::CSHandler;
+use crate::prelude::Character;
 use crate::tex::catcodes::CommandCode;
 use crate::tex::nodes::horizontal::HNode;
 use crate::tex::nodes::math::MathNode;
@@ -780,7 +781,7 @@ where
         let mut t = Otherize::new(&mut f);
         let mut hasher = md5::Md5::default();
         hasher.update(str.as_bytes());
-        let r : [u8;16] = hasher.finalize().into();
+        let r: [u8; 16] = hasher.finalize().into();
         for i in r {
             write!(t, "{i:02X}")?;
         }
@@ -1317,6 +1318,37 @@ pub fn pdffontsize<ET: EngineTypes>(
     Ok(())
 }
 
+// dummy
+pub fn showstream<ET: EngineTypes>(
+    engine: &mut EngineReferences<ET>,
+    tk: ET::Token,
+) -> TeXResult<Option<Box<WhatsitFunction<ET>>>, ET>
+where
+    ET::Extension: PDFExtension<ET>,
+    ET::CustomNode: From<PDFNode<ET>>,
+{
+    showstream_immediate::<ET>(engine, tk)?;
+    Ok(None)
+}
+pub fn showstream_immediate<ET: EngineTypes>(
+    engine: &mut EngineReferences<ET>,
+    tk: ET::Token,
+) -> TeXResult<(), ET>
+where
+    ET::Extension: PDFExtension<ET>,
+    ET::CustomNode: From<PDFNode<ET>>,
+{
+    if engine
+        .need_next(false, &tk)?
+        .char_value()
+        .map(|v| v.to_char())
+        == Some('=')
+    {
+        let _ = engine.need_next(false, &tk)?;
+    }
+    Ok(())
+}
+
 pub fn pdffontexpand<ET: EngineTypes>(
     engine: &mut EngineReferences<ET>,
     tk: ET::Token,
@@ -1411,6 +1443,7 @@ where
     register_unexpandable(engine, "pdfsetmatrix", CommandScope::Any, pdfsetmatrix);
     register_unexpandable(engine, "pdfannot", CommandScope::Any, pdfannot);
 
+    register_whatsit(engine, "showstream", showstream, showstream_immediate, None);
     register_whatsit(engine, "pdfobj", pdfobj, pdfobj_immediate, None);
     register_whatsit(engine, "pdfxform", pdfxform, pdfxform_immediate, None);
     register_whatsit(
@@ -1487,7 +1520,6 @@ where
     cmtodo!(engine, pdftracingfonts);
     cmtodo!(engine, pdfuniqueresname);
     cmtodo!(engine, shbscode);
-    cmtodo!(engine, showstream);
     cmtodo!(engine, stbscode);
     cmtodo!(engine, tagcode);
     cmtodo!(engine, pdflastlink);
