@@ -2154,6 +2154,22 @@ pub fn openout_immediate<ET: EngineTypes>(
     Ok(())
 }
 
+// dummy
+pub fn showstream<ET: EngineTypes>(
+    engine: &mut EngineReferences<ET>,
+    tk: ET::Token,
+) -> TeXResult<(), ET> {
+    if engine
+        .need_next(false, &tk)?
+        .char_value()
+        .map(|v| v.to_char())
+        == Some('=')
+    {
+        let _ = engine.need_next(false, &tk)?;
+    }
+    Ok(())
+}
+
 pub fn prevdepth_get<ET: EngineTypes>(
     engine: &mut EngineReferences<ET>,
     _tk: ET::Token,
@@ -4662,6 +4678,7 @@ pub fn register_tex_primitives<E: TeXEngine>(engine: &mut E) {
     register_unexpandable(engine, "radical", CommandScope::MathOnly, radical);
     register_unexpandable(engine, "eqno", CommandScope::MathOnly, eqno);
     register_unexpandable(engine, "leqno", CommandScope::MathOnly, leqno);
+    register_unexpandable(engine, "showstream", CommandScope::Any, showstream);
 
     register_unexpandable(engine, "over", CommandScope::MathOnly, over);
     register_unexpandable(
