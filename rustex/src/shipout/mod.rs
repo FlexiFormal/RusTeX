@@ -287,54 +287,6 @@ impl<Mode: VLike> Shipout<'_, '_, Mode> {
                 _ => todo!("{c:?}"),
             }
         }
-        /*
-         */
-        /*
-        while let Some(c) = children.next() {
-            match c {
-                VNode::Custom(RusTeXNode::PGFGBegin {..}|RusTeXNode::PGFGEnd) => (), // TODO?
-                VNode::Custom(RusTeXNode::PGFEscape(bx)) => children.prefix(vec!(VNode::Box(bx))),
-                c => {
-                    empty = false;
-                    do_v(engine,state,c)?;
-                }
-
-                VNode::VKern(kn) => state.push_comment(format!("<div class=\"rustex-vkern\" style=\"margin-bottom:{};\"></div>",dim_to_string(kn))),
-                VNode::VSkip(sk) => state.push_comment(format!("<div class=\"rustex-vskip\" style=\"margin-bottom:{};\"></div>",dim_to_string(sk.base))),
-                VNode::VFil => state.push_comment("<div class=\"rustex-vfil\"></div>"),
-                VNode::VFill => state.push_comment("<div class=\"rustex-vfill\"></div>"),
-                VNode::Vss => state.push_comment("<div class=\"rustex-vss\"></div>"),
-                VNode::VFilneg => (),
-                VNode::Custom(RusTeXNode::ParagraphBegin{specs,start,end,lineskip,parskip}) => {
-                    let parskip = if empty {None} else {Some(parskip)};
-                    empty = false;
-                    nodes::do_paragraph(engine,state,children,specs,start,end,lineskip,parskip)?;
-                }
-                VNode::Custom(RusTeXNode::HAlignBegin) => {
-                    empty = false;
-                    nodes::do_halign(engine,state,children)?;
-                }
-                VNode::Custom(RusTeXNode::PDFNode(PDFNode::PDFOutline(_) | PDFNode::PDFPageAttr(_) | PDFNode::PDFPagesAttr(_) |
-                PDFNode::PDFCatalog(_)| PDFNode::PDFSave| PDFNode::PDFAnnot(_) | PDFNode::PDFLiteral(_) | PDFNode::XForm(_) | PDFNode::Obj(_))) | VNode::Penalty(_) => (),
-                VNode::Custom(RusTeXNode::PDFNode(PDFNode::Color(act))) => annotations::do_color(state,engine,act),
-                VNode::Custom(RusTeXNode::FontChange(font,true)) => {
-                    /*if state.in_content {
-                        todo!()
-                    }*/
-                    *state.fonts.last_mut().unwrap() = font;
-                }
-                VNode::Custom(RusTeXNode::FontChange(font,false)) => annotations::do_font(state,&engine.fontsystem.glyphmaps,font),
-                VNode::Custom(RusTeXNode::PDFNode(PDFNode::PDFStartLink(link))) =>
-                    annotations::do_link(link,state),
-                VNode::Custom(RusTeXNode::PDFNode(PDFNode::PDFEndLink)) =>
-                    annotations::close_link(state),
-                VNode::Custom(RusTeXNode::FontChangeEnd) => annotations::close_font(state),
-                VNode::Custom(RusTeXNode::AnnotBegin {start,attrs,styles,tag}) => annotations::do_annot(state,start,tag,attrs,styles),
-                VNode::Custom(RusTeXNode::AnnotEnd(end)) => annotations::close_annot(state,end),
-            }
-        }
-
-         */
         Ok(())
     }
 
@@ -693,48 +645,6 @@ impl<Mode: HLike> Shipout<'_, '_, Mode> {
                 _ => todo!("{c:?}"),
             }
         }
-        /*
-        while let Some(c) = children.next() {
-            match c {
-                HNode::HKern(kn) => {
-                    if kn!= Dim32(0) {state.push_comment(format!("<div class=\"rustex-hkern\" style=\"margin-left:{};\"></div>",dim_to_string(kn)))}
-                }
-                HNode::Space if state.mode() == ShipoutMode::H{escape:true} =>
-                    state.push_comment(format_args!("<div class=\"rustex-space-in-hbox\"></div>")),
-                HNode::Space => state.push_space(),
-                HNode::HSkip(sk) => {
-                    state.push_comment(format!("<div class=\"rustex-hskip\" style=\"margin-left:{};\"></div>",dim_to_string(sk.base)))
-                }
-                HNode::HFil => state.push_comment("<div class=\"rustex-hfil\"></div>"),
-                HNode::HFill => state.push_comment("<div class=\"rustex-hfill\"></div>"),
-                HNode::Hss => state.push_comment("<div class=\"rustex-hss\"></div>"),
-                HNode::HFilneg => (),
-                HNode::Custom(RusTeXNode::PDFNode(PDFNode::Color(act))) =>  annotations::do_color(state,engine,act),
-                HNode::Custom(RusTeXNode::FontChange(font,true)) => {
-                    if state.in_content {
-                        //TODO ???
-                    }
-                    *state.fonts.last_mut().unwrap() = font;
-                }
-                HNode::Custom(RusTeXNode::PDFNode(PDFNode::PDFStartLink(link))) =>
-                    annotations::do_link(link,state),
-                HNode::Custom(RusTeXNode::PDFNode(PDFNode::PDFEndLink)) =>
-                    annotations::close_link(state),
-                HNode::Custom(RusTeXNode::FontChange(font,false)) => annotations::do_font(state,&engine.fontsystem.glyphmaps,font),
-                HNode::Custom(RusTeXNode::FontChangeEnd) => annotations::close_font(state),
-                HNode::Custom(RusTeXNode::AnnotBegin {start,attrs,styles,tag}) => annotations::do_annot(state,start,tag,attrs,styles),
-                HNode::Custom(RusTeXNode::AnnotEnd(end)) => annotations::close_annot(state,end),
-                HNode::Custom(RusTeXNode::InvisibleBegin) => annotations::do_invisible(state),
-                HNode::Custom(RusTeXNode::InvisibleEnd) => annotations::close_invisible(state),
-                HNode::Custom(RusTeXNode::PGFGBegin{..}|RusTeXNode::PGFGEnd) => (),  // TODO???
-                HNode::Custom(RusTeXNode::PDFNode(PDFNode::PDFOutline(_) | PDFNode::PDFPageAttr(_) | PDFNode::PDFPagesAttr(_) |
-                PDFNode::PDFCatalog(_) | PDFNode::PDFSave | PDFNode::PDFAnnot(_) | PDFNode::PDFLiteral(_) | PDFNode::XForm(_) | PDFNode::Obj(_))) | HNode::Penalty(_) => (),
-                HNode::Custom(RusTeXNode::PGFEscape(bx)) => do_h(engine,state,HNode::Box(bx))?,
-                c => do_h(engine,state,c)?
-            }
-        }
-
-         */
         Ok(())
     }
 }
