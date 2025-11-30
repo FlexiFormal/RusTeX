@@ -68,11 +68,7 @@ either = "1"
 md-5 = { version = "0.10", optional = true }
 image = { version = "0.25", optional = true }
 regex = { version = "1.10", optional = true }
-pdfium-render = { version = "0.8", features = [
-    "image_025",
-    "pdfium_7350",
-    "thread_safe"
-], optional = true, default=false }
+pdfium-render = { workspace=true, optional = true }
 
 reqwest = { version = "0.12", features = ["blocking"], optional = true }
 flate2 = { version = "1.0", optional = true }

@@ -1,6 +1,6 @@
 [package]
 name = "rustex_lib"
-version = "0.1.6"
+version = "0.1.7"
 edition = "2024"
 authors = ["Dennis Müller <d.mueller@kwarc.info>"]
 description = "A crate for converting TeX/pdfTeX to HTML"
@@ -51,7 +51,7 @@ ansi_term = "0.12"
 chrono = "0.4"
 clap = { version = "4.5", features = ["derive"] }
 lazy_static = "1.5"
-pdfium-render = { version = "0.8" }
+pdfium-render = { workspace=true }
 path-dedot = "3.1"
 image = { version = "0.25" }
 
