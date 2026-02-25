@@ -1,3 +1,5 @@
+#![allow(clippy::cast_precision_loss, clippy::cast_possible_truncation)]
+
 use crate::RUSTEX_CSS_URL;
 use crate::engine::extension::CSS;
 use crate::engine::{Font, Types};
@@ -10,7 +12,6 @@ use std::borrow::Cow;
 use std::fmt::Write;
 use std::fmt::{Display, Formatter};
 use std::path::Path;
-use tex_engine::engine::EngineTypes;
 use tex_engine::engine::fontsystem::Font as FontT;
 use tex_engine::pdflatex::nodes::{NumOrName, PDFColor, PDFImage};
 use tex_engine::tex::nodes::boxes::{HBoxInfo, ToOrSpread, VBoxInfo};
@@ -27,7 +28,7 @@ pub enum ImageOptions {
     Embed,
 }
 
-pub(crate) struct CompilationDisplay<'a, 'b> {
+pub struct CompilationDisplay<'a, 'b> {
     pub(crate) width: i32,
     pub(crate) indent: u8,
     pub(crate) color: PDFColor,
@@ -205,33 +206,31 @@ impl CompilationDisplay<'_, '_> {
     ) -> std::fmt::Result {
         self.f.write_str("<!DOCTYPE html>\n<html lang=\"en\"")?;
         for (k, v) in top.iter() {
-            write!(self.f, " {}=\"{}\"", k, v)?;
+            write!(self.f, " {k}=\"{v}\"")?;
         }
         self.f.write_str(">\n<head>\t<meta charset=\"UTF-8\">\n")?;
         for m in metas {
             write!(self.f, "\t<meta")?;
             for (k, v) in m.iter() {
-                write!(self.f, " {}=\"{}\"", k, v)?;
+                write!(self.f, " {k}=\"{v}\"")?;
             }
             self.f.write_str(">\n")?;
         }
         writeln!(
             self.f,
-            "\t<link rel=\"stylesheet\" type=\"text/css\" href=\"{}\">",
-            RUSTEX_CSS_URL
+            "\t<link rel=\"stylesheet\" type=\"text/css\" href=\"{RUSTEX_CSS_URL}\">",
         )?;
-        for c in css.iter() {
+        for c in css {
             match c {
                 CSS::File(s) => writeln!(
                     self.f,
-                    "\t<link rel=\"stylesheet\" type=\"text/css\" href=\"{}\">",
-                    s
+                    "\t<link rel=\"stylesheet\" type=\"text/css\" href=\"{s}\">"
                 )?,
                 CSS::Literal(s) => writeln!(self.f, "\t<style>\n{s}</style>")?,
             }
         }
         let mut fonts = VecSet::default();
-        for (name, d) in self.font_data.iter() {
+        for (name, d) in self.font_data {
             //.filter_map(|d| d.1.web.as_ref().map(|s| s.as_ref().ok()).flatten()) {
             match &d.web {
                 Some((l, _)) => fonts.insert(l),
@@ -240,7 +239,7 @@ impl CompilationDisplay<'_, '_> {
         }
         for font in fonts {
             //.filter_map(|d| d.1.web.as_ref().map(|s| s.as_ref().ok()).flatten()) {
-            writeln!(self.f, "\t<link rel=\"stylesheet\" href=\"{font}\">")?
+            writeln!(self.f, "\t<link rel=\"stylesheet\" href=\"{font}\">")?;
         }
         self.f.write_str("</head>")?;
         write!(
@@ -260,50 +259,74 @@ impl CompilationDisplay<'_, '_> {
             )?;
         }
         self.f.write_str("\">")?;
-        for c in out.iter() {
+        for c in out {
             self.do_v(c, true)?;
         }
         self.f.write_str("\n</body></html>")
     }
 
-    #[inline(always)]
+    #[inline]
     fn dim_to_px(d: i32) -> f32 {
         d as f32 / 65536.0 * 1.5
     }
-    #[inline(always)]
-    fn dim_to_num(d: i32) -> String {
-        format!("{:.5}", Self::dim_to_px(d))
-            .trim_end_matches('0')
-            .trim_end_matches('.')
-            .to_string()
+    #[inline]
+    fn dim_to_num(d: i32) -> impl std::fmt::Display {
+        struct F(i32);
+        impl std::fmt::Display for F {
+            #[inline]
+            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                let v = (CompilationDisplay::dim_to_px(self.0) * 100_000.0).round() / 100_000.0;
+                v.fmt(f)
+            }
+        }
+        F(d)
     }
-    #[inline(always)]
-    fn dim_to_int(d: i32) -> String {
-        (((d as f32) / 65536.0 * 1.5).round() as i32).to_string()
+    #[inline]
+    fn dim_to_int(d: i32) -> impl std::fmt::Display {
+        struct F(i32);
+        impl std::fmt::Display for F {
+            #[inline]
+            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                let v = ((self.0 as f32) / 65536.0 * 1.5).round() as i32;
+                v.fmt(f)
+            }
+        }
+        F(d)
     }
-    #[inline(always)]
-    fn dim_to_string(d: i32) -> String {
-        Self::dim_to_num(d) + "px"
+    #[inline]
+    fn dim_to_string(d: i32) -> impl std::fmt::Display {
+        struct F(i32);
+        impl std::fmt::Display for F {
+            #[inline]
+            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{}px", CompilationDisplay::dim_to_num(self.0))
+            }
+        }
+        F(d)
     }
-    #[inline(always)]
-    fn mu_to_string(d: i32) -> String {
-        format!("{:.5}", (d as f32) / 18.0 / 65536.0)
-            .trim_end_matches('0')
-            .trim_end_matches('.')
-            .to_string()
-            + "em"
+    #[inline]
+    fn mu_to_string(d: i32) -> impl std::fmt::Display {
+        struct F(i32);
+        impl std::fmt::Display for F {
+            #[inline]
+            fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+                let v = ((self.0 as f32) / 18.0 / 65536.0 * 100_000.0).round() / 100_000.0;
+                write!(f, "{v}em")
+            }
+        }
+        F(d)
     }
-    #[inline(always)]
+    #[inline]
     fn do_indent(&mut self) -> std::fmt::Result {
         self.f.write_char('\n')?;
-        for _ in 0..(self.indent + 1) {
+        for _ in 0..=self.indent {
             self.f.write_str("\t")?;
         }
         Ok(())
     }
     fn do_styles(&mut self) -> std::fmt::Result {
         for (k, v) in std::mem::take(&mut self.styles) {
-            write!(self.f, "{}:{};", k, v)?
+            write!(self.f, "{k}:{v};")?;
         }
         Ok(())
     }
@@ -895,7 +918,7 @@ impl CompilationDisplay<'_, '_> {
         }
     }
 
-    fn cls(cls: MathClass) -> &'static str {
+    const fn cls(cls: MathClass) -> &'static str {
         match cls {
             MathClass::Ord => "rustex-math-ord",
             MathClass::Op => "rustex-math-op",
@@ -966,12 +989,18 @@ impl CompilationDisplay<'_, '_> {
         let inner = move |s: &mut Self| {
             //s.f.write_str("​");
             node!(s <math class="rustex-math" ref=sref {
-            node!(s !<mrow {
-                for c in children {
-                   s.do_indent()?;s.do_math(c,None/*,false */)?
+                if children.iter().map(|c| c.num_nodes(s)).sum::<usize>() == 1 {
+                    for c in children {
+                        s.do_indent()?;s.do_math(c,None/*,false */)?
+                    }
+                } else {
+                    node!(s !<mrow {
+                        for c in children {
+                            s.do_indent()?;s.do_math(c,None/*,false */)?
+                        }
+                    }/>);
                 }
             }/>);
-        }/>);
             Ok(())
         };
 
@@ -1033,7 +1062,7 @@ impl CompilationDisplay<'_, '_> {
                 match n {
                     NumOrName::Name(s) => node!(self !<mspace "id"=s;/>),
                     NumOrName::Num(n) => {
-                        node!(self !<mspace "id"=format_args!("NUM_{}",n);/>)
+                        node!(self !<mspace "id"=format_args!("NUM_{}",n);/>);
                     }
                 }
                 Ok(())
@@ -1056,8 +1085,10 @@ impl CompilationDisplay<'_, '_> {
             ShipoutNodeM::WithClass {
                 class, children, ..
             } => {
-                if children.len() == 1 {
-                    self.do_math(children.first().unwrap(), Some(*class) /*,cramped*/)
+                if children.iter().map(|c| c.num_nodes(self)).sum::<usize>() == 1 {
+                    for c in children {
+                        self.do_math(c, Some(*class) /*,cramped*/)?;
+                    }
                 } else if children
                     .iter()
                     .all(|c| matches!(c, ShipoutNodeM::Glyph { .. }))
@@ -1065,7 +1096,7 @@ impl CompilationDisplay<'_, '_> {
                     let mut display = true;
                     let mut cramped = true;
                     let mut string = String::new();
-                    let mut glyphs = children.into_iter().map(|c| {
+                    let mut glyphs = children.iter().map(|c| {
                         let ShipoutNodeM::Glyph {
                             char,
                             cramped: c,
@@ -1126,16 +1157,15 @@ impl CompilationDisplay<'_, '_> {
                     } else {
                         node!(self <mo "lspace"="0"; "rspace"="0"; class=Self::cls(*class); "stretchy"="false"; {Display::fmt(&Escaped(&string.into()), self.f)?}/>);
                     }
-                    Ok(())
                 } else {
                     let cls = Self::cls(*class);
                     node!(self !<mrow class=cls; {
                         for c in children {
-                            self.do_math(c, Some(*class)/*,cramped*/)?
+                            self.do_math(c, Some(*class)/*,cramped*/)?;
                         }
                     }/>);
-                    Ok(())
                 }
+                Ok(())
             }
             ShipoutNodeM::Common(Common::HBox {
                 sref,
@@ -1160,7 +1190,7 @@ impl CompilationDisplay<'_, '_> {
                     _ => ()
                 } */
             } {
-                self.do_hbox(sref,info,true,children)?
+                self.do_hbox(sref,info,true,children)?;
             }/>);
                 //self.width = oldwd;
                 Ok(())
@@ -1250,8 +1280,8 @@ impl CompilationDisplay<'_, '_> {
                         for c in children {
                             self.do_v(c,false)?;
                         }
-                    } />)
-                }/>)
+                    } />);
+                }/>);
             }/>);
                 self.width = oldwd;
                 Ok(())
@@ -1337,11 +1367,13 @@ impl CompilationDisplay<'_, '_> {
                 self.do_math(base,None/*,cramped*/)?;
                 let at = self.font.get_at();
                 self.font.set_at(at.scale_float(0.7));
-                if sup.len() == 1 {
-                    self.do_math(sup.first().unwrap(),None/*,cramped*/)?;
+                if sup.iter().map(|n| n.num_nodes(self)).sum::<usize>() == 1 {
+                    for c in sup {
+                        self.do_math(c,None/*,cramped*/)?;
+                    }
                 } else {
                     node!(self !<mrow {
-                        for c in sup.iter() {
+                        for c in sup {
                             self.do_math(c,None/*,cramped*/)?;
                         }
                     }/>);
@@ -1357,11 +1389,13 @@ impl CompilationDisplay<'_, '_> {
                 self.do_math(base,None/*,cramped*/)?;
                 let at = self.font.get_at();
                 self.font.set_at(at.scale_float(0.7));
-                if sub.len() == 1 {
-                    self.do_math(sub.first().unwrap(),None/*,cramped*/)?;
+                if sub.iter().map(|n| n.num_nodes(self)).sum::<usize>() == 1 {
+                    for c in sub {
+                        self.do_math(c,None/*,cramped*/)?;
+                    }
                 } else {
                     node!(self !<mrow {
-                        for c in sub.iter() {
+                        for c in sub {
                             self.do_math(c,None/*,cramped*/)?;
                         }
                     }/>);
@@ -1378,25 +1412,25 @@ impl CompilationDisplay<'_, '_> {
                 ..
             } => {
                 node!(self !<mrow ref=sref {
-                if let Some(Ok(c)) = left {
-                    node!(self <mo "lspace"="0"; "rspace"="0";  class="rustex-math-open" "stretchy"="true"; {Display::fmt(&Escaped(&c.into()),self.f)?} />);
-                }
-                for c in children {
-                    self.do_math(c,None/*,cramped*/)?
-                }
-                if let Some(Ok(c)) = right {
-                    node!(self <mo "lspace"="0"; "rspace"="0";  class="rustex-math-close" "stretchy"="true"; {Display::fmt(&Escaped(&c.into()),self.f)?} />);
-                }
-            }/>);
+                    if let Some(Ok(c)) = left {
+                        node!(self <mo "lspace"="0"; "rspace"="0";  class="rustex-math-open" "stretchy"="true"; {Display::fmt(&Escaped(&c.into()),self.f)?} />);
+                    }
+                    for c in children {
+                        self.do_math(c,None/*,cramped*/)?;
+                    }
+                    if let Some(Ok(c)) = right {
+                        node!(self <mo "lspace"="0"; "rspace"="0";  class="rustex-math-close" "stretchy"="true"; {Display::fmt(&Escaped(&c.into()),self.f)?} />);
+                    }
+                }/>);
                 Ok(())
             }
             ShipoutNodeM::Middle(r) => {
                 match r {
                     Ok(c) => {
-                        node!(self <mo "lspace"="0"; "rspace"="0";  "stretchy"="true"; {Display::fmt(&Escaped(&c.into()),self.f)?}/>)
+                        node!(self <mo "lspace"="0"; "rspace"="0";  "stretchy"="true"; {Display::fmt(&Escaped(&c.into()),self.f)?}/>);
                     }
                     Err((_, char, font_name)) => {
-                        node!(self <mtext class="rustex-missing" "title"=format_args!("Missing Glyph {char} in {font_name}");/>)
+                        node!(self <mtext class="rustex-missing" "title"=format_args!("Missing Glyph {char} in {font_name}");/>);
                     }
                 }
                 Ok(())
@@ -1413,20 +1447,24 @@ impl CompilationDisplay<'_, '_> {
                 self.do_math(base,None/*,cramped*/)?;
                 let at = self.font.get_at();
                 self.font.set_at(at.scale_float(0.7));
-                if sub.len() == 1 {
-                    self.do_math(sub.first().unwrap(),None/*,cramped*/)?;
+                if sub.iter().map(|n| n.num_nodes(self)).sum::<usize>() == 1 {
+                    for c in sub {
+                        self.do_math(c,None/*,cramped*/)?;
+                    }
                 } else {
                     node!(self !<mrow {
-                        for c in sub.iter() {
+                        for c in sub {
                             self.do_math(c,None/*,cramped*/)?;
                         }
                     }/>);
                 }
-                if sup.len() == 1 {
-                    self.do_math(sup.first().unwrap(),None/*,cramped*/)?;
+                if sup.iter().map(|n| n.num_nodes(self)).sum::<usize>() == 1 {
+                    for c in sup {
+                        self.do_math(c,None/*,cramped*/)?;
+                    }
                 } else {
                     node!(self !<mrow {
-                        for c in sup.iter() {
+                        for c in sup {
                             self.do_math(c,None/*,cramped*/)?;
                         }
                     }/>);
@@ -1458,17 +1496,29 @@ impl CompilationDisplay<'_, '_> {
                 ..
             } => {
                 let inner = move |s: &mut Self| {
-                    node!(s !<mfrac ref=sref "linethickness"=sep.map(Self::dim_to_string).unwrap_or_default(); {
-                        node!(s !<mrow {
-                            for c in top.iter() {
+                    node!(s !<mfrac ref=sref ?(sep.map(|i| ("linethickness",Self::dim_to_string(i)))) {
+                        if top.iter().map(|n| n.num_nodes(s)).sum::<usize>() == 1 {
+                            for c in top {
                                 s.do_math(c,None/*,cramped*/)?;
                             }
-                        }/>);
-                        node!(s !<mrow {
-                            for c in bottom.iter() {
+                        } else {
+                            node!(s !<mrow {
+                                for c in top {
+                                    s.do_math(c,None/*,cramped*/)?;
+                                }
+                            }/>);
+                        }
+                        if bottom.iter().map(|n| n.num_nodes(s)).sum::<usize>() == 1 {
+                            for c in bottom {
                                 s.do_math(c,None/*,cramped*/)?;
                             }
-                        }/>);
+                        } else {
+                            node!(s !<mrow {
+                                for c in bottom {
+                                    s.do_math(c,None/*,cramped*/)?;
+                                }
+                            }/>);
+                        }
                     }/>);
                     Ok::<_, std::fmt::Error>(())
                 };
@@ -1487,52 +1537,58 @@ impl CompilationDisplay<'_, '_> {
                 Ok(())
             }
             ShipoutNodeM::Underline { children, .. } => {
-                if children.len() == 1 {
+                if children.iter().map(|n| n.num_nodes(self)).sum::<usize>() == 1 {
                     self.styles
                         .insert("text-decoration".into(), "underline".into());
-                    self.do_math(children.first().unwrap(), cls /*,cramped*/)
+                    for c in children {
+                        self.do_math(c, cls /*,cramped*/)?;
+                    }
                 } else {
                     node!(self !<mrow style:"text-decoration"="underline"; {
-                    for c in children {
-                        self.do_math(c,cls/*,cramped*/)?;
-                    }
-                }/>);
-                    Ok(())
+                        for c in children {
+                            self.do_math(c,cls/*,cramped*/)?;
+                        }
+                    }/>);
                 }
+                Ok(())
             }
             ShipoutNodeM::Overline { children, .. } => {
-                if children.len() == 1 {
+                if children.iter().map(|n| n.num_nodes(self)).sum::<usize>() == 1 {
                     self.styles
                         .insert("text-decoration".into(), "overline".into());
-                    self.do_math(children.first().unwrap(), cls /*,cramped*/)
+                    for c in children {
+                        self.do_math(c, cls /*,cramped*/)?;
+                    }
                 } else {
                     node!(self !<mrow style:"text-decoration"="overline"; {
-                    for c in children {
-                        self.do_math(c,cls/*,cramped*/)?;
-                    }
-                }/>);
-                    Ok(())
+                        for c in children {
+                            self.do_math(c,cls/*,cramped*/)?;
+                        }
+                    }/>);
                 }
+                Ok(())
             }
             ShipoutNodeM::Accent {
                 accent, children, ..
             } => {
                 node!(self !<mover {
-                if children.len() == 1 {
-                    self.do_math(children.first().unwrap(),None/*,cramped*/)?
-                } else {
-                    node!(self !<mrow {
+                    if children.iter().map(|n| n.num_nodes(self)).sum::<usize>() == 1 {
                         for c in children {
                             self.do_math(c,None/*,cramped*/)?;
                         }
-                    }/>);
-                }
-                match accent {
-                    Ok(c) => node!(self !<mo "lspace"="0"; "rspace"="0"; "stretchy"="false"; {Display::fmt(&Escaped(&c.into()),self.f)?}/>),
-                    Err((_,c,fnt)) =>
-                        node!(self !<mtext class="rustex-missing" "title"=format_args!("Missing Glyph {c} in {fnt}");/>)
-                }
-            }/>);
+                    } else {
+                        node!(self !<mrow {
+                            for c in children {
+                                self.do_math(c,None/*,cramped*/)?;
+                            }
+                        }/>);
+                    }
+                    match accent {
+                        Ok(c) => node!(self !<mo "lspace"="0"; "rspace"="0"; "stretchy"="false"; {Display::fmt(&Escaped(&c.into()),self.f)?}/>),
+                        Err((_,c,fnt)) =>
+                            node!(self !<mtext class="rustex-missing" "title"=format_args!("Missing Glyph {c} in {fnt}");/>)
+                    }
+                }/>);
                 Ok(())
             }
             ShipoutNodeM::MissingGlyph {
@@ -1543,10 +1599,10 @@ impl CompilationDisplay<'_, '_> {
             }
             ShipoutNodeM::Radical { children, .. } => {
                 node!(self <msqrt {
-                for c in children {
-                    self.do_math(c,None/*,cramped*/)?;
-                }
-            }/>);
+                    for c in children {
+                        self.do_math(c,None/*,cramped*/)?;
+                    }
+                }/>);
                 Ok(())
             }
             ShipoutNodeM::Img(img) => Ok(node!(self <mtext {match (&self.image, &img.img) {
@@ -2099,24 +2155,82 @@ impl CompilationDisplay<'_, '_> {
     }
 }
 
+impl ShipoutNodeM {
+    /*fn render(
+        &self,
+        renderer: &mut CompilationDisplay,
+        cls: Option<MathClass>,
+    ) -> std::fmt::Result {
+        todo!()
+    }*/
+    fn num_nodes(&self, renderer: &CompilationDisplay) -> usize {
+        match self {
+            Self::Common(Common::Literal(_)) => 10, // doesn't matter, but we assume > 1,
+            Self::Common(
+                Common::WithLink { .. }
+                | Common::PDFDest(_)
+                | Common::HBox { .. }
+                | Common::VBox { .. }
+                | Common::WithAnnotation { .. },
+            )
+            | Self::MSkip { .. }
+            | Self::WithClass { .. }
+            | Self::VCenter { .. }
+            | Self::VRule { .. }
+            | Self::Glyph { .. }
+            | Self::Space
+            | Self::Sup { .. }
+            | Self::Sub { .. }
+            | Self::LeftRight { .. }
+            | Self::Middle(_)
+            | Self::SubSup { .. }
+            | Self::Phantom { .. }
+            | Self::Over { .. }
+            | Self::Underline { .. }
+            | Self::Overline { .. }
+            | Self::Accent { .. }
+            | Self::MissingGlyph { .. }
+            | Self::Radical { .. }
+            | Self::Img(_) => 1,
+            Self::Common(Common::WithColor {
+                color, children, ..
+            }) => {
+                if *color == renderer.color {
+                    children.iter().map(|c| c.num_nodes(renderer)).sum()
+                } else {
+                    1
+                }
+            }
+            Self::Common(Common::WithFont { font, children, .. }) => {
+                if *font == renderer.font {
+                    children.iter().map(|c| c.num_nodes(renderer)).sum()
+                } else {
+                    1
+                }
+            }
+            _ => 10,
+        }
+    }
+}
+
 struct Escaped<'a>(&'a CharOrStr);
 impl Display for Escaped<'_> {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        use CharOrStr::*;
+        use CharOrStr as C;
         const TRIGGER: [char; 3] = ['<', '>', '&'];
         match self.0 {
-            Char('<') => f.write_str("&lt;"),
-            Char('>') => f.write_str("&gt;"),
-            Char('&') => f.write_str("&amp;"),
+            C::Char('<') => f.write_str("&lt;"),
+            C::Char('>') => f.write_str("&gt;"),
+            C::Char('&') => f.write_str("&amp;"),
             //'"' => self.f.write_str("&quot;"),
             //'\'' => self.f.write_str("&apos;"),
-            Char(c) => f.write_char(*c),
-            Str(s) if s.contains(TRIGGER) => f.write_str(
+            C::Char(c) => f.write_char(*c),
+            C::Str(s) if s.contains(TRIGGER) => f.write_str(
                 &s.replace('&', "&amp;")
                     .replace('<', "&lt;")
                     .replace('>', "&gt;"),
             ),
-            Str(s) => f.write_str(s),
+            C::Str(s) => f.write_str(s),
         }
     }
 }
