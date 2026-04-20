@@ -43,7 +43,6 @@ that would be required to get this crate more in line with "actual TeX".
 
 Feel free to contact me [on github](https://github.com/Jazzpirate) if you have questions.
  */
-#![forbid(unsafe_code)]
 //#![warn(missing_docs)]
 #![doc(html_root_url = "https://docs.rs")]
 #![allow(clippy::type_complexity)]

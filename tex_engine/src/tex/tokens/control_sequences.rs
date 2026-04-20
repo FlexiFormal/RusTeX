@@ -234,11 +234,11 @@ impl<C: Character> CSInterner<C> {
     }
     /// Interns a `&'static str` as a control sequence name
     pub fn from_static(&mut self, s: &'static str) -> InternedCSName<C> {
-        self.intern(C::string_to_iter(s).collect::<Vec<_>>().as_slice())
+        C::slice_from_str(s, |s| self.intern(s))
     }
     /// Interns a `String` as a control sequence name
     pub fn from_string<S: AsRef<str>>(&mut self, s: S) -> InternedCSName<C> {
-        self.intern(C::string_to_iter(s.as_ref()).collect::<Vec<_>>().as_slice())
+        C::slice_from_str(s.as_ref(), |s| self.intern(s))
     }
     /// Resolves a control sequence name to a sequence of [`Character`]s
     pub fn resolve(&self, i: InternedCSName<C>) -> &[C] {
@@ -253,7 +253,8 @@ impl<C: Character> CSInterner<C> {
         let len = self.ls.len();
         self.idx.push(len);
         let len = self.idx.len() - 1;
-        let r = NonZeroU32::new(len as u32 + 1).unwrap();
+        // SAFETY: len + 1 > 0
+        let r = unsafe { NonZeroU32::new_unchecked(len as u32 + 1) };
         self.map.insert(v.into(), r);
         (r, PhantomData)
     }
@@ -271,21 +272,22 @@ impl<C: Character> CSInterner<C> {
 impl<C: Character> CSHandler<C, InternedCSName<C>> for CSInterner<C> {
     type Resolved<'a> = DisplayCSName<'a, C>;
     fn cs_from_str(&mut self, s: &str) -> InternedCSName<C> {
-        self.intern(C::string_to_iter(s).collect::<Vec<_>>().as_slice())
+        C::slice_from_str(s, |s| self.intern(s))
+        //self.intern(C::string_to_iter(s).collect::<Vec<_>>().as_slice())
     }
     fn get(&self, s: &str) -> Option<InternedCSName<C>> {
-        self.map
-            .get(C::string_to_iter(s).collect::<Vec<_>>().as_slice())
-            .map(|i| (*i, PhantomData))
+        C::slice_from_str(s, |s| self.map.get(s).map(|i| (*i, PhantomData)))
     }
     fn cs_from_chars(&mut self, v: &[C]) -> InternedCSName<C> {
         self.intern(v)
     }
     fn par(&self) -> InternedCSName<C> {
-        (NonZeroU32::new(2).unwrap(), PhantomData)
+        // SAFETY: 2 > 0
+        const { (NonZeroU32::new(2).unwrap(), PhantomData) }
     }
     fn empty_str(&self) -> InternedCSName<C> {
-        (NonZeroU32::new(1).unwrap(), PhantomData)
+        // SAFETY: 1 > 0
+        const { (NonZeroU32::new(1).unwrap(), PhantomData) }
     }
     fn resolve<'a>(&'a self, cs: &InternedCSName<C>) -> DisplayCSName<'a, C> {
         DisplayCSName(self.get(cs.0))
@@ -296,7 +298,7 @@ pub struct DisplayCSName<'a, C: Character>(&'a [C]);
 impl<C: Character> Display for DisplayCSName<'_, C> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for c in self.0 {
-            c.display_fmt(f)
+            c.display_fmt(f);
         }
         Ok(())
     }

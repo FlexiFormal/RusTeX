@@ -30,6 +30,8 @@ pub trait Character:
     /// Convert a line in a file/string (as a vector of bytes) into a [`Vec`] of [`Character`]s.
     fn convert(input: Vec<u8>) -> TextLine<Self>;
 
+    fn slice_from_str<R>(s: &str, then: impl FnOnce(&[Self]) -> R) -> R;
+
     /// Display this character to a [`Write`](std::fmt::Write) (e.g. a `&mut String`). Relevant for e.g.
     /// TeX's convention to display control characters using `^^` encoding.
     fn display_fmt<W: std::fmt::Write>(&self, target: &mut W);
@@ -97,6 +99,14 @@ impl Character for u8 {
     }
 
     type Iter<'a> = ByteIterator<'a>;
+
+    fn slice_from_str<R>(s: &str, then: impl FnOnce(&[Self]) -> R) -> R {
+        if s.contains("^^") {
+            then(&Self::string_to_iter(s).collect::<Vec<_>>())
+        } else {
+            then(s.as_bytes())
+        }
+    }
 
     fn string_to_iter(string: &str) -> Self::Iter<'_> {
         ByteIterator(string.as_bytes())

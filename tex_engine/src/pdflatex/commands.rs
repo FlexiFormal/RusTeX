@@ -1,3 +1,5 @@
+#![allow(clippy::missing_errors_doc)]
+
 use md5::Digest;
 
 use super::nodes::{
@@ -1373,9 +1375,10 @@ const PRIMITIVE_INTS: &[&str] = &[
     "pdfoutput",
     "pdfpkresolution",
     "pdfprotrudechars",
-    "tracingstacklevels",
     "pdfprependkern",
     "pdfappendkern",
+    "tracingstacklevels",
+    "partokencontext",
 ];
 
 const PRIMITIVE_DIMS: &[&str] = &[
