@@ -1,6 +1,6 @@
 [package]
 name = "rustex_lib"
-version = "0.1.8"
+version = "0.1.9"
 edition = "2024"
 authors = ["Dennis Müller <d.mueller@kwarc.info>"]
 description = "A crate for converting TeX/pdfTeX to HTML"

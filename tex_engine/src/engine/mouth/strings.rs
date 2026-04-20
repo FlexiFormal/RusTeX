@@ -25,6 +25,7 @@ pub enum MouthState {
 # use tex_engine::utils::Ptr;
 # use tex_engine::tex::catcodes::CommandCode;
 # use tex_engine::tex::characters::StringLineSource;
+# use tex_engine::prelude::CSHandler;
 #
 type T = StandardToken<u8,Ptr<str>>;
 let mut cs_handler = ();
@@ -34,25 +35,26 @@ let string = "\\foo   \n  \n   {a}{!}";
 let input: StringLineSource<u8> = string.into();
 let mut tokenizer = InputTokenizer::new(input);
 let eol = Some(b'\r');
-let next = tokenizer.get_next(&mut cs_handler,cc,None); // \foo
+let par = CSHandler::<u8,Ptr<str>>::par(&cs_handler);
+let next = tokenizer.get_next(&mut cs_handler,cc,None,&par); // \foo
 assert!(matches!(next,Ok(Some(T::ControlSequence(s))) if &*s == "foo"));
-let next = tokenizer.get_next(&mut cs_handler,cc,eol); // \par
+let next = tokenizer.get_next(&mut cs_handler,cc,eol,&par); // \par
 assert!(matches!(next,Ok(Some(T::ControlSequence(s))) if &*s == "par"));
-let next : T = tokenizer.get_next(&mut cs_handler,cc,eol).unwrap().unwrap(); // {
+let next : T = tokenizer.get_next(&mut cs_handler,cc,eol,&par).unwrap().unwrap(); // {
 assert_eq!(next.command_code(), CommandCode::BeginGroup);
-let next : T = tokenizer.get_next(&mut cs_handler,cc,eol).unwrap().unwrap(); // a
+let next : T = tokenizer.get_next(&mut cs_handler,cc,eol,&par).unwrap().unwrap(); // a
 assert_eq!(next.command_code(), CommandCode::Letter);
-let next : T = tokenizer.get_next(&mut cs_handler,cc,eol).unwrap().unwrap(); // }
+let next : T = tokenizer.get_next(&mut cs_handler,cc,eol,&par).unwrap().unwrap(); // }
 assert_eq!(next.command_code(), CommandCode::EndGroup);
-let next : T = tokenizer.get_next(&mut cs_handler,cc,eol).unwrap().unwrap(); // {
+let next : T = tokenizer.get_next(&mut cs_handler,cc,eol,&par).unwrap().unwrap(); // {
 assert_eq!(next.command_code(), CommandCode::BeginGroup);
-let next : T = tokenizer.get_next(&mut cs_handler,cc,eol).unwrap().unwrap(); // !
+let next : T = tokenizer.get_next(&mut cs_handler,cc,eol,&par).unwrap().unwrap(); // !
 assert_eq!(next.command_code(), CommandCode::Other);
-let next : T = tokenizer.get_next(&mut cs_handler,cc,eol).unwrap().unwrap(); // }
+let next : T = tokenizer.get_next(&mut cs_handler,cc,eol,&par).unwrap().unwrap(); // }
 assert_eq!(next.command_code(), CommandCode::EndGroup);
-let next : T = tokenizer.get_next(&mut cs_handler,cc,eol).unwrap().unwrap(); // end of line => space
+let next : T = tokenizer.get_next(&mut cs_handler,cc,eol,&par).unwrap().unwrap(); // end of line => space
 assert_eq!(next.command_code(), CommandCode::Space);
-assert!(tokenizer.get_next::<T>(&mut cs_handler,cc,eol).unwrap().is_none()); // EOF
+assert!(tokenizer.get_next::<T>(&mut cs_handler,cc,eol,&par).unwrap().is_none()); // EOF
 ```
 */
 #[derive(Clone, Debug)]
@@ -129,6 +131,7 @@ impl<C: Character, S: TextLineSource<C>> InputTokenizer<C, S> {
         handler: &mut Csh<T>,
         cc: &CategoryCodeScheme<C>,
         endline: Option<C>,
+        par_token: &T::CS,
         mut f: F,
     ) -> Result<(), InvalidCharacter<C>> {
         let mut ingroups = 0;
@@ -140,12 +143,12 @@ impl<C: Character, S: TextLineSource<C>> InputTokenizer<C, S> {
                     if self.eof {
                         return ret;
                     }
-                    if let Some(n) = self.return_endline::<T>(cc, endline, handler.par()) {
+                    if let Some(n) = self.return_endline::<T>(cc, endline, par_token) {
                         f(n)
                     }
                     return ret;
                 }
-                Some(c) => match self.check_char::<T>(handler, cc, endline, c) {
+                Some(c) => match self.check_char::<T>(handler, cc, endline, c, par_token) {
                     Ok(None) if self.line == line || ingroups > 0 => (),
                     Ok(None) => return ret,
                     Ok(Some(tk)) => {
@@ -173,18 +176,19 @@ impl<C: Character, S: TextLineSource<C>> InputTokenizer<C, S> {
         handler: &mut Csh<T>,
         cc: &CategoryCodeScheme<C>,
         endline: Option<C>,
+        par_token: &T::CS,
     ) -> Result<Option<T>, InvalidCharacter<C>> {
         loop {
             match self.get_char() {
                 None if self.eof => return Ok(None),
                 None => {
-                    if let Some(e) = self.return_endline::<T>(cc, endline, handler.par()) {
+                    if let Some(e) = self.return_endline::<T>(cc, endline, par_token) {
                         //debug_log!(trace=>"Returning endline {}",e.printable(&interner));
                         return Ok(Some(e));
                     }
                 }
                 Some(c) => {
-                    if let Some(t) = self.check_char::<T>(handler, cc, endline, c)? {
+                    if let Some(t) = self.check_char::<T>(handler, cc, endline, c, par_token)? {
                         return Ok(Some(t));
                     }
                 }
@@ -198,14 +202,15 @@ impl<C: Character, S: TextLineSource<C>> InputTokenizer<C, S> {
         cc: &CategoryCodeScheme<C>,
         endline: Option<C>,
         c: C,
+        par_token: &T::CS,
     ) -> Result<Option<T>, InvalidCharacter<C>> {
         use CategoryCode::*;
         match cc.get(c) {
             EOL if self.state == MouthState::NewLine => {
                 self.next_line();
-                Ok(Some(self.do_par(handler.par())))
+                Ok(Some(self.do_par(par_token.clone())))
             }
-            EOL => Ok(self.return_endline::<T>(cc, endline, handler.par())),
+            EOL => Ok(self.return_endline::<T>(cc, endline, par_token)),
             Space if self.state == MouthState::SkipBlank => Ok(None),
             Space if self.state == MouthState::NewLine => Ok(None),
             Space => {
@@ -221,7 +226,7 @@ impl<C: Character, S: TextLineSource<C>> InputTokenizer<C, S> {
             Invalid => Err(InvalidCharacter(c)),
             Escape => Ok(Some(self.get_escape::<T>(handler, cc, endline))),
             Superscript => match self.maybe_superscript(c) {
-                Some(c) => self.check_char::<T>(handler, cc, endline, c),
+                Some(c) => self.check_char::<T>(handler, cc, endline, c, par_token),
                 None => {
                     self.state = MouthState::MidLine;
                     Ok(Some(T::from_char_cat(c, CommandCode::Superscript)))
@@ -263,7 +268,7 @@ impl<C: Character, S: TextLineSource<C>> InputTokenizer<C, S> {
         &mut self,
         cc: &CategoryCodeScheme<C>,
         endline: Option<C>,
-        par: T::CS,
+        par: &T::CS,
     ) -> Option<T> {
         use CategoryCode::*;
         self.next_line();
@@ -272,7 +277,7 @@ impl<C: Character, S: TextLineSource<C>> InputTokenizer<C, S> {
             Some(c) => match cc.get(c) {
                 Space | EOL if self.state == MouthState::SkipBlank => None,
                 Space if self.state == MouthState::NewLine => None,
-                EOL if self.state == MouthState::NewLine => Some(self.do_par(par)),
+                EOL if self.state == MouthState::NewLine => Some(self.do_par(par.clone())),
                 EOL => Some(T::space()),
                 Ignored | Invalid | Comment => None,
                 o => Some(T::from_char_cat(c, (*o).into())),

@@ -80,47 +80,48 @@ fn tokenizer() {
     let input: StringLineSource<u8> = string.into();
     let mut tokenizer = InputTokenizer::new(input);
     let eol = Some(b'\r');
-    let next = tokenizer.get_next(&mut cs_handler, cc, None); // \foo
+    let par = CSHandler::<u8, Ptr<str>>::par(&cs_handler);
+    let next = tokenizer.get_next(&mut cs_handler, cc, None, &par); // \foo
     assert!(matches!(next,Ok(Some(T::ControlSequence(s))) if &*s == "foo"));
-    let next = tokenizer.get_next(&mut cs_handler, cc, eol); // \par
+    let next = tokenizer.get_next(&mut cs_handler, cc, eol, &par); // \par
     assert!(matches!(next,Ok(Some(T::ControlSequence(s))) if &*s == "par"));
     let next: T = tokenizer
-        .get_next(&mut cs_handler, cc, eol)
+        .get_next(&mut cs_handler, cc, eol, &par)
         .unwrap()
         .unwrap(); // {
     assert_eq!(next.command_code(), CommandCode::BeginGroup);
     let next: T = tokenizer
-        .get_next(&mut cs_handler, cc, eol)
+        .get_next(&mut cs_handler, cc, eol, &par)
         .unwrap()
         .unwrap(); // a
     assert_eq!(next.command_code(), CommandCode::Letter);
     let next: T = tokenizer
-        .get_next(&mut cs_handler, cc, eol)
+        .get_next(&mut cs_handler, cc, eol, &par)
         .unwrap()
         .unwrap(); // }
     assert_eq!(next.command_code(), CommandCode::EndGroup);
     let next: T = tokenizer
-        .get_next(&mut cs_handler, cc, eol)
+        .get_next(&mut cs_handler, cc, eol, &par)
         .unwrap()
         .unwrap(); // {
     assert_eq!(next.command_code(), CommandCode::BeginGroup);
     let next: T = tokenizer
-        .get_next(&mut cs_handler, cc, eol)
+        .get_next(&mut cs_handler, cc, eol, &par)
         .unwrap()
         .unwrap(); // !
     assert_eq!(next.command_code(), CommandCode::Other);
     let next: T = tokenizer
-        .get_next(&mut cs_handler, cc, eol)
+        .get_next(&mut cs_handler, cc, eol, &par)
         .unwrap()
         .unwrap(); // }
     assert_eq!(next.command_code(), CommandCode::EndGroup);
     let next: T = tokenizer
-        .get_next(&mut cs_handler, cc, eol)
+        .get_next(&mut cs_handler, cc, eol, &par)
         .unwrap()
         .unwrap(); // end of line => space
     assert_eq!(next.command_code(), CommandCode::Space);
     assert!(tokenizer
-        .get_next::<T>(&mut cs_handler, cc, eol)
+        .get_next::<T>(&mut cs_handler, cc, eol, &par)
         .unwrap()
         .is_none()); // EOF
 }

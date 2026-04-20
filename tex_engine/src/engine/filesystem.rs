@@ -78,7 +78,7 @@ pub trait File: std::fmt::Display + Clone + std::fmt::Debug + 'static {
     /// Returns the path of this file.
     fn path(&self) -> &Path;
     /// Returns a line source for this file. Used by a [`Mouth`](crate::engine::mouth::Mouth) to read from this file.
-    fn line_source(self) -> Result<Self::LineSource,PathBuf>;
+    fn line_source(self) -> Result<Self::LineSource, PathBuf>;
     /// Returns whether this file exists.
     fn exists(&self) -> bool {
         self.path().exists()
@@ -252,10 +252,12 @@ impl<C: Character> FileSystem for NoOutputFileSystem<C> {
     ) -> TeXResult<(), ET> {
         match self.read_files.get_mut(idx as usize) {
             Some(Some(f)) => {
+                let par = state.get_par_token();
                 match f.read(
                     handler,
                     state.get_catcode_scheme(),
                     state.get_endline_char(),
+                    &par,
                     cont,
                 ) {
                     Ok(_) => Ok(()),
@@ -379,7 +381,7 @@ impl<C: Character> File for VirtualFile<C> {
     fn path(&self) -> &Path {
         &self.path
     }
-    fn line_source(self) -> Result<Self::LineSource,PathBuf> {
+    fn line_source(self) -> Result<Self::LineSource, PathBuf> {
         use std::io::BufRead;
         match self.source {
             Some(src) => Ok(VirtualFileLineSource {
@@ -388,7 +390,7 @@ impl<C: Character> File for VirtualFile<C> {
             }),
             None => {
                 let Some(f) = std::fs::File::open(&self.path).ok() else {
-                    return Err(self.path)
+                    return Err(self.path);
                 };
                 let f = std::io::BufReader::new(f);
                 let f = f.split(b'\n');

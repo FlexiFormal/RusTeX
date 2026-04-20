@@ -4,14 +4,14 @@ use tex_engine::commands::primitives::{PrimitiveCommands, PrimitiveIdentifier};
 use tex_engine::commands::{PrimitiveCommand, TeXCommand};
 use tex_engine::engine::mouth::Mouth;
 use tex_engine::engine::state::{GroupType, State, StateChangeTracker, StateStack};
-use tex_engine::engine::{state, EngineAux, EngineTypes};
+use tex_engine::engine::{EngineAux, EngineTypes, state};
 use tex_engine::prelude::*;
 use tex_engine::tex::catcodes::{CategoryCode, CategoryCodeScheme};
 use tex_engine::tex::nodes::boxes::TeXBox;
 use tex_engine::tex::numerics::{Dim32, Mu, MuSkip, Skip};
-use tex_engine::tex::tokens::control_sequences::CSNameVec;
 use tex_engine::tex::tokens::CompactToken;
 use tex_engine::tex::tokens::Token;
+use tex_engine::tex::tokens::control_sequences::CSNameVec;
 
 #[derive(Clone)]
 pub struct RusTeXState(state::tex_state::DefaultState<Types>);
@@ -38,7 +38,14 @@ impl State<Types> for RusTeXState {
         name: &'static str,
         cmd: PrimitiveCommand<Types>,
     ) {
-        self.0.register_primitive(aux, name, cmd)
+        self.0.register_primitive(aux, name, cmd);
+    }
+
+    fn get_par_token(&self) -> <Types as EngineTypes>::CSName {
+        self.0.get_par_token()
+    }
+    fn set_par_token(&mut self, par: <Types as EngineTypes>::CSName) {
+        self.0.set_par_token(par);
     }
 
     fn primitives(&self) -> &PrimitiveCommands<Types> {
@@ -46,7 +53,7 @@ impl State<Types> for RusTeXState {
     }
 
     fn aftergroup(&mut self, token: CompactToken) {
-        self.0.aftergroup(token)
+        self.0.aftergroup(token);
     }
 
     fn push(&mut self, aux: &mut EngineAux<Types>, group_type: GroupType, line_number: usize) {
@@ -85,7 +92,7 @@ impl State<Types> for RusTeXState {
         fnt: <Types as EngineTypes>::Font,
         globally: bool,
     ) {
-        self.0.set_textfont(aux, idx, fnt, globally)
+        self.0.set_textfont(aux, idx, fnt, globally);
     }
 
     fn get_scriptfont(&self, i: u8) -> &<Types as EngineTypes>::Font {
@@ -99,7 +106,7 @@ impl State<Types> for RusTeXState {
         fnt: <Types as EngineTypes>::Font,
         globally: bool,
     ) {
-        self.0.set_scriptfont(aux, idx, fnt, globally)
+        self.0.set_scriptfont(aux, idx, fnt, globally);
     }
 
     fn get_scriptscriptfont(&self, i: u8) -> &<Types as EngineTypes>::Font {
@@ -113,11 +120,11 @@ impl State<Types> for RusTeXState {
         fnt: <Types as EngineTypes>::Font,
         globally: bool,
     ) {
-        self.0.set_scriptscriptfont(aux, idx, fnt, globally)
+        self.0.set_scriptscriptfont(aux, idx, fnt, globally);
     }
 
     fn set_current_font(&mut self, aux: &mut EngineAux<Types>, fnt: Font, globally: bool) {
-        self.0.set_current_font(aux, fnt, globally)
+        self.0.set_current_font(aux, fnt, globally);
     }
 
     fn get_catcode_scheme(&self) -> &CategoryCodeScheme<u8> {
@@ -125,7 +132,7 @@ impl State<Types> for RusTeXState {
     }
 
     fn set_catcode(&mut self, aux: &EngineAux<Types>, c: u8, cc: CategoryCode, globally: bool) {
-        self.0.set_catcode(aux, c, cc, globally)
+        self.0.set_catcode(aux, c, cc, globally);
     }
 
     fn get_sfcode(&self, c: u8) -> u16 {
@@ -133,7 +140,7 @@ impl State<Types> for RusTeXState {
     }
 
     fn set_sfcode(&mut self, aux: &EngineAux<Types>, c: u8, sfcode: u16, globally: bool) {
-        self.0.set_sfcode(aux, c, sfcode, globally)
+        self.0.set_sfcode(aux, c, sfcode, globally);
     }
 
     fn get_lccode(&self, c: u8) -> u8 {
@@ -141,7 +148,7 @@ impl State<Types> for RusTeXState {
     }
 
     fn set_lccode(&mut self, aux: &EngineAux<Types>, c: u8, lccode: u8, globally: bool) {
-        self.0.set_lccode(aux, c, lccode, globally)
+        self.0.set_lccode(aux, c, lccode, globally);
     }
 
     fn get_uccode(&self, c: u8) -> u8 {
@@ -149,7 +156,7 @@ impl State<Types> for RusTeXState {
     }
 
     fn set_uccode(&mut self, aux: &EngineAux<Types>, c: u8, uccode: u8, globally: bool) {
-        self.0.set_uccode(aux, c, uccode, globally)
+        self.0.set_uccode(aux, c, uccode, globally);
     }
 
     fn get_delcode(&self, c: u8) -> i32 {
@@ -157,7 +164,7 @@ impl State<Types> for RusTeXState {
     }
 
     fn set_delcode(&mut self, aux: &EngineAux<Types>, c: u8, delcode: i32, globally: bool) {
-        self.0.set_delcode(aux, c, delcode, globally)
+        self.0.set_delcode(aux, c, delcode, globally);
     }
 
     fn get_mathcode(&self, c: u8) -> u32 {
@@ -165,7 +172,7 @@ impl State<Types> for RusTeXState {
     }
 
     fn set_mathcode(&mut self, aux: &EngineAux<Types>, c: u8, mathcode: u32, globally: bool) {
-        self.0.set_mathcode(aux, c, mathcode, globally)
+        self.0.set_mathcode(aux, c, mathcode, globally);
     }
 
     fn get_endline_char(&self) -> Option<u8> {
@@ -173,7 +180,7 @@ impl State<Types> for RusTeXState {
     }
 
     fn set_endline_char(&mut self, aux: &EngineAux<Types>, c: Option<u8>, globally: bool) {
-        self.0.set_endline_char(aux, c, globally)
+        self.0.set_endline_char(aux, c, globally);
     }
 
     fn get_escape_char(&self) -> Option<u8> {
@@ -181,7 +188,7 @@ impl State<Types> for RusTeXState {
     }
 
     fn set_escape_char(&mut self, aux: &EngineAux<Types>, c: Option<u8>, globally: bool) {
-        self.0.set_escape_char(aux, c, globally)
+        self.0.set_escape_char(aux, c, globally);
     }
 
     fn get_newline_char(&self) -> Option<u8> {
@@ -189,7 +196,7 @@ impl State<Types> for RusTeXState {
     }
 
     fn set_newline_char(&mut self, aux: &EngineAux<Types>, c: Option<u8>, globally: bool) {
-        self.0.set_newline_char(aux, c, globally)
+        self.0.set_newline_char(aux, c, globally);
     }
 
     fn get_parshape(&self) -> &Vec<(Dim32, Dim32)> {
@@ -206,7 +213,7 @@ impl State<Types> for RusTeXState {
         parshape: Vec<(Dim32, Dim32)>,
         globally: bool,
     ) {
-        self.0.set_parshape(aux, parshape, globally)
+        self.0.set_parshape(aux, parshape, globally);
     }
 
     fn get_int_register(&self, idx: usize) -> i32 {
@@ -214,7 +221,7 @@ impl State<Types> for RusTeXState {
     }
 
     fn set_int_register(&mut self, aux: &EngineAux<Types>, idx: usize, v: i32, globally: bool) {
-        self.0.set_int_register(aux, idx, v, globally)
+        self.0.set_int_register(aux, idx, v, globally);
     }
 
     fn get_primitive_int(&self, name: PrimitiveIdentifier) -> i32 {
@@ -228,7 +235,7 @@ impl State<Types> for RusTeXState {
         v: i32,
         globally: bool,
     ) {
-        self.0.set_primitive_int(aux, name, v, globally)
+        self.0.set_primitive_int(aux, name, v, globally);
     }
 
     fn get_dim_register(&self, idx: usize) -> Dim32 {
@@ -236,7 +243,7 @@ impl State<Types> for RusTeXState {
     }
 
     fn set_dim_register(&mut self, aux: &EngineAux<Types>, idx: usize, v: Dim32, globally: bool) {
-        self.0.set_dim_register(aux, idx, v, globally)
+        self.0.set_dim_register(aux, idx, v, globally);
     }
 
     fn get_skip_register(&self, idx: usize) -> Skip<Dim32> {
@@ -250,7 +257,7 @@ impl State<Types> for RusTeXState {
         v: Skip<Dim32>,
         globally: bool,
     ) {
-        self.0.set_skip_register(aux, idx, v, globally)
+        self.0.set_skip_register(aux, idx, v, globally);
     }
 
     fn get_muskip_register(&self, idx: usize) -> MuSkip<Mu> {
@@ -264,7 +271,7 @@ impl State<Types> for RusTeXState {
         v: MuSkip<Mu>,
         globally: bool,
     ) {
-        self.0.set_muskip_register(aux, idx, v, globally)
+        self.0.set_muskip_register(aux, idx, v, globally);
     }
     fn get_toks_register(&self, idx: usize) -> &TokenList<CompactToken> {
         self.0.get_toks_register(idx)
@@ -276,7 +283,7 @@ impl State<Types> for RusTeXState {
         v: TokenList<CompactToken>,
         globally: bool,
     ) {
-        self.0.set_toks_register(aux, idx, v, globally)
+        self.0.set_toks_register(aux, idx, v, globally);
     }
 
     fn get_box_register(&self, idx: usize) -> Option<&TeXBox<Types>> {
@@ -298,7 +305,7 @@ impl State<Types> for RusTeXState {
         v: Option<TeXBox<Types>>,
         globally: bool,
     ) {
-        self.0.set_box_register(aux, idx, v, globally)
+        self.0.set_box_register(aux, idx, v, globally);
     }
 
     fn get_primitive_dim(&self, name: PrimitiveIdentifier) -> Dim32 {
@@ -312,7 +319,7 @@ impl State<Types> for RusTeXState {
         v: Dim32,
         globally: bool,
     ) {
-        self.0.set_primitive_dim(aux, name, v, globally)
+        self.0.set_primitive_dim(aux, name, v, globally);
     }
 
     fn get_primitive_skip(&self, name: PrimitiveIdentifier) -> Skip<Dim32> {
@@ -326,7 +333,7 @@ impl State<Types> for RusTeXState {
         v: Skip<Dim32>,
         globally: bool,
     ) {
-        self.0.set_primitive_skip(aux, name, v, globally)
+        self.0.set_primitive_skip(aux, name, v, globally);
     }
 
     fn get_primitive_muskip(&self, name: PrimitiveIdentifier) -> MuSkip<Mu> {
@@ -340,7 +347,7 @@ impl State<Types> for RusTeXState {
         v: MuSkip<Mu>,
         globally: bool,
     ) {
-        self.0.set_primitive_muskip(aux, name, v, globally)
+        self.0.set_primitive_muskip(aux, name, v, globally);
     }
 
     fn get_primitive_tokens(&self, name: PrimitiveIdentifier) -> &TokenList<CompactToken> {
@@ -354,7 +361,7 @@ impl State<Types> for RusTeXState {
         v: TokenList<CompactToken>,
         globally: bool,
     ) {
-        self.0.set_primitive_tokens(aux, name, v, globally)
+        self.0.set_primitive_tokens(aux, name, v, globally);
     }
 
     fn get_command(&self, name: &CSName) -> Option<&TeXCommand<Types>> {
@@ -368,7 +375,7 @@ impl State<Types> for RusTeXState {
         cmd: Option<TeXCommand<Types>>,
         globally: bool,
     ) {
-        self.0.set_command(aux, name, cmd, globally)
+        self.0.set_command(aux, name, cmd, globally);
     }
 
     fn get_ac_command(&self, c: u8) -> Option<&TeXCommand<Types>> {
@@ -382,6 +389,6 @@ impl State<Types> for RusTeXState {
         cmd: Option<TeXCommand<Types>>,
         globally: bool,
     ) {
-        self.0.set_ac_command(aux, c, cmd, globally)
+        self.0.set_ac_command(aux, c, cmd, globally);
     }
 }

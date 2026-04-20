@@ -1,4 +1,4 @@
-#![allow(clippy::missing_errors_doc)]
+#![allow(clippy::missing_errors_doc, clippy::needless_pass_by_value)]
 
 use md5::Digest;
 
@@ -11,6 +11,7 @@ use crate::commands::primitives::*;
 use crate::commands::CommandScope;
 use crate::engine::filesystem::{File, FileSystem};
 use crate::engine::fontsystem::Font;
+use crate::engine::gullet::methods::CSOrActiveChar;
 use crate::engine::gullet::Gullet;
 use crate::engine::state::State;
 use crate::engine::stomach::Stomach;
@@ -1364,6 +1365,23 @@ pub fn pdffontexpand<ET: EngineTypes>(
     Ok(())
 }
 
+pub fn partokenname<ET: EngineTypes>(
+    engine: &mut EngineReferences<ET>,
+    tk: ET::Token,
+) -> TeXResult<(), ET>
+where
+    ET::Extension: PDFExtension<ET>,
+    ET::CustomNode: From<PDFNode<ET>>,
+{
+    let CSOrActiveChar::Name(par) = engine.read_control_sequence(&tk)? else {
+        return TeXResult::Err(TeXError::General(
+            "expected control sequence after \\partokenname".to_string(),
+        ));
+    };
+    engine.state.set_par_token(par);
+    Ok(())
+}
+
 const PRIMITIVE_INTS: &[&str] = &[
     "pdfadjustspacing",
     "pdfcompresslevel",
@@ -1469,6 +1487,7 @@ where
         pdfpagesattr,
         Some(|_, _| Ok(Vec::new())),
     );
+    register_unexpandable(engine, "partokenname", CommandScope::Any, partokenname);
     register_unexpandable(engine, "pdfrefobj", CommandScope::Any, pdfrefobj);
     register_int(engine, "pdflastobj", pdflastobj, None);
     register_unexpandable(engine, "pdfrefxform", CommandScope::Any, pdfrefxform);
@@ -1552,7 +1571,6 @@ where
     cmtodo!(engine, pdfximagebbox);
 
     cmtodo!(engine, letterspacefont);
-    cmtodo!(engine, partokenname);
     cmtodo!(engine, pdfcopyfont);
     cmtodo!(engine, pdfendthread);
     cmtodo!(engine, pdffakespace);

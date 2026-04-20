@@ -86,17 +86,22 @@ such as pdfTeX, XeTeX or LuaTeX.
 This crate implements (most of) the primitives of pdfTeX, when the `pdflatex` feature is enabled.
 Assuming the feature is enabled, you can load the pdfTeX primitives by calling
 ```no_run
+# #[cfg(feature="pdflatex")]
+# {
 # use tex_engine::prelude::*;
 use tex_engine::pdflatex::{PDFTeXEngine,PlainPDFTeXEngine};
 let mut engine = PlainPDFTeXEngine::default();
 // registers the plain TeX + e-TeX + pdfTeX primitives,
 // and processes `pdftexconfig.tex` and `latex.ltx`
 engine.initialize_pdflatex().unwrap();
+# }
 ```
 This will (on `--release`) process `latex.ltx` in about 3.5 seconds on my machine.
 
 You can then process a `.tex` file by calling
 ```no_run
+# #[cfg(feature="pdflatex")]
+# {
 # use tex_engine::prelude::*;
 # use tex_engine::pdflatex::{PDFTeXEngine,PlainPDFTeXEngine};
 # let mut engine = PlainPDFTeXEngine::default();
@@ -104,6 +109,7 @@ engine.do_file_pdf("/path/to/your/tex/file.tex",|e,node| {
     // do something with the nodes produced, e.g. print them to stdout:
     println!("{}",node.display());Ok(())
 }).unwrap()
+# }
 ```
 
 # What else can I do?

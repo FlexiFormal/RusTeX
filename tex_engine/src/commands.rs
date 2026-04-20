@@ -9,6 +9,7 @@ use crate::engine::fontsystem::FontSystem;
 use crate::engine::mouth::strings::InputTokenizer;
 use crate::engine::state::State;
 use crate::engine::{EngineAux, EngineReferences, EngineTypes};
+use crate::prelude::CSHandler;
 use crate::tex::catcodes::{CategoryCodeScheme, CommandCode};
 use crate::tex::characters::StringLineSource;
 use crate::tex::nodes::boxes::{BoxInfo, TeXBox};
@@ -500,14 +501,16 @@ impl<T: Token> Macro<T> {
         if !sig.is_empty() {
             let sigsrc: StringLineSource<T::Char> = sig.into();
             let mut sigsrc = InputTokenizer::new(sigsrc);
-            while let Some(t) = sigsrc.get_next(int, cc, None)? {
+            let par = int.par();
+            while let Some(t) = sigsrc.get_next(int, cc, None, &par)? {
                 parser.do_signature_token::<ET>(t)?;
             }
         }
         let exp = exp.as_ref();
         let expsrc: StringLineSource<T::Char> = exp.into();
         let mut expsrc = InputTokenizer::new(expsrc);
-        while let Some(t) = expsrc.get_next(int, cc, None)? {
+        let par = int.par();
+        while let Some(t) = expsrc.get_next(int, cc, None, &par)? {
             parser.do_expansion_token::<ET>(t)?;
         }
         Ok(parser.close(false, false, false))

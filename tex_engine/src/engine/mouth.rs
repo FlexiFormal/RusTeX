@@ -290,10 +290,12 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
                 self.start_ref.pop();
                 if r.state != MouthState::NewLine {
                     let mut ret = Vec::new();
+                    let par = state.get_par_token();
                     match r.read(
                         aux.memory.cs_interner_mut(),
                         state.get_catcode_scheme(),
                         state.get_endline_char(),
+                        &par,
                         |t| ret.push(t),
                     ) {
                         Ok(_) => (),
@@ -346,7 +348,7 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
         let id = f.sourceref();
         let s = match f.line_source() {
             Ok(s) => s,
-            Err(p) => panic!("File {} has no line source",p.display())
+            Err(p) => panic!("File {} has no line source", p.display()),
         };
         let rf = SourceReference {
             file: id,
@@ -374,10 +376,12 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
                     }
                 },
                 TokenSource::String(s) => {
+                    let par = state.get_par_token();
                     match s.get_next(
                         aux.memory.cs_interner_mut(),
                         state.get_catcode_scheme(),
                         state.get_endline_char(),
+                        &par,
                     ) {
                         Ok(Some(t)) => return Ok(Some(t)),
                         Ok(None) => return Ok(Some(self.end_file(aux, state))),
@@ -390,7 +394,8 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
                 TokenSource::File(s, _) => {
                     let cc: &CategoryCodeScheme<ET::Char> = state.get_catcode_scheme();
                     let endline: Option<ET::Char> = state.get_endline_char();
-                    match s.get_next(aux.memory.cs_interner_mut(), cc, endline) {
+                    let par = state.get_par_token();
+                    match s.get_next(aux.memory.cs_interner_mut(), cc, endline, &par) {
                         Ok(Some(t)) => return Ok(Some(t)),
                         Ok(None) => return Ok(Some(self.end_file(aux, state))),
                         Err(c) => {
@@ -431,8 +436,9 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
                 Some(TokenSource::String(s)) => {
                     let cc = state.get_catcode_scheme();
                     let endline = state.get_endline_char();
+                    let par = state.get_par_token();
                     loop {
-                        match s.get_next(aux.memory.cs_interner_mut(), cc, endline) {
+                        match s.get_next(aux.memory.cs_interner_mut(), cc, endline, &par) {
                             Ok(Some(t)) => {
                                 if let Some(r) = cont(aux, t)? {
                                     return Ok(r);
@@ -452,8 +458,9 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
                 Some(TokenSource::File(s, _)) => {
                     let cc = state.get_catcode_scheme();
                     let endline = state.get_endline_char();
+                    let par = state.get_par_token();
                     loop {
-                        match s.get_next(aux.memory.cs_interner_mut(), cc, endline) {
+                        match s.get_next(aux.memory.cs_interner_mut(), cc, endline, &par) {
                             Ok(Some(t)) => {
                                 if let Some(r) = cont(aux, t)? {
                                     return Ok(r);

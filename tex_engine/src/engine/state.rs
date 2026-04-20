@@ -167,6 +167,10 @@ pub trait State<ET: EngineTypes>: Sized + Clone {
         globally: bool,
     );
 
+    /// Get the current `\par` token
+    fn get_par_token(&self) -> ET::CSName;
+    /// Set the current `\par` token
+    fn set_par_token(&mut self, par: ET::CSName);
     /// Get the current [`CategoryCodeScheme`]
     fn get_catcode_scheme(&self) -> &CategoryCodeScheme<ET::Char>;
     /// Set the current [`CategoryCode`] for a character

@@ -49,6 +49,7 @@ pub struct DefaultState<ET: EngineTypes> {
     scriptscriptfonts: [ET::Font; 16],
     empty_list: TokenList<ET::Token>,
     parshape: Vec<(ET::Dim, ET::Dim)>,
+    par_token: ET::CSName,
 }
 impl<ET: EngineTypes> DefaultState<ET> {
     fn tracing_assigns(&self) -> bool {
@@ -88,6 +89,7 @@ impl<ET: EngineTypes> State<ET> for DefaultState<ET> {
             *mathcodes.get_mut(ET::Char::from(i)) = (i as u32) + (7 * 16 * 16 * 16);
         }
         let mathfonts = array_init::array_init(|_| nullfont.clone());
+        let par = aux.memory.cs_interner().par();
         Self {
             stack: StateStack::default(),
             primitives: PrimitiveCommands::default(),
@@ -119,7 +121,15 @@ impl<ET: EngineTypes> State<ET> for DefaultState<ET> {
             textfonts: mathfonts.clone(),
             scriptfonts: mathfonts.clone(),
             scriptscriptfonts: mathfonts,
+            par_token: par,
         }
+    }
+
+    fn get_par_token(&self) -> <ET as EngineTypes>::CSName {
+        self.par_token.clone()
+    }
+    fn set_par_token(&mut self, par: <ET as EngineTypes>::CSName) {
+        self.par_token = par;
     }
 
     fn register_primitive(
