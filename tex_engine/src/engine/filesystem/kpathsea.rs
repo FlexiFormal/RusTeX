@@ -460,12 +460,25 @@ impl PathParser {
             .map(|v| String::from_utf8(v).unwrap())
         {
             let mut recurse = false;
-            if s.ends_with("//") {
-                recurse = true;
-                s.pop();
-                s.pop();
-            } else if s.ends_with('/') {
-                s.pop();
+            #[cfg(target_os = "windows")]
+            {
+                if s.ends_with("//") || s.ends_with("\\\\") {
+                    recurse = true;
+                    s.pop();
+                    s.pop();
+                } else if s.ends_with('/') || s.ends_with('\\') {
+                    s.pop();
+                }
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                if s.ends_with("//") {
+                    recurse = true;
+                    s.pop();
+                    s.pop();
+                } else if s.ends_with('/') {
+                    s.pop();
+                }
             }
             if s == "." {
                 if self.diddot {
