@@ -19,9 +19,9 @@ profile 1:38 / 1:38     ==> 1:43
 thesis  0:15
  */
 fn main() {
+    run();
     //profile()
     //thesis()
-    run();
     //test()
     //temp_test()
     //notes()
@@ -178,7 +178,8 @@ fn temp_test() {
     //let ret = RusTeXEngine::do_file("/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/numtest.tex",false,true,true);
     let ret = RusTeXEngine::do_file(
         //"/home/jazzpirate/work/MathHub/courses/UMR/GdMA/course/source/course/sec/Vorwort.de.tex",
-        "/home/jazzpirate/work/MathHub/Papers/25-CICM-MathMap/source/paper.tex",
+        //"/home/jazzpirate/work/MathHub/Papers/25-CICM-MathMap/source/paper.tex",
+        "/home/jazzpirate/work/MathHub/FTML/math/source/test.tex",
         //"/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/tmptest.tex",
         Settings {
             verbose: true,
@@ -192,7 +193,7 @@ fn temp_test() {
     //std::fs::write("/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/numtest.html", &ret.out).unwrap();
     ret.write_out(Path::new(
         //"/home/jazzpirate/rustex.out.html"
-        "/home/jazzpirate/work/MathHub/Papers/25-CICM-MathMap/source/paper.html",
+        "/home/jazzpirate/work/MathHub/FTML/math/source/test.html",
         //"/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/tmptest.html", //"/home/jazzpirate/work/MathHub/courses/UMR/GdMA/course/source/course/sec/Vorwort.de.tex.html"
     ))
     .unwrap();

@@ -347,7 +347,7 @@ impl CompilationDisplay<'_, '_> {
         }
         let size = ((self.font.get_at().0 as f32 / (old.get_at().0 as f32)) * 100.0).round();
         if size != 100.0 {
-            style(self, "font-size", format!("{}%", size).into())?;
+            style(self, "font-size", format!("{size}%").into())?;
         }
         let old = oldd.modifiers.unwrap_or_default();
         let new = newd.modifiers.unwrap_or_default();
@@ -376,23 +376,21 @@ impl CompilationDisplay<'_, '_> {
     fn do_color<N>(
         &mut self,
         node: &'static str,
-        color: &PDFColor,
+        color: PDFColor,
         children: &Vec<N>,
         mut f: impl FnMut(&mut Self, &N) -> std::fmt::Result,
     ) -> std::fmt::Result {
-        if *color == self.color {
+        if color == self.color {
             for c in children {
-                f(self, c)?
+                f(self, c)?;
             }
-            Ok(())
         } else {
             let old = self.color;
-            self.color = *color;
+            self.color = color;
             if children.len() == 1 {
-                self.styles
-                    .insert("color".into(), format!("{}", color).into());
+                self.styles.insert("color".into(), color.to_string().into());
                 for c in children {
-                    f(self, c)?
+                    f(self, c)?;
                 }
             } else {
                 node!(self <<node; class="rustex-contents"?(node!="mrow" && node !="g") style:"color"=color; {
@@ -400,8 +398,8 @@ impl CompilationDisplay<'_, '_> {
                 }/>);
             }
             self.color = old;
-            Ok(())
         }
+        Ok(())
     }
 
     fn do_font<N>(
@@ -413,9 +411,8 @@ impl CompilationDisplay<'_, '_> {
     ) -> std::fmt::Result {
         if *font == self.font {
             for c in children {
-                f(self, c)?
+                f(self, c)?;
             }
-            Ok(())
         } else {
             let old = std::mem::replace(&mut self.font, font.clone());
             if children.len() == 1 {
@@ -424,7 +421,7 @@ impl CompilationDisplay<'_, '_> {
                     Ok(())
                 })?;
                 for c in children {
-                    f(self, c)?
+                    f(self, c)?;
                 }
             } else {
                 node!(self <<node; class="rustex-contents"?(node!="mrow" && node !="g") style:{
@@ -434,8 +431,8 @@ impl CompilationDisplay<'_, '_> {
                 }/>);
             }
             self.font = old;
-            Ok(())
         }
+        Ok(())
     }
     fn do_annotations<N>(
         &mut self,
@@ -487,7 +484,7 @@ impl CompilationDisplay<'_, '_> {
         match c {
             ShipoutNodeV::Common(Common::WithColor {
                 color, children, ..
-            }) => self.do_color("div", color, children, |s, n| s.do_v(n, top)),
+            }) => self.do_color("div", *color, children, |s, n| s.do_v(n, top)),
             ShipoutNodeV::Common(Common::WithFont { font, children, .. }) => {
                 self.do_font("div", font, children, |s, n| s.do_v(n, top))
             }
@@ -509,7 +506,7 @@ impl CompilationDisplay<'_, '_> {
             ShipoutNodeV::Common(Common::Literal(s)) => self.f.write_str(s),
             ShipoutNodeV::Common(Common::WithLink { children, .. }) if self.in_link => {
                 for c in children {
-                    self.do_v(c, top)?
+                    self.do_v(c, top)?;
                 }
                 Ok(())
             }
@@ -538,7 +535,7 @@ impl CompilationDisplay<'_, '_> {
                 match n {
                     NumOrName::Name(s) => node!(self !<a "id"=s;/>),
                     NumOrName::Num(n) => {
-                        node!(self !<a "id"=format_args!("NUM_{}",n);/>)
+                        node!(self !<a "id"=format_args!("NUM_{}",n);/>);
                     }
                 }
                 Ok(())
@@ -546,9 +543,9 @@ impl CompilationDisplay<'_, '_> {
             ShipoutNodeV::KernSkip(m) => {
                 node!(self !<div class="rustex-vskip" style:{
                 if m.base.is_positive() {
-                    style!("min-height"=Self::dim_to_string(m.base))
+                    style!("min-height"=Self::dim_to_string(m.base));
                 } else {
-                    style!("margin-bottom"=Self::dim_to_string(m.base))
+                    style!("margin-bottom"=Self::dim_to_string(m.base));
                 }
                 match m.stretch {
                     Flex::Fil(_) | Flex::Fill(_) | Flex::Filll(_) =>
@@ -597,7 +594,7 @@ impl CompilationDisplay<'_, '_> {
                 height,
                 depth,
             } => {
-                let ht = height.map(|h| h.0).unwrap_or(26214) + depth.map(|d| d.0).unwrap_or(0);
+                let ht = height.map_or(26214, |h| h.0) + depth.map_or(0, |d| d.0);
                 if ht <= 0 {
                     return Ok(());
                 }
@@ -689,7 +686,7 @@ impl CompilationDisplay<'_, '_> {
         match c {
             ShipoutNodeH::Common(Common::WithColor {
                 color, children, ..
-            }) => self.do_color("div", color, children, |s, n| s.do_h(n, in_para, escape)),
+            }) => self.do_color("div", *color, children, |s, n| s.do_h(n, in_para, escape)),
             ShipoutNodeH::Common(Common::WithFont { font, children, .. }) => {
                 self.do_font("div", font, children, |s, n| s.do_h(n, in_para, escape))
             }
@@ -1032,7 +1029,7 @@ impl CompilationDisplay<'_, '_> {
             }
             ShipoutNodeM::Common(Common::WithColor {
                 color, children, ..
-            }) => self.do_color("mrow", color, children, |s, n| {
+            }) => self.do_color("mrow", *color, children, |s, n| {
                 s.do_math(n, cls /*,cramped*/)
             }),
             ShipoutNodeM::Common(Common::WithAnnotation {
@@ -1111,16 +1108,20 @@ impl CompilationDisplay<'_, '_> {
                         char
                     });
                     thread_local! {
-                        static MAPSTO : std::cell::LazyCell<tex_glyphs::Glyph> = std::cell::LazyCell::new(|| tex_glyphs::Glyph::get("mapsto"));
-                        static ARROWS: std::cell::LazyCell<[tex_glyphs::Glyph;3]> = std::cell::LazyCell::new(|| [
+                        static MAPSTO : std::cell::LazyCell<[tex_glyphs::Glyph;2]> = std::cell::LazyCell::new(|| [
+                            tex_glyphs::Glyph::get("mapsto"),
+                            tex_glyphs::Glyph::get("uni21A6")
+                        ]);
+                        static ARROWS: std::cell::LazyCell<[tex_glyphs::Glyph;4]> = std::cell::LazyCell::new(|| [
                             tex_glyphs::Glyph::get("a161"),
                             tex_glyphs::Glyph::get("arrowright"),
                             tex_glyphs::Glyph::get("shortrightarrow"),
+                            tex_glyphs::Glyph::get("uni2192"),
                         ]);
                     }
                     // TODO optimize
                     while let Some(glyph) = glyphs.next() {
-                        if MAPSTO.with(|v| glyph.glyph == **v) {
+                        if MAPSTO.with(|v| v.contains(&glyph.glyph)) {
                             if let Some(next) = glyphs.next() {
                                 if ARROWS.with(|a| a.contains(&next.glyph)) {
                                     write!(&mut string, "{glyph}")?;
@@ -1784,7 +1785,7 @@ impl CompilationDisplay<'_, '_> {
             }
             ShipoutNodeSVG::Common(Common::WithColor {
                 color, children, ..
-            }) => self.do_color("g", color, children, |s, n| s.do_svg_node(n)),
+            }) => self.do_color("g", *color, children, |s, n| s.do_svg_node(n)),
             ShipoutNodeSVG::Common(Common::WithAnnotation {
                 attrs,
                 styles,
