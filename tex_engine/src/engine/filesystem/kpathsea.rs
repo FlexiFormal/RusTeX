@@ -23,6 +23,7 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 /// The result of a [`Kpathsea`] search.
+///
 /// TODO capitalization might be an issue. TeX is more permissive wrt case distinctions
 /// than the filesystem, (apparently) iff either not covered by an ls-R file or
 /// directly in a TEXINPUTS path...?
@@ -171,76 +172,62 @@ impl KpathseaBase {
         let loc = std::str::from_utf8(locout.as_slice()).unwrap().trim();
         let selfautoloc = Path::new(loc);
 
-        let (pre, dot, post) = if loc.contains("miktex") {
-            todo!()
+        let mut vars = Self::get_vars(selfautoloc, loc.contains("miktex"));
+        let home = if cfg!(target_os = "windows") {
+            std::env::vars().find(|x| x.0 == "HOMEDRIVE").unwrap().1
+                + &std::env::vars().find(|x| x.0 == "HOMEPATH").unwrap().1
         } else {
-            let mut vars = Self::get_vars(selfautoloc);
-            let home = if cfg!(target_os = "windows") {
-                std::env::vars().find(|x| x.0 == "HOMEDRIVE").unwrap().1
-                    + &std::env::vars().find(|x| x.0 == "HOMEPATH").unwrap().1
-            } else {
-                std::env::vars().find(|x| x.0 == "HOME").unwrap().1
-            };
-            if log {
-                println!("Variables:\n-------------------------");
-                for (k, v) in &vars {
-                    println!("{k}:   {v}");
-                }
-            }
-
-            let paths = Self::paths_to_scan(&mut vars);
-            if log {
-                println!("-------------------------\nScan paths:\n-------------------------");
-                for p in &paths {
-                    println!("{}", p);
-                }
-            }
-            let mut parser = PathParser {
-                vars,
-                diddot: false,
-                recdot: false,
-                predot: vec![],
-                postdot: vec![],
-                home: PathBuf::from(home),
-                resolved_vars: HMap::default(),
-            };
-
-            for s in paths {
-                parser.do_dir(&s);
-            }
-
-            if log {
-                println!(
-                    "-------------------------\nResolved variables:\n-------------------------"
-                );
-                for (k, v) in &parser.resolved_vars {
-                    let val = v
-                        .iter()
-                        .map(|v| String::from_utf8_lossy(v))
-                        .collect::<Vec<_>>()
-                        .join("; ");
-                    println!("{k}:   {val}");
-                }
-                println!("-------------------------\nResolved paths:\n-------------------------");
-                for (p, b) in &parser.predot {
-                    println!("{} ({b})", p.display());
-                }
-                for (p, b) in &parser.postdot {
-                    println!("{} ({b})", p.display());
-                }
-                println!("-------------------------\n");
-            }
-
-            let r = if log {
-                parser.close::<true>()
-            } else {
-                parser.close::<false>()
-            };
-            if log {
-                println!("-------------------------\n");
-            }
-            r
+            std::env::vars().find(|x| x.0 == "HOME").unwrap().1
         };
+        if log {
+            println!("Variables:\n-------------------------");
+            for (k, v) in &vars {
+                println!("{k}:   {v}");
+            }
+        }
+        let paths = Self::paths_to_scan(&mut vars);
+        if log {
+            println!("-------------------------\nScan paths:\n-------------------------");
+            for p in &paths {
+                println!("{}", p);
+            }
+        }
+        let mut parser = PathParser {
+            vars,
+            diddot: false,
+            recdot: false,
+            predot: vec![],
+            postdot: vec![],
+            home: PathBuf::from(home),
+            resolved_vars: HMap::default(),
+        };
+
+        for s in paths {
+            parser.do_dir(&s);
+        }
+        if log {
+            println!("-------------------------\nResolved variables:\n-------------------------");
+            for (k, v) in &parser.resolved_vars {
+                let val = v
+                    .iter()
+                    .map(|v| String::from_utf8_lossy(v))
+                    .collect::<Vec<_>>()
+                    .join("; ");
+                println!("{k}:   {val}");
+            }
+            println!("-------------------------\nResolved paths:\n-------------------------");
+            for (p, b) in &parser.predot {
+                println!("{} ({b})", p.display());
+            }
+            for (p, b) in &parser.postdot {
+                println!("{} ({b})", p.display());
+            }
+            println!("-------------------------\n");
+        }
+        let (pre, dot, post) = parser.close(log);
+        if log {
+            println!("-------------------------\n");
+        }
         KpathseaBase {
             pre,
             recdot: dot,
@@ -263,7 +250,74 @@ impl KpathseaBase {
         None
     }
 
-    fn get_vars(selfautoloc: &Path) -> HMap<String, String> {
+    fn get_vars(selfautoloc: &Path, is_miktex: bool) -> HMap<String, String> {
+        fn texlive(vars: &mut HMap<String, String>) {
+            let out = std::process::Command::new("kpsewhich")
+                .args(vec!["-a", "texmf.cnf"])
+                .output()
+                .expect("kpsewhich not found!")
+                .stdout;
+            let outstr = std::str::from_utf8(out.as_slice()).unwrap();
+            let rs = outstr
+                .split('\n')
+                .map(|x| x.trim())
+                .filter(|s| !s.is_empty());
+            for r in rs {
+                let p = Path::new(r);
+                if let Ok(f) = File::open(p) {
+                    let lines = std::io::BufReader::new(f).lines();
+                    for l in lines.map_while(Result::ok) {
+                        if !l.starts_with('%') && !l.is_empty() {
+                            let mut kb = l.split('=').map(|x| x.trim()).collect::<Vec<_>>();
+                            if kb.len() == 2 {
+                                let v = kb.pop().unwrap();
+                                let mut k = kb.pop().unwrap();
+                                if let Some(i) = k.find('.') {
+                                    let pre = &k[..i];
+                                    let post = &k[i + 1..];
+                                    if post != "pdftex" {
+                                        continue;
+                                    }
+                                    k = pre;
+                                }
+                                if k.chars().any(|c| c.is_lowercase()) {
+                                    continue;
+                                }
+                                match vars.entry(k.to_string()) {
+                                    Entry::Occupied(_) => (),
+                                    Entry::Vacant(e) => {
+                                        e.insert(v.to_string());
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        fn miktex(vars: &mut HMap<String, String>) {
+            static TEXMF_CNF: [(&str, &str); 11] = [
+                ("TEXMFHOME", "~/texmf"),
+                ("TEXMFDOTDIR", "."),
+                ("TEXMFROOT", "$SELFAUTOGRANDPARENT"),
+                ("TEXMFDIST", "$SELFAUTOGRANDPARENT"),
+                ("TEXMF", "{$TEXMFHOME,!!$TEXMFDIST}"),
+                (
+                    "TEXINPUTS",
+                    "$TEXMFDOTDIR;$TEXMF/tex/{plain,generic,latex,}//",
+                ),
+                ("VARTEXFONTS", "$SELFAUTOGRANDPARENT/fonts"),
+                ("VFFONTS", "$TEXMF/fonts/vf//"),
+                ("TFMFONTS", "$TEXMF/fonts/tfm//"),
+                ("T1FONTS", "$TEXMF/fonts/type1//"),
+                ("ENCFONTS", "$TEXMF/fonts/enc//"),
+            ];
+            for (a, b) in TEXMF_CNF {
+                if !vars.contains_key(a) {
+                    vars.insert(a.to_string(), b.to_string());
+                }
+            }
+        }
         let mut vars = HMap::<String, String>::default();
         vars.insert(
             "SELFAUTOLOC".to_string(),
@@ -314,48 +368,10 @@ impl KpathseaBase {
                 selfautoloc.to_str().unwrap().to_string(),
             );
         }
-
-        let out = std::process::Command::new("kpsewhich")
-            .args(vec!["-a", "texmf.cnf"])
-            .output()
-            .expect("kpsewhich not found!")
-            .stdout;
-        let outstr = std::str::from_utf8(out.as_slice()).unwrap();
-        let rs = outstr
-            .split('\n')
-            .map(|x| x.trim())
-            .filter(|s| !s.is_empty());
-        for r in rs {
-            let p = Path::new(r);
-            if let Ok(f) = File::open(p) {
-                let lines = std::io::BufReader::new(f).lines();
-                for l in lines.map_while(Result::ok) {
-                    if !l.starts_with('%') && !l.is_empty() {
-                        let mut kb = l.split('=').map(|x| x.trim()).collect::<Vec<_>>();
-                        if kb.len() == 2 {
-                            let v = kb.pop().unwrap();
-                            let mut k = kb.pop().unwrap();
-                            if let Some(i) = k.find('.') {
-                                let pre = &k[..i];
-                                let post = &k[i + 1..];
-                                if post != "pdftex" {
-                                    continue;
-                                }
-                                k = pre;
-                            }
-                            if k.chars().any(|c| c.is_lowercase()) {
-                                continue;
-                            }
-                            match vars.entry(k.to_string()) {
-                                Entry::Occupied(_) => (),
-                                Entry::Vacant(e) => {
-                                    e.insert(v.to_string());
-                                }
-                            }
-                        }
-                    }
-                }
-            }
+        if is_miktex {
+            miktex(&mut vars);
+        } else {
+            texlive(&mut vars);
         }
         vars.insert("progname".to_string(), "pdftex".to_string());
         vars
@@ -584,17 +600,17 @@ impl PathParser {
         }
         self.resolved_vars.get(key).unwrap()
     }
-    fn close<const LOG: bool>(self) -> (HMap<String, PathBuf>, bool, HMap<String, PathBuf>) {
+    fn close(self, log: bool) -> (HMap<String, PathBuf>, bool, HMap<String, PathBuf>) {
         (
-            Self::close_i::<LOG>(self.predot),
+            Self::close_i(self.predot, log),
             self.recdot,
-            Self::close_i::<LOG>(self.postdot),
+            Self::close_i(self.postdot, log),
         )
     }
-    fn close_i<const LOG: bool>(v: Vec<(PathBuf, bool)>) -> HMap<String, PathBuf> {
+    fn close_i(v: Vec<(PathBuf, bool)>, log: bool) -> HMap<String, PathBuf> {
         let mut ret = HMap::default();
         for (p, rec) in v.into_iter().rev() {
-            if LOG {
+            if log {
                 println!("Checking {} ({rec})", p.display());
             }
             let len = p.to_str().unwrap().len() + 1;
@@ -603,7 +619,7 @@ impl PathParser {
                 .min_depth(1)
                 .into_iter()
                 .filter_map(|e| match e {
-                    Err(e) if LOG => {
+                    Err(e) if log => {
                         println!("ERROR: {e}");
                         None
                     }
@@ -620,7 +636,7 @@ impl PathParser {
             {
                 let sub = &e.path().to_str().unwrap()[len..];
                 if sub.contains('.') {
-                    if LOG {
+                    if log {
                         println!("Adding {} ({rec})", e.path().display());
                     }
                     let sub = sub.to_string();
