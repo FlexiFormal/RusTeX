@@ -340,14 +340,25 @@ impl CompilationDisplay<'_, '_> {
         let newd = self.font_data.get(self.font.filename()).unwrap();
         let oldcss = oldd.web.as_ref().map(|(_, c)| c.as_str());
         let newcss = newd.web.as_ref().map(|(_, c)| c.as_str());
-        if oldcss != newcss {
-            if let Some(c) = newcss {
-                style(self, "font-family", c.to_string().into())?;
-            }
+        if oldcss != newcss
+            && let Some(c) = newcss
+        {
+            style(self, "font-family", c.to_string().into())?;
         }
-        let size = ((self.font.get_at().0 as f32 / (old.get_at().0 as f32)) * 100.0).round();
-        if size != 100.0 {
-            style(self, "font-size", format!("{size}%").into())?;
+        let old_at = old.get_at().0;
+        let new_at = self.font.get_at().0;
+        if new_at == old_at {
+        } else if new_at == 0 || old_at == 0 {
+            style(
+                self,
+                "font-size",
+                Self::dim_to_string(new_at).to_string().into(),
+            )?;
+        } else {
+            let size = ((new_at as f32 / (old_at as f32)) * 100.0).round();
+            if size != 100.0 {
+                style(self, "font-size", format!("{size}%").into())?;
+            }
         }
         let old = oldd.modifiers.unwrap_or_default();
         let new = newd.modifiers.unwrap_or_default();
