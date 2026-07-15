@@ -283,19 +283,6 @@ pub struct MacroExpansion<T: Token> {
     pub args: [Vec<T>; 9],
 }
 impl<T: Token> MacroExpansion<T> {
-    /// Consumes the [`MacroExpansion`] by pushing its [`Token`]s reversed into the provided
-    /// `Vec` - i.e. afterwards, the first [`Token`] of the expansion is the last one of the provided `Vec`.
-    pub fn consume_rev(&mut self, v: &mut Vec<T>) {
-        for t in self.ls.0.iter().rev() {
-            if let Some(i) = t.is_argument_marker() {
-                v.extend(self.args[i as usize].iter().rev().cloned())
-            } else {
-                v.push(t.clone());
-            }
-        }
-    }
-}
-impl<T: Token> MacroExpansion<T> {
     /// Creates a new [`MacroExpansion`] from a [`TokenList`] and a list of arguments.
     pub fn new(ls: TokenList<T>, args: [Vec<T>; 9]) -> Self {
         Self {

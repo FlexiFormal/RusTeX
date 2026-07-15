@@ -319,7 +319,15 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
     }
 
     fn push_macro_exp(&mut self, mut exp: MacroExpansion<ET::Token>) {
-        self.with_list(|v| exp.consume_rev(v));
+        self.with_list(|v| {
+            for t in exp.ls.0.iter().rev() {
+                if let Some(i) = t.is_argument_marker() {
+                    v.extend(exp.args[i as usize].iter().rev().cloned());
+                } else {
+                    v.push(t.clone());
+                }
+            }
+        });
         self.return_args(exp.args);
     }
 

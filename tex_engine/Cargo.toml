@@ -1,7 +1,7 @@
 [package]
 name = "tex_engine"
 version = "0.1.11"
-edition = "2021"
+edition = "2024"
 authors = ["Dennis Müller <d.mueller@kwarc.info>"]
 description = "A modular crate for building TeX engines"
 readme = "README.md"
@@ -53,19 +53,22 @@ lazy_static = "1"
 log = { version = "0.4", features = ["kv_unstable"] }
 #ahash = "0.8"
 rustc-hash = "2"
-string-interner = "0.19"
+string-interner = "0.20"
 chrono = "0.4"
 array-init = "2"
 arrayvec = "0.7"
-shared_vector = "0.4"
+shared_vector = "0.5"
 walkdir = "2"
 path-dedot = "3"
 const_for = "0.1"
 thiserror = "2"
 either = "1"
 #pdfium-render = "0.8.11" #, features = ["static"] }
+#allocator-api2 = "0.4.0"
+#multitude = "0.6"
+#fastarena = "0.2"
 
-md-5 = { version = "0.10", optional = true }
+md-5 = { version = "0.11", optional = true }
 image = { version = "0.25", optional = true }
 regex = { version = "1.10", optional = true }
 pdfium-render = { workspace=true, optional = true }

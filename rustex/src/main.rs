@@ -19,9 +19,9 @@ profile 1:38 / 1:38     ==> 1:43
 thesis  0:15
  */
 fn main() {
-    run();
+    //run();
     //profile()
-    //thesis()
+    thesis()
     //test()
     //temp_test()
     //notes()

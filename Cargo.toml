@@ -21,13 +21,13 @@ panic = "abort"
 strip = "symbols"
 
 [profile.bench]
-strip = "none"
+strip = false
 
 [workspace.dependencies]
 tex_engine = { path = "tex_engine", version = "0.1.2" }
 tex-glyphs = { path = "tex-glyphs", version = "0.1.2" }
 rustex = { path = "rustex" }
-pdfium-render = { version = "0.8.37", features = [
+pdfium-render = { version = "0.9", features = [
     "image_025",
     "pdfium_7350",
     "thread_safe"

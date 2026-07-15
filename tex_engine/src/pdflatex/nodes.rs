@@ -740,8 +740,7 @@ pub fn pdf_as_image<ET: EngineTypes, E: PDFExtension<ET>>(path: &Path, ext: &mut
     };
     let cfg = PdfRenderConfig::new().scale_page_by_factor(5.0);
     let pages = pdf.pages();
-    let r = if let Ok(bmp) = pages.iter().next().unwrap().render_with_config(&cfg) {
-        let img = bmp.as_image();
+    let r = if let Ok(bmp) = pages.iter().next().unwrap().render_with_config(&cfg) && let Ok(img) = bmp.as_image() {
         PDFImage::PDF(img)
     } else {
         log::warn!("Failed to render PDF file {}", path.display());

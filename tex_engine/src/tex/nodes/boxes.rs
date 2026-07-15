@@ -1,14 +1,14 @@
 /*! [`TeXBox`]es */
 
+use crate::engine::EngineTypes;
 use crate::engine::filesystem::SourceRef;
 use crate::engine::stomach::methods::ParLineSpec;
-use crate::engine::EngineTypes;
 use crate::tex::nodes::horizontal::{HNode, HorizontalNodeListType};
 use crate::tex::nodes::math::{
     MathAtom, MathClass, MathKernel, MathNode, MathNucleus, UnresolvedMathFontStyle,
 };
 use crate::tex::nodes::vertical::{VNode, VerticalNodeListType};
-use crate::tex::nodes::{display_do_indent, BoxTarget, NodeList, NodeTrait, NodeType};
+use crate::tex::nodes::{BoxTarget, NodeList, NodeTrait, NodeType, display_do_indent};
 use crate::tex::numerics::Skip;
 use crate::tex::numerics::TeXDimen;
 use std::fmt::{Display, Formatter};
@@ -250,7 +250,7 @@ impl<ET: EngineTypes> HBoxInfo<ET> {
     pub fn raise(&mut self, d: ET::Dim) {
         self.to_hbox();
         match self {
-            HBoxInfo::HBox { ref mut raised, .. } => *raised = Some(d),
+            HBoxInfo::HBox { raised, .. } => *raised = Some(d),
             _ => unreachable!(),
         }
     }
@@ -258,9 +258,7 @@ impl<ET: EngineTypes> HBoxInfo<ET> {
     pub fn move_left(&mut self, d: ET::Dim) {
         self.to_hbox();
         match self {
-            HBoxInfo::HBox {
-                ref mut moved_left, ..
-            } => *moved_left = Some(d),
+            HBoxInfo::HBox { moved_left, .. } => *moved_left = Some(d),
             _ => unreachable!(),
         }
     }
@@ -541,8 +539,8 @@ impl<ET: EngineTypes> VBoxInfo<ET> {
     /// Raise this box by the given amount (i.e. `\raise` or `\lower`)
     pub fn raise(&mut self, d: ET::Dim) {
         match self {
-            VBoxInfo::VBox { ref mut raised, .. } => *raised = Some(d),
-            VBoxInfo::VTop { ref mut raised, .. } => *raised = Some(d),
+            VBoxInfo::VBox { raised, .. } => *raised = Some(d),
+            VBoxInfo::VTop { raised, .. } => *raised = Some(d),
             _ => {
                 self.to_vbox();
                 let VBoxInfo::VBox { raised, .. } = self else {
@@ -555,12 +553,8 @@ impl<ET: EngineTypes> VBoxInfo<ET> {
     /// Move this box left by the given amount (i.e. `\moveleft` or `\moveright`)
     pub fn move_left(&mut self, d: ET::Dim) {
         match self {
-            VBoxInfo::VBox {
-                ref mut moved_left, ..
-            } => *moved_left = Some(d),
-            VBoxInfo::VTop {
-                ref mut moved_left, ..
-            } => *moved_left = Some(d),
+            VBoxInfo::VBox { moved_left, .. } => *moved_left = Some(d),
+            VBoxInfo::VTop { moved_left, .. } => *moved_left = Some(d),
             _ => {
                 self.to_vbox();
                 let VBoxInfo::VBox { moved_left, .. } = self else {
@@ -849,27 +843,21 @@ impl<ET: EngineTypes> TeXBox<ET> {
     pub fn assign_height(&mut self, h: ET::Dim) {
         match self {
             TeXBox::H {
-                info:
-                    HBoxInfo::HBox {
-                        ref mut assigned_height,
-                        ..
-                    },
+                info: HBoxInfo::HBox {
+                    assigned_height, ..
+                },
                 ..
             } => *assigned_height = Some(h),
             TeXBox::V {
-                info:
-                    VBoxInfo::VBox {
-                        ref mut assigned_height,
-                        ..
-                    },
+                info: VBoxInfo::VBox {
+                    assigned_height, ..
+                },
                 ..
             } => *assigned_height = Some(h),
             TeXBox::V {
-                info:
-                    VBoxInfo::VTop {
-                        ref mut assigned_height,
-                        ..
-                    },
+                info: VBoxInfo::VTop {
+                    assigned_height, ..
+                },
                 ..
             } => *assigned_height = Some(h),
             _ => (),
@@ -903,27 +891,15 @@ impl<ET: EngineTypes> TeXBox<ET> {
     pub fn assign_width(&mut self, w: ET::Dim) {
         match self {
             TeXBox::H {
-                info:
-                    HBoxInfo::HBox {
-                        ref mut assigned_width,
-                        ..
-                    },
+                info: HBoxInfo::HBox { assigned_width, .. },
                 ..
             } => *assigned_width = Some(w),
             TeXBox::V {
-                info:
-                    VBoxInfo::VBox {
-                        ref mut assigned_width,
-                        ..
-                    },
+                info: VBoxInfo::VBox { assigned_width, .. },
                 ..
             } => *assigned_width = Some(w),
             TeXBox::V {
-                info:
-                    VBoxInfo::VTop {
-                        ref mut assigned_width,
-                        ..
-                    },
+                info: VBoxInfo::VTop { assigned_width, .. },
                 ..
             } => *assigned_width = Some(w),
             _ => (),
@@ -951,27 +927,15 @@ impl<ET: EngineTypes> TeXBox<ET> {
     pub fn assign_depth(&mut self, d: ET::Dim) {
         match self {
             TeXBox::H {
-                info:
-                    HBoxInfo::HBox {
-                        ref mut assigned_depth,
-                        ..
-                    },
+                info: HBoxInfo::HBox { assigned_depth, .. },
                 ..
             } => *assigned_depth = Some(d),
             TeXBox::V {
-                info:
-                    VBoxInfo::VBox {
-                        ref mut assigned_depth,
-                        ..
-                    },
+                info: VBoxInfo::VBox { assigned_depth, .. },
                 ..
             } => *assigned_depth = Some(d),
             TeXBox::V {
-                info:
-                    VBoxInfo::VTop {
-                        ref mut assigned_depth,
-                        ..
-                    },
+                info: VBoxInfo::VTop { assigned_depth, .. },
                 ..
             } => *assigned_depth = Some(d),
             _ => (),

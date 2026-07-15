@@ -4,6 +4,19 @@
 /* ----------------------------------------------------- CSS -------------------------------------------------------- */
 /* ------------------------------------------------------------------------------------------------------------------ */
 
+:root {
+    /* made up numbers to be replaced */
+    --rustex-text-width: 600;
+    --rustex-page-width: 750;
+    --rustex-scale-width: 1;
+
+    --rustex-curr-width: calc(
+        (var(--rustex-text-width) / var(--rustex-page-width)) *
+            min(100vw, calc(var(--rustex-page-width) * 1px))
+    );
+    --rustex-this-width: var(--rustex-curr-width);
+}
+
 .rustex-link {
     color: inherit;
     text-decoration: inherit;
@@ -39,17 +52,6 @@
 }
 
 .rustex-body {
-    /* made up numbers to be replaced */
-    --rustex-text-width: 600;
-    --rustex-page-width: 750;
-    --rustex-scale-width: 1;
-
-    --rustex-curr-width: calc(
-        (var(--rustex-text-width) / var(--rustex-page-width)) *
-            min(100vw, calc(var(--rustex-page-width) * 1px))
-    );
-    --rustex-this-width: var(--rustex-curr-width);
-
     max-width: calc(var(--rustex-page-width) * 1px);
     width: min(100vw, calc(var(--rustex-text-width) * 1px));
     padding-left: calc(

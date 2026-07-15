@@ -1,5 +1,5 @@
 use super::primitives::*;
-use crate::commands::methods::{IfxCmd, MacroParser, END_TEMPLATE, END_TEMPLATE_ROW};
+use crate::commands::methods::{END_TEMPLATE, END_TEMPLATE_ROW, IfxCmd, MacroParser};
 use crate::commands::{
     ActiveConditional, CharOrPrimitive, CommandScope, Macro, MacroSignature, PrimitiveCommand,
     ResolvedToken, TeXCommand,
@@ -7,8 +7,8 @@ use crate::commands::{
 use crate::engine::filesystem::{File, FileSystem};
 use crate::engine::fontsystem::Font;
 use crate::engine::fontsystem::FontSystem;
-use crate::engine::gullet::methods::CSOrActiveChar;
 use crate::engine::gullet::Gullet;
+use crate::engine::gullet::methods::CSOrActiveChar;
 use crate::engine::mouth::Mouth;
 use crate::engine::state::{GroupType, State};
 use crate::engine::stomach::methods::SplitResult;
@@ -548,7 +548,7 @@ pub fn def<ET: EngineTypes>(
             StandardToken::Character(_, CommandCode::Space) => (),
             StandardToken::ControlSequence(cs) => break CSOrActiveChar::Name(cs),
             _ => {
-                return engine.general_error("Expected control sequence after `\\def`".to_string())
+                return engine.general_error("Expected control sequence after `\\def`".to_string());
             }
         }
     };
@@ -582,7 +582,8 @@ pub fn edef<ET: EngineTypes>(
             StandardToken::Character(_, CommandCode::Space) => (),
             StandardToken::ControlSequence(cs) => break CSOrActiveChar::Name(cs),
             _ => {
-                return engine.general_error("Expected control sequence after `\\edef`".to_string())
+                return engine
+                    .general_error("Expected control sequence after `\\edef`".to_string());
             }
         }
     };
@@ -967,12 +968,12 @@ pub fn r#else<ET: EngineTypes>(
         Some(ActiveConditional::Else(_)) => {
             return Err(TeXError::General(
                 "Unexpected `\\else` in `\\else`-branch".to_string(),
-            ))
+            ));
         }
         _ => {
             return Err(TeXError::General(
                 "Unexpected `\\else` outside of a condition".to_string(),
-            ))
+            ));
         }
     };
     let trace = engine.state.get_primitive_int(PRIMITIVES.tracingifs) > ET::Int::default();
@@ -1261,7 +1262,7 @@ pub fn unbox<ET: EngineTypes>(
                 _ => {
                     return engine.general_error(
                         "Cannot unbox \\hbox outside of horizontal mode".to_string(),
-                    )
+                    );
                 }
             }
         }
@@ -1772,7 +1773,7 @@ pub fn futurelet<ET: EngineTypes>(
         _ => {
             return Err(TeXError::General(
                 "Control sequence expected after \\futurelet".to_string(),
-            ))
+            ));
         }
     };
     let first = match engine.mouth.get_next(engine.aux, engine.state)? {
@@ -1780,7 +1781,7 @@ pub fn futurelet<ET: EngineTypes>(
         _ => {
             return Err(TeXError::FileEndedWhileScanningUseOf(
                 "futurelet".to_string(),
-            ))
+            ));
         }
     };
     let second = match engine.mouth.get_next(engine.aux, engine.state)? {
@@ -1788,7 +1789,7 @@ pub fn futurelet<ET: EngineTypes>(
         _ => {
             return Err(TeXError::FileEndedWhileScanningUseOf(
                 "futurelet".to_string(),
-            ))
+            ));
         }
     };
     let cmd = match second.to_enum() {
@@ -1865,7 +1866,7 @@ pub fn mathchardef<ET: EngineTypes>(
         _ => {
             return Err(TeXError::General(
                 "Expected control sequence after \\mathchardef".to_string(),
-            ))
+            ));
         }
     };
     let i = engine.read_int(true, &tk)?.into();
@@ -1944,7 +1945,7 @@ pub fn right<ET: EngineTypes>(
         _ => {
             return Err(TeXError::General(
                 "Unexpected open list in \\right".to_string(),
-            ))
+            ));
         }
     }
     Ok(())
@@ -2064,7 +2065,7 @@ pub fn noexpand<ET: EngineTypes>(
         _ => {
             return Err(TeXError::General(
                 "control sequence expected after \\noexpand".to_string(),
-            ))
+            ));
         }
     };
     match engine.resolve(&token) {
@@ -3310,13 +3311,13 @@ pub fn shipout<ET: EngineTypes>(
         either::Right(bi) => {
             let mut list = bi.open_list(engine.mouth.start_ref());
             let target = BoxTarget::new(|e, b| e.shipout(VNode::Box(b)));
-            match list {
+            match &mut list {
                 NodeList::Horizontal {
-                    tp: HorizontalNodeListType::Box(_, _, ref mut t),
+                    tp: HorizontalNodeListType::Box(_, _, t),
                     ..
                 } => *t = target,
                 NodeList::Vertical {
-                    tp: VerticalNodeListType::Box(_, _, ref mut t),
+                    tp: VerticalNodeListType::Box(_, _, t),
                     ..
                 } => *t = target,
                 _ => unreachable!(),
@@ -3338,7 +3339,7 @@ pub fn displaylimits<ET: EngineTypes>(
             if let Some(MathNode::Atom(MathAtom {
                 sub: None,
                 sup: None,
-                nucleus: MathNucleus::Simple { ref mut limits, .. },
+                nucleus: MathNucleus::Simple { limits, .. },
                 ..
             })) = children.list_mut().last_mut()
             {
@@ -3362,7 +3363,7 @@ pub fn limits<ET: EngineTypes>(
                 nucleus:
                     MathNucleus::Simple {
                         cls: MathClass::Op,
-                        ref mut limits,
+                        limits,
                         ..
                     },
                 ..
@@ -3388,7 +3389,7 @@ pub fn nolimits<ET: EngineTypes>(
                 nucleus:
                     MathNucleus::Simple {
                         cls: MathClass::Op,
-                        ref mut limits,
+                        limits,
                         ..
                     },
                 ..
@@ -3651,7 +3652,7 @@ pub fn over<ET: EngineTypes>(
         Some(NodeList::Math { .. }) => {
             return Err(TeXError::General(
                 "Incompatible list for \\over".to_string(),
-            ))
+            ));
         }
         _ => unreachable!(),
     }
@@ -3697,7 +3698,7 @@ pub fn overwithdelims<ET: EngineTypes>(
         Some(NodeList::Math { .. }) => {
             return Err(TeXError::General(
                 "Incompatible list for \\overwithdelims".to_string(),
-            ))
+            ));
         }
         _ => unreachable!(),
     }
@@ -3738,7 +3739,7 @@ pub fn above<ET: EngineTypes>(
         Some(NodeList::Math { .. }) => {
             return Err(TeXError::General(
                 "Incompatible list for \\above".to_string(),
-            ))
+            ));
         }
         _ => unreachable!(),
     }
@@ -3785,7 +3786,7 @@ pub fn abovewithdelims<ET: EngineTypes>(
         Some(NodeList::Math { .. }) => {
             return Err(TeXError::General(
                 "Incompatible list for \\abovewithdelims".to_string(),
-            ))
+            ));
         }
         _ => unreachable!(),
     }
@@ -3825,7 +3826,7 @@ pub fn atop<ET: EngineTypes>(
         Some(NodeList::Math { .. }) => {
             return Err(TeXError::General(
                 "Incompatible list for \\atop".to_string(),
-            ))
+            ));
         }
         _ => unreachable!(),
     }
@@ -3871,7 +3872,7 @@ pub fn atopwithdelims<ET: EngineTypes>(
         Some(NodeList::Math { .. }) => {
             return Err(TeXError::General(
                 "Incompatible list for \\atopwithdelims".to_string(),
-            ))
+            ));
         }
         _ => unreachable!(),
     }
@@ -4211,11 +4212,11 @@ pub fn end_template<ET: EngineTypes>(
             if data.span {
                 match engine.stomach.data_mut().open_lists.last_mut() {
                     Some(NodeList::Horizontal {
-                        tp: HorizontalNodeListType::HAlignCell(_, ref mut span),
+                        tp: HorizontalNodeListType::HAlignCell(_, span),
                         ..
                     })
                     | Some(NodeList::Vertical {
-                        tp: VerticalNodeListType::VAlignCell(_, ref mut span),
+                        tp: VerticalNodeListType::VAlignCell(_, span),
                         ..
                     }) => {
                         *span += 1;
