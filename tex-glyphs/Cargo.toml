@@ -1,6 +1,6 @@
 [package]
 name = "tex-glyphs"
-version = "0.1.2"
+version = "0.1.3"
 edition = "2021"
 authors = ["Dennis Müller <d.mueller@kwarc.info>"]
 description = "A crate for dealing with glyphs in TeX/pdfTeX fonts as unicode characters."

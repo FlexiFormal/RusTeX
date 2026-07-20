@@ -1885,23 +1885,25 @@ impl ShipoutNodeH {
         };
         if !glyph.is_defined() {
             data.missing_glyph(glyph.name(), char);
-            ShipoutNodeH::MissingGlyph {
+            Self::MissingGlyph {
                 font_name: font.filename().into(),
                 char,
                 name: glyph.name().to_string().into(),
             }
         } else if !accentglyph.is_defined() {
             data.missing_glyph(accentglyph.name(), accent);
-            ShipoutNodeH::MissingGlyph {
+            Self::MissingGlyph {
                 font_name: font.filename().into(),
                 char: accent,
                 name: accentglyph.name().to_string().into(),
             }
         } else {
-            //println!("Here: {glyph:?}+{accentglyph:?}");
-            // TODO merge better
-            let cos = glyph.to_string() + &accentglyph.to_string();
-            ShipoutNodeH::Char(cos.into())
+            let cos = accentglyph.as_combinator().map_or_else(
+                || format!("{glyph}{accentglyph}"),
+                |comb| comb.apply_glyph(&glyph),
+            );
+
+            Self::Char(cos.into())
         }
     }
 }

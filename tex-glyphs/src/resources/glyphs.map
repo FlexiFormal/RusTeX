@@ -1642,7 +1642,7 @@ asciibreve ˘
 asciicaron ˇ
 asciicircum ^
 asciicircummonospace ＾
-asciidieresis ¨
+asciidieresis ◌̈
 asciigrave `
 asciigravedbl  ̏
 asciimacron ¯
@@ -1911,7 +1911,7 @@ capitalbreve ˘
 capitalcaron ˇ
 capitalcircumflex ˆ
 capitalcompwordmark ?
-capitaldieresis ¨
+capitaldieresis ◌̈
 capitaldotaccent ˙
 capitalgrave `
 capitalhungarhumlaut ˝
@@ -2325,10 +2325,10 @@ diamondsolid ◆
 diamondsuitwhite ♢
 died †
 diereesisnosp ¨
-dieresis ¨
+dieresis ◌̈
 dieresisacute 
 dieresisbelowcmb ̤
-dieresiscmb ̈
+dieresiscmb ◌̈
 dieresisgrave 
 dieresistonos ΅
 difference ≏
