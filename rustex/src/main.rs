@@ -209,7 +209,7 @@ fn thesis() {
             verbose: false,
             log: true,
             sourcerefs: true,
-            image_options: rustex_lib::ImageOptions::Embed,
+            image_options: rustex_lib::ImageOptions::AsIs,
             insert_font_info: false,
         },
     );
