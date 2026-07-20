@@ -1,0 +1,260 @@
+The previously discussed subtyping rules were almost exclusively concerned with variance behavior of type constructors, i.e. rules of the form $\subtp{C(a)}{C(a')}$ if (depending on the variance) $\subtp a{a'}$ or $\subtp{a'}a$. Naturally, in the absence of any additional subtyping rules, these variance rules ultimately reduce to equality rules, since the only way to prove $\subtp a{a'}$ (ignoring recursively calling variance rules) is to check $\judgeq a{a'}A$. However, some systems allow for primitive subtyping principles of various forms, e.g. by declaring $\subtp AB$ axiomatically for two primitive types $A,B$ or by introducing predicate subtypes. Systems with subtyping mechanism include e.g. PVS~\cite{pvs}, IMPS~\cite{imps} and -- in a certain sense -- Coq~\cite{coq} and Matita~\cite{matita}, as we will discuss later. Variance rules are accordingly important for the composite types to behave as intended in the presence of primitive subtyping principles.
+
+Notably, subtyping in general breaks several often desirable properties of a type system, such as terms having a unique type and (potentially) decidability. Consequently, many systems decide to not support any subtyping. While this allows for a convenient implementation and formal analysis of a system, it often leads to awkward formalizations of content which can be implemented very naturally with subtypes. For example, numerical types (natural numbers, integers, real numbers) are often desirable to behave as subtypes. Similarly, types for algebraic structures yield a very natural subtyping hierarchy (e.g. all groups are monoids).
+
+In this chapter, I will discuss various approaches to implementing subtyping principles in \mmt, how and why they are not fully implementable in the system, and speculate on how to improve \mmt to better support subtyping mechanisms.
+
+\section{Issues with Subtyping in \mmt}
+
+\paragraph{} \mmt supports subtyping in the form of a binary subtyping judgment $\subtp AB$ and rules returning these judgments as conclusion. Notably however, a binary subtyping judgment is insufficient to exploit all deducable subtyping judgments without additional treatment or huge increases in computational cost. A simple example is \emph{transitivity}: % While this is avoidable by e.g. keeping track of the full subtyping lattice of the current context, \mmt as of yet lacks a corresponding implementation.
+
+\begin{example}\label{ex:lf:lfx:sub:ex1}
+	Assume we have $\mathbb N,\mathbb Z,\mathbb R:\type$ and subtyping rules proving $\subtp{\mathbb N}{\mathbb Z}$ and $\subtp{\mathbb Z}{\mathbb R}$. Consider a statement $\lfpi{n:\mathbb N}{\lfpi{r:\mathbb R}{n+r}}$, where ``$+$'' has type $\lfarrow{\mathbb R}{\lfarrow{\mathbb R}{\mathbb R}}$. In order for this to be well-typed, the system has to prove $\judg{\Gamma,n:\mathbb N}{\hastype n{\mathbb R}}$, which in the absence of additional rules would default to checking $\subtp{\mathbb N}{\mathbb R}$. We know that this follows from $\mathbb Z$ being an intermediary type between $\mathbb N$ and $\mathbb R$, but in an implementation, this implies finding a seemingly arbitrary type $C$ satisfying two additional (binary) judgments, which is computationally expensive. Hence the solver	can not algorithmically conclude the judgment from the above two subtyping rules alone.
+\end{example}
+
+This example alone is sufficient to demonstrate that merely checking binary subtyping judgments is not sufficient for covering subtyping mechanisms found in other systems.
+
+One way this can be resolved is by keeping the full subtyping lattice for the current context in memory, and dynamically expanding it whenever the context is extended by additional types. Additionally, we can model subtyping premises as constraints (i.e. lower and upper bounds in the subtyping lattice), and introduce appropriate constraints when encountering unsolved type variables. These can then be solved in a manner similar to the method proposed in \cite{KoPf:uialcw93}. Notably, to be able to solve these constraints the full subtyping lattice still needs to be known. The feasibility, potential cost and benefits of this approach will need to be explored.
+
+\paragraph{} Additional problems arise whenever it becomes necessary to coerce a term to a refinement of its principal type:
+\begin{example}
+	Consider $n,m:\mathbb N$ odd numbers, $r_1:\mathbb R= n/2$ and $r_2:\mathbb R=m/2$, and $S:\mathbb N\to\mathbb N$.
+	
+	We know then, that $S(r_1+r_2)$ is a well-typed expression, since $r_1+r_2$ can be coerced to have type $\mathbb N$, however, $r_1+r_2$ will have the inferred type $\mathbb R$ from the types of $+$ and the arguments $r_1,r_2$ - from the point of view of the algorithm, the information that $r_1+r_2$ is in fact a natural number is lost.
+\end{example}
+
+This problem can in principle be solved by introducing an object-level \emph{typing}-predicate $a \$ B$ with a rule of the form
+\[ \irule{\gjudg{\hastype\_{a \$ B}}}{\gjudg{\hastype aB}}. \]
+By allowing arbitrary terms for $a$ and $B$ and quantification on the outside, this corresponds to \emph{term declarations}~\cite{Schmidt-Schauss89}. Again, how to implement this efficiently and whether doing so is an effective solution remains to be determined.
+
+\paragraph{} Things get more difficult in the presence of predicate subtyping: $\predsubtp xA{P(x)}$ -- the subtype of $A$ containing exactly the elements $x:A$ for which the predicate $P(x)$ holds. Correspondingly, checking $a:\predsubtp xA{P(x)}$ entails \emph{proving} the proposition $P(a)$, for which a strong prover is (if not required) strongly desirable, and the typing system is immediately undecidable. Additionally, the set of all types for a given term $t$ is now a (for all practical purposes) infinite lattice induced by all propositions that hold for $t$ and the implications between them.
+
+\paragraph{} However, for knowledge management purposes where fully checking the accuracy of content is not strictly necessary, even weak support for computationally difficult features is sufficient for most purposes, especially plain \emph{representation}. Consequently, in this section we will discuss several subtyping mechanisms that, while not strongly supported by \mmt, are still desirable as purely syntactical features with weak inference support to cover as many situations as possible.
+
+\section{Declared Subtypes and Rule Generators}\label{sec:lf:lfx:declsubtp}
+At its most primitive, a user might want to axiomatically \hypertarget{stp}{\emph{declare} two types $A,B$ to be subtypes of each other}. Naively, one might want to implement this by introducing a new constructor $\stp AB$ such that $\stp AB$ is inhabitable whenever $A$ and $B$ are, and adding a simple subtyping rule:
+\[ \irule{\gjudg{\_:\stp AB}}{\gjudg{\subtp AB}} \]
+
+The disadvantage of this naive approach is the existence of a subtyping rule that a) needs to be applicable for arbitrary types $A,B$ and hence be potentially called every time a subtyping judgments is checked, and b) defers to the prover to find an element $p:\stp AB$, which is computationally expensive and fails in the majority of cases anyway (e.g. when $A,B$ are actually equal). Correspondingly, even though adequate, the mere presence of this rule will noticably slow down type checking in general.
+
+\paragraph{} To avoid this problem, we can instead implement a \emph{change listener}, that generates a new subtyping rule for every constant of type $\stp AB$ which is only applicable on the specific judgment $\subtp AB$ and always returns *true* if applicable. Additionally, this introduces the constraint on the user that they can only declare two types as subtypes by introducing a constant of the respective \stpsym-type, which prohibits subtype judgments as arguments in dependent types. This allows the typing system (barring other factors) to stay decidable. The resulting inference rules are simple and listed in \autoref{fig:lf:lfx:declsubtprules}.
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+\begin{framed}
+\begin{flushleft}
+\textbf{Formation:}
+\[
+	\trule{\gjudg{\judginh A} \quad \gjudg{\judginh B} }{\gjudg{\judginh{\stp AB}}}
+\]
+
+\textbf{Subtyping:}
+
+{\small For each constant $c:\stp AB$:}
+\[
+\trule{}{\gjudg{\subtp AB}}
+\]
+\end{flushleft}\end{framed}%\vspace*{-.5em}
+\caption{Rules for Declared Subtypes}\label{fig:lf:lfx:declsubtprules}%\vspace*{-1em}
+\end{figure}
+
+A change listener extends the class *ChangeListener* and needs to implement the following methods:
+\begin{itemize}
+	\item *onAdd(e: StructuralElement)* is called whenever a new *StructuralElement* (e.g. *Constant*s, *Theory*s) are added to \mmt's library, as after parsing.
+	\item *onDelete(e: StructuralElement)* is called whenever a *StructuralElement* is removed from \mmt's memory, as during reparsing.
+	\item *onCheck(e: StructuralElement)* is called when the *StructuralElement* has been checked to be well-typed.
+\end{itemize}
+
+\begin{example}
+	The change listener generating subtyping rules is given in \autoref{lst:lf:lfx:subtyping:clistener}.
+	\begin{labeling}{Lines 31--33}
+	\item[Line 1] declares a new class *SubtypeJudgRule* for our generated *SubtypingRule*s for the judgment $\subtp{\cn{tm1}}{\cn{tm2}}$. Its *head* is the path to the symbol $\stpsym$.
+	\item[Line 3] makes such a rule applicable for the above judgement only, in which case
+	\item[Line 4/5] simply returns *true* for that judgement.
+	\end{labeling}
+	The actual *ChangeListener* starts in Line 8.
+	\begin{labeling}{Lines 31--33}
+	\item[Line 12] Given a constant with path $m?c$ that generates a *SubtypeJudgRule*, the corresponding *RuleConstant* which declares the generated rule valid has path $m?\{c/\cn{subtypeTag}\}$.
+	\item[Line 16] attempts to map a constant $c$ to its corresponding generated rule.
+	\item[Lines 31--33] makes sure to remove the *RuleConstant* whenever the generating constant is removed.
+	\item[Lines 35--47] contain the core method of the change listener. It acts whenever a new constant is added (Line 36) whose type
+		is of the form $\stp AB$ (Line 37), in which case a new *SubtypeJudgRule* is generated (Line 38), as well as a corresponding
+		*RuleConstant* (Line 39), and the latter is added to the library (Line 42).
+	\end{labeling}
+	
+		\begin{nscalacode}[label=lst:lf:lfx:subtyping:clistener,caption={A Change Listener Generating Subtyping Rules  \protect\footnotemark},emph={SubtypeJudgRule,subtypeJudg,RuleConstant}]
+class SubtypeJudgRule(val tm1 : Term, val tm2 : Term, val by : GlobalName) extends SubtypingRule {
+  val head = subtypeJudg.path
+  def applicable(tp1: Term, tp2: Term): Boolean = tp1.hasheq(tm1) && tp2.hasheq(tm2)
+  def apply(solver: Solver)(tp1: Term, tp2: Term)(implicit stack: Stack, history: History): Option[Boolean]
+   = Some(true)
+}
+
+class SubtypeGenerator extends ChangeListener {
+  override val logPrefix = "subtype-rule-gen"
+  protected val subtypeTag = "subtype_rule"
+
+  private def rulePath(r: SubtypeJudgRule) = r.by / subtypeTag
+
+  private def present(t: Term) = controller.presenter.asString(t)
+
+  private def getGeneratedRule(p: Path): Option[SubtypeJudgRule] = {
+    p match {
+      case p: GlobalName =>
+        controller.globalLookup.getO(p / subtypeTag) match {
+          case Some(r: RuleConstant) => r.df.map(df => df.asInstanceOf[SubtypeJudgRule])
+          case _ => None
+        }
+      case _ => None
+    }
+  }
+
+  override def onAdd(e: StructuralElement) {
+    onCheck(e)
+  }
+
+  override def onDelete(e: StructuralElement) {
+    getGeneratedRule(e.path).foreach { r => controller.delete(rulePath(r)) }
+  }
+
+  override def onCheck(e: StructuralElement): Unit = e match {
+    case c: Constant if c.tpC.analyzed.isDefined => c.tp match {
+      case Some(subtypeJudg(tm1,tm2)) =>
+        val rule = new SubtypeJudgRule(tm1,tm2,c.path)
+        val ruleConst = RuleConstant(c.home,c.name / subtypeTag,subtypeJudg(tm1,tm2),Some(rule))
+        ruleConst.setOrigin(GeneratedBy(this))
+        log(c.name + " ~~> " + present(tm1) + " <: " + present(tm2))
+        controller add ruleConst
+      case _ =>
+    }
+    case _ =>
+  }
+}
+	\end{nscalacode}
+\end{example}
+\footnotetext{\url{https://github.com/UniFormal/MMT/blob/master/src/mmt-odk/src/info/kwarc/mmt/odk/Rules.scala}}
+
+\begin{remark}
+	A *ChangeListener* is an *Extension* that needs to be explicitly registered with the \mmt system. As such it can not be activated by a \lstinline[language=mmt,style=mmt]|rule <path>|-statement. Instead, the command \lstinline|extension <fully-qualified-classpath>| needs to be called before handling any content which depends on the *ChangeListener*. This is because change listeners have access to \mmt's central components (backend, library, server, other extensions) and hence can change the global state of the system, which mere content should not be allowed to do. 
+	
+	For that reason, the above change listener is currently implemented as part of the ODK-plugin in the MMT code repository itself (\cite{mmt:repo:on}) rather than the LFX repository (\cite{mmtlfx:git}), where it arguably belongs.
+\end{remark}
+
+\section{Intersection Types}\label{sec:lf:lfx:intersect}
+In \cite{Pfenning93}, the authors present an extension of \LF by refinement types (\emph{sorts}) and \hypertarget{inttp}{intersection types}, which introduce a weak subtyping principle while retaining decidability. The following canonical example illustrates the usefulness of these intersection types:
+\begin{example}\label{ex:lf:lfx:intersect1}
+	Assume a type $\mathbb N$ of natural numbers with two declared subtypes (\emph{refinement types}) $\cn{Even}$ and $\cn{Odd}$, representing even and odd natural numbers, respectively. Naturally, the successor function $S$ has type $\lfarrow{\mathbb N}{\mathbb N}$, however, we also know that it will map odd numbers to even numbers and vice versa -- hence $S$ can also be implemented with the types $\lfarrow{\cn{Odd}}{\cn{Even}}$ and $\lfarrow{\cn{Even}}{\cn{Odd}}$, both of which are \emph{refinements} of the type $\lfarrow{\mathbb N}{\mathbb N}$. 
+	
+	Intersection types allow to encode this additional typing information by giving $S$ all three types at once, or more precisely: The intersection type of all three:
+	\[ S: \inttp{(\lfarrow{\cn{Odd}}{\cn{Even}})}{\inttp{(\lfarrow{\cn{Even}}{\cn{Odd}})}{(\lfarrow{\mathbb N}{\mathbb N})}} \]
+\end{example}
+\begin{remark}[\lfpisym-Elimination]
+As the above example suggests, intersection types are primarily useful for refining function types by encoding additional information on the return types based on the (refinement) types of the inputs. Note that this breaks the up until now valid assumptions that \emph{every function has a principal \lfpisym-type}. In fact, the basic rules for \LF (to be precise: the elimination rule for function application) assume that the inferred type of every function is equal to a \lfpisym-type.
+
+\cite{Pfenning93} deals primarily with refinement types, which can be thought of as sorts of a specific (maximal) type. Two refinement types can only be compared if they refine the same maximal type. This allows for retaining decidability and keep the original elimination rule for function applications (under the additional rule that $\subtp{\inttp{\left(\lfpi{x:A}B\right)}{\left(\lfpi{x:A}C\right)}}{\lfpi{x:A}{\inttp BC}}$), but already excludes \autoref{ex:lf:lfx:intersect1}.
+
+ Thankfully, \mmt allows for rules to \emph{shadow} other rules -- we can hence implement a new elimination rule for \LF with intersection types which subsumes the primtive \LF rule. In the presence of this new rule, the old rule is ``deactivated'', thus preserving modularity.
+\end{remark}
+\begin{remark}[Inhabitants of Intersection Types]\label{rem:lf:lfx:intersect2}
+Another problem with intersection types in a logical framework is to inhabit them with \lflambdasym-terms. Consider the following example:
+\begin{mmtcode}
+	succ : (Even ⟶ Odd) ⊓   (Odd ⟶ Even) ⊓   (Nat ⟶ Nat) ❘ # S 1 ❙
+	succ2 : (Even ⟶ Even) ⊓  (Odd ⟶ Odd) ⊓   (Nat ⟶ Nat) ❘ = [x] S S x ❙
+\end{mmtcode}
+To check the definiens of \cn{succ2} against its type, the \lflambdasym-bound variable \cn x needs to be either explicitly typed, or its type must be inferred from the remainder of the definiens. In both cases we run into the problem that checking the \lflambdasym-expression against the three distinct intersected function types requires typing \cn x differently each time.
+
+\cite{stolze:hal-01534035} attempts to solve this by introducing a dedicated introduction form $\langle a,b\rangle$ for intersection types $\inttp AB$, where it is required that $\hastype aA$, $\hastype bB$ and $a$ and $b$ have the same \emph{shape} (roughly meaning: the same syntax tree disregarding types of bounds variables). The idea being that the definiens for \cn{succ2} would have to be \lstinline[language=mmt]|⟨[x:Even] S S x, [x:Odd] S S x, [x:Nat] S S x⟩|. While this solves the problem in theory, it is in practice inconvenient for users.
+
+
+\end{remark}
+
+The basic rules for intersection types are given in \autoref{fig:lf:lfx:intersectrules}.
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+\begin{framed}
+{\small For any $U$ with $\gjudg{\judguniv U}$:}
+\begin{flushleft}
+\textbf{Formation:}
+\[
+	\trule{\gjudg{\infertype AU} \quad \gjudg{\infertype B{U'}} }{\gjudg{\infertype{\inttp AB}{\umax {U,U'}}}}
+\]
+
+\textbf{Type Checking:}
+\[
+	\trule{\gjudg{\hastype aA} \quad \gjudg{\hastype aB}}{\gjudg{\hastype a{\inttp AB}}}
+\]
+
+\textbf{Subtyping:}
+\[
+	\trule{\gjudg{\subtp AC}}{\gjudg{\subtp{\inttp AB}C}} \qquad \trule{\gjudg{\subtp BC}}{\gjudg{\subtp{\inttp AB}C}} \qquad
+	\trule{\gjudg{\subtp CA} \quad \gjudg{\subtp CB}}{\gjudg{\subtp C{\inttp AB}}}
+\]
+
+%\textbf{$\lfpisym$-Elimination:}
+%\[
+%	\trule{\gjudg{\judgmatchinf f{\inttp CD}} \quad \gjudg{\judgeq C{\lfpi{x:A}B}U} \quad \gjudg{\hastype aA} }{\gjudg{\infertype{f\ a}B\sub xa}} \qquad
+%	\trule{\gjudg{\judgmatchinf f{\inttp CD}} \quad \gjudg{\judgeq D{\lfpi{x:A}B}U} \quad \gjudg{\hastype aA} }{\gjudg{\infertype{f\ a}B\sub xa}}
+% \]
+\end{flushleft}\end{framed}%\vspace*{-.5em}
+\caption{Rules for Intersection Types}\label{fig:lf:lfx:intersectrules}%\vspace*{-1em}
+\end{figure}
+
+\begin{remark}[Lambda-Expressions in Intersection Types]
+	We can attempt to simplify the introduction form in \autoref{rem:lf:lfx:intersect2} for users by supplying additional rules. This is necessarily computationally expensive, since every conjunct in an intersection needs to be checked individually for each application of such a function, and hence not an ideal solution. Consider the following expression:
+\lstDeleteShortInline*
+	\begin{align*}
+		add2&:\;\inttp{\lfarrow{\cn{E}}{\lfarrow{\cn{E}}{\cn{E}}}}{\inttp{\lfarrow{\cn{O}}{\lfarrow{\cn{O}}{\cn{E}}}}{\inttp{\lfarrow{\cn{E}}{\lfarrow{\cn{O}}{\cn{O}}}}{\inttp{\lfarrow{\cn{O}}{\lfarrow{\cn{E}}{\cn{O}}}}{\lfarrow{\mathbb N}{\lfarrow{\mathbb N}{\mathbb N}}}}}}\\
+			&=\; \langle \lflambda{n}{\lflambda{m}n+m} \rangle
+	\end{align*}
+\lstMakeShortInline[language=scala]*
+where \cn{E} and \cn{O} abbreviate \cn{Even} and \cn{Odd}, respectively. Then we can supply the $\langle\cdot\rangle$-Operator with rules that either duplicate the lambda-expression with different types for the bound variables (as in \autoref{rem:lf:lfx:intersect2}), or alternatively type the variables $n,m$ with appropriate $\coprodsym$-types and automatically insert $\injl\cdot\cdot$ or $\injr\cdot\cdot$ in any application of a $\langle\lambda\rangle$-expression.
+Either case would retain the formal correctness of the approach in \cite{stolze:hal-01534035} without forcing users to provide multiple lambda expressions of the same shape, and require merely a new inference and computation rule for \LF-function applications.
+\end{remark}
+
+A rudimentary form of intersection types has been implemented in \mmt\footnote{\url{https://gl.mathhub.info/MMT/LFX/blob/master/source/IntersectionTypes.mmt}}. Notably, intersection types as described above still have the drawback that a user has to provide all the intersected types when declaring a new constant, without being able to refine afterwards. For example, the successor function as in \autoref{rem:lf:lfx:intersect2} would require the types \cn{Odd} and \cn{Even} to be declared beforehand, which is counter to the usual order of declarations when implementing natural numbers.
+
+Term declarations as mentioned above could potentially be used to add additional refinement types to a constant after its declaration.
+
+\section{Predicate Subtypes}
+\hypertarget{predsubtp}{The type $\predsubtp xA{P(x)}$ corresponds to the subtype of $A$ containing exactly those elements $x:A$ for which the predicate $P(x)$ holds. In the presence of Judgments-as-Types, this corresponds to the type of elements $x:A$ for which the dependent type $P(x)$ is inhabited -- i.e. checking a term $t$ against the type $\predsubtp xA{P(x)}$ entails checking $t:A$ and the existence of a witness $p:P(t)$.}
+
+Given an element $a:\predsubtp xA{P(x)}$, we should be able to obtain a witness $p:P(a)$, hence we add an additional symbol
+$\predof a:P(a)$.
+
+The remaining rules can be easily derived from this intended semantics:
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+\begin{framed}
+{\small For any $U$ with $\gjudg{\judguniv U}$:}
+\begin{flushleft}
+\textbf{Formation:}
+\[
+	\trule{ \gjudg{\infertype AU} \quad \judg{\Gamma,x:A}{\infertype P{U'}} }{\gjudg{\infertype{\predsubtp xAP}{\umax{U,U'}}}}
+\]
+
+\textbf{Type Checking:}
+\[
+	\trule{ \gjudg{\hastype aA} \quad \gjudg{\hastype\_{P\sub xa}} }{\gjudg{\hastype a{\predsubtp xAP}}}
+\]
+
+\textbf{Elimination:}
+\[
+ 	\trule{ \gjudg{\infertype a{\predsubtp xAP}} }{\gjudg{\infertype{\predof a}{P\sub xa}}}
+\]
+
+\textbf{Subtyping:}
+\[
+	\trule{ \judg{\Gamma,x:A,p:P}{\hastype xB} }{ \gjudg{\subtp{\predsubtp xAP}B}} \qquad
+	\trule{ \gjudg{\subtp BA} \quad \judg{\Gamma,y:B}{\hastype\_{P\sub xy}} }{\gjudg{\subtp B{\predsubtp xAP}}}
+\]
+\end{flushleft}\end{framed}%\vspace*{-.5em}
+\caption{Rules for Predicate Subtypes}\label{fig:lf:lfx:predsubrules}%\vspace*{-1em}
+\end{figure}
+
+\begin{remark}
+	Note that the second subtyping rule is immediately derivable from the type checking rule. Furthermore, \emph{either} subtyping rule implies $\subtp{\predsubtp xA{P(x)}}{\predsubtp yA{Q(y)}}$ iff for any $z:A$ the proposition $P(z)$ implies $Q(z)$ -- i.e. if there is a function $f:\lfpi{z:A}{\lfarrow{P(z)}{Q(z)}}$.
+\end{remark}
+\begin{remark}
+	As mentioned in \autoref{rem:lf:lfx:sigma:predsub}, predicate subtyping is on paper subsumed by $\sigmasym$-types. The difference in an implementation is that $\sigmasym$-types necessitate inserting coercions between the types $A$ and $\sigmatp {x:A}P$; by pairing an element $a:A$ with a witness $p:P(a)$ in the one direction, and by the projection $\projl\cdot$ in the other. If these coercions can be inserted automatically and hence left implicit, we can define $\predof a:=\projr a$ and all rules in \autoref{fig:lf:lfx:predsubrules} are derivable for $\sigmasym$-types. This approach is taken e.g. in Matita and enabled in Coq via the \cn{Program} package\footnote{\url{https://coq.inria.fr/refman/addendum/program.html}}, which is intended to mimic the subtyping behavior of PVS.
+\end{remark}
+
+The rudimentary implementation for predicate subtypes\footnote{\url{https://gl.mathhub.info/MMT/LFX/blob/master/source/Subtyping.mmt}} in \mmt based on these rules is used e.g. for our formalization of the PVS logic, described in \autoref{ch:import:pvs}.

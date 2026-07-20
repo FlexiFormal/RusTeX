@@ -1,0 +1,82 @@
+\paragraph{Motivation}
+Theory morphisms have proved an essential tool for managing collections of theories in logics and related formal systems.
+They can be used to structure theories and build large theories modularly from small components or to relate different theories to each other \cite{asl,devgraphs,littletheories}.
+Areas in which tools based on theories and theory morphisms have been developed include specification \cite{obj,hets}, rewriting \cite{maude}, theorem proving \cite{imps,isabelle_locales}, and knowledge representation \cite{RK:mmt:10}.
+Closely related concepts are used in both object-oriented (\emph{classes}) and functional (\emph{type classes}) programming languages.
+
+%The latter of these tools is our \mmt system.
+%We use \mmt as both a theoretical framework and a concrete implementation of our results.
+%But our ideas are independent of \mmt and can be transferred very easily to any other language using theory morphisms.
+
+These systems usually use a logic $L$ for the low-level formalization of domain knowledge, and a diagram $D$ in the category of $L$-theories and $L$-morphisms for the high-level structure of large bodies of knowledge.
+
+\begin{wrapfigure}{r}{5.5cm}
+\vspace{-3em}
+\begin{tikzpicture}
+\node (M) at (0,0) {$\cn{Monoid}$};
+\node (G) at (-2,-2) {$\cn{Group}$};
+\node (D) at (2,-2) {$\cn{DivGroup}$};
+\draw[mono](M) -- (G);
+\draw[arrow](G) to[out=30,in=150] node[above] {$\cn{G2DG}$} (D);
+\draw[arrow](D) to[out=-150,in=-30] node[above] {$\cn{DG2G}$} (G);
+\end{tikzpicture}
+\vspace{-3.5em}
+\end{wrapfigure}
+
+For example, a document might reference an existing theory $\cn{Monoid}$, define a new theory $\cn{Group}$ that extends $\cn{Monoid}$, define a theory $\cn{DivGroup}$ (providing an alternative formulation of groups based on the division operation), and then define two theory morphisms $\cn{G2DG}:\cn{Group}\darr \cn{DivGroup}:\cn{DG2G}$ that witness an isomorphism between these theories.
+This would result in the diagram on the right.%
+\footnote{Note that we use the syntactic direction for the arrows, e.g., an arrow $m:S\to T$ states that any $S$-expression $E$ (e.g., a sort, term, formula, or proof) can be translated to a $T$-expression $m(E)$. Models are translated in the opposite direction.}
+%Crucially, $m(-)$ preserves typing and provability.
+
+The key idea behind implicit morphisms is very simple:
+We maintain an additional diagram $I$, which is a commutative subdiagram of $D$ and whose morphisms we call \emph{implicit}.
+The condition of commutativity guarantees that $I$ has at most one morphism $i$ from theory $S$ to theory $T$, in which case we write $\ipc{i}{S}{T}$.
+Commutativity makes the following language extension well-defined: if $\ipc{i}{S}{T}$, then any identifier $c$ that is visible to $S$ may also be used in $T$-expressions, with the semantics being that $c$ abbreviates $i(c)$.
+For example, in the diagram above, we may choose to label \cn{DG2G} implicit.
+Immediately, every abbreviation or theorem that we have formulated in the theory \cn{DivGroup} becomes available for use in \cn{Group} without any syntactic overhead.
+We can even label \cn{G2DG} implicit as well if we prove the isomorphism property to ensure that $I$ remains commutative, thus capturing the mathematical intuition that \cn{Group} and \cn{DivGroup} are just different formalizations of the same concept.
+While these morphisms must be labeled manually, any inclusion morphism like the one from \cn{Monoid} to \cn{Group} can be made implicit automatically.
+
+%\paragraph{Contribution}
+%At the highest level, our contribution is the observation that implicit morphisms form a sweet spot of a very simple language feature that has substantial practical uses.
+%We recommend using implicit morphisms in all theory morphism--based formalisms.
+%More concretely, we present a formal system for developing structured theories with implicit morphisms based on the \mmt language \cite{RK:mmt:10}.
+%We choose \mmt because it provides a simple framework for working with theories and morphisms while remaining logic-independent: \mmt allows embedding a large variety of declarative languages $L$ (logics, type-theories, etc.) so that our results immediately yield an implementation of implicit morphisms for any such $L$.
+%We also expect but do not describe here that other morphism-based systems can be easily extended to allow for implicit morphisms.
+%
+%We describe several example applications of implicit morphisms in detail: the identification of isomorphic theories, definitional extensions of theories, building large hierarchies of theories with many rarely used intermediate theories, seamlessly moving theories across logic morphisms, and transparently refactoring theory hierarchies.
+
+\paragraph{Previous Work}
+Implicit morphism were first conceived by Rabe in 2010 and implemented as part of the Twelf system \cite{twelf} (which implements the dependent type theory LF).
+The theory behind this implementation was never written up and not published.
+But the implementation already scaled well, and implicit morphisms were used in the LATIN logic atlas \cite{CHKMR:latinabs:11} built by Rabe and others in 2009--2012.
+The LATIN atlas already has around a 1000 theories and atomic morphisms, and about 50 of the latter are marked as implicit.
+It also has a few hundred inclusions, each of which induces another implicit morphism.
+
+Since then, MMT has been developed, and
+\begin{compactitem}
+ \item implicit morphisms were generalized from LF to the logic-independent level of MMT,
+ \item their theory was worked out,
+ \item they were reimplemented from scratch as a part of MMT.
+\end{compactitem}
+MMT is backwards-compatible with Twelf, and the LATIN atlas including its implicit morphisms can be used from within MMT.
+The present paper introduces these results in their final, most elegant form.
+
+%\paragraph{Overview}
+%In Sect.~\ref{sec:mmt}, we present the syntax and semantics of \mmt.
+%Even though the \mmt language is not new, our presentation is an entirely novel contribution in itself: it is much simpler and more elegant than the original one in \cite{RK:mmt:10}.
+%%Based on this extensible definition, we can introduce several additional structuring mechanisms.
+%%Many of these have already been implemented in the \mmt tool but were not formally defined --- a formal definition of their semantics as a part of the \mmt language had previously proved too complicated to spell out elegantly.
+%%With our reformulation, this is now not only possible but very easy.
+%%As an example, we define include declarations, the most important special case of implicit morphisms.
+%%\medskip
+%%
+%%Secondly, we describe implicit morphisms as a novel feature of \mmt.
+%Crucially, this increase in simplicity allows spelling out the syntax and semantics of implicit morphisms, which we do in Sect.~\ref{sec:impl}, within a few pages.
+%In Sect.~\ref{sec:appl}, we present applications.
+%Finally we discuss related and future work in Sect.~\ref{sec:conc}.
+
+%In fact, implicit morphisms work so well that we have refactored the \mmt tool in such a way that implicit morphisms are now more primitive than inclusion morphisms.
+%The semantics of inclusion morphisms is obtained by saying that inclusions are implicit morphisms that map all identifiers to themselves.
+%Even the fundamental property that a theory may reference its own identifiers is then just a consequence of the fact that all identity morphisms are implicit.
+%Therefore, surprisingly, adding the new feature of implicit morphisms to the \mmt kernel has made its design much simpler.

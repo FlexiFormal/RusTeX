@@ -1,0 +1,129 @@
+The implementation of record types and the $\modelsof\cdot$ can be found at~\cite{mmtlfx:git}\cn{/scala/.../Records}. They are used extensively in the \emph{Math-in-the-Middle} archive (see \autoref{sec:lf:mitm}).
+
+%We have implemented a variant of the record types and the $\modelsof\cdot$-operator described here in the \textsf{MMT}-system (as part of~\cite{mmtlfx:git}). They are used extensively in the \emph{Math-in-the-Middle} archive (MitM), which forms an integral part in the OpenDreamKit \cite{DehKohKon:iop16} and MaMoRed \cite{KohKopMue:mmrdftg17} projects. In particular the formalizations of algebra and topology are systematically built on top of the concepts presented in this paper.
+
+%The archive sources can be found at~\cite{mitm:smglom:on}, and its contents can be inspected and browsed online at \url{https://mmt.mathhub.info} under MitM/smglom.
+
+%\begin{figure}[ht]\footnotesize%[ht]\centering\vspace*{-1em}\footnotesize
+%\begin{framed}
+%  \begin{eqnarray*}
+%    \mathtt{theory\ Ring}
+%    & = & \left\{
+%          \begin{array}{ll}
+%            U &:\; \type \\
+%            + &:\; U \to U \to U \\
+%            \cdot &:\; U \to U \to U \\
+%            \mathtt{assoc\_plus} &:\; \vdash \forall x,y,z:U.\; (x + y) + z \doteq x + (y + z) \\
+%            \mathtt{commutative\_plus} &:\;\ldots \\
+%            \ldots \\
+%          \end{array}
+%    \right\} \\
+%    \mathtt{theory\ Field}
+%    & =&  \left\{
+%    \begin{array}{ll}
+%      \mathtt{include} &\mathtt{Ring} \\
+%      \mathtt{inverses\_times} &:\; \vdash \forall x :U.\; x \neq 0 \Rightarrow \exists y.\; x \cdot y \doteq 1\\
+%      \ldots\\
+%    \end{array}
+%    \right\}
+%   \end{eqnarray*}
+%   \begin{eqnarray*}
+%    \mathtt{theory\ Module}(R:\modelsof{\mathtt{Ring}})
+%    & = & \left\{
+%          \begin{array}{ll}
+%	\mathtt{include} &\mathtt{AbelianGroup} \\
+%	\mathtt{scalar\_mult} &: R.U \to U \to U\\
+%	\ldots\\ 
+%          \end{array}
+%    \right\} \\
+%    \mathtt{theory\ VSpace}(F:\modelsof{\mathtt{Field}})
+%    & = & \left\{
+%          \begin{array}{ll}
+%            \mathtt{include} &\mathtt{Module}(F) \\
+%            \ldots\\
+%          \end{array}
+%    \right\}
+%  \end{eqnarray*}
+%\end{framed}%\vspace*{-.5em}
+%\caption{Theories for $R$-Modules and Vector Spaces}\label{fig:modvec}%\vspace*{-1em}
+%\end{figure}
+
+For a particularly interesting example that occurs in MitM, consider the theories for modules and vector spaces (over some ring/field) given in \autoref{lst:lf:rec:mv1} to \autoref{lst:lf:rec:mv4}, which elegantly follow informal mathematical practice.
+Going beyond the syntax introduced so far, these use \emph{parametric} theories.
+Our implementation extends $\modelsofF$ to parametric theories as well, namely in such a way that e.g. $\modelsof{\mathtt{module\_theory}}:\lfpi{R:\mathtt{ring}}{\modelsof{\mathtt{module\_theory}(R)}}$ and correspondingly for fields.
+Thus, we obtain 
+\[\expr{\mathtt{vectorspace}\mmtdf\lambda F : \mathtt{field}.((\mathtt{module}\,F) + \ldots)}\]
+ and, e.g., $\subtp{\mathtt{vectorspace}(\R)}{\mathtt{module}(\R)}$, where \texttt{vectorspace}, \texttt{module}, \texttt{field} and \texttt{ring} are all $\modelsof\cdot$-types.
+ 
+Because of type-level parameters, this requires some kind of parametric polymorphism in the type system.
+For our approach, the shallow polymorphism module that is available in PLF (see \autoref{remark:lf:lfx:plf}) is sufficient.
+
+\begin{mmtcode}[caption={A Theory of Rings\protect\footnotemark},label={lst:lf:rec:mv1}]
+theory Ring : base:?Logic =
+
+  theory ring_theory : base:?Logic =
+    include sets:?SetStructures/setstruct_theory ❙
+    structure addition : ?AbelianGroup/abeliangroup_theory =
+      universe = `sets:?SetStructures/setstruct_theory?universe ❘ # Uadd ❙
+      op @ rplus ❘ # 1 + 2 prec 5❙
+      unit @ rzero ❘ # O ❙
+      inverse @ rminus ❘ # - 1 ❙
+    ❚ 
+    structure multiplication : ?Monoid/monoid_theory =
+      universe = `sets:?SetStructures/setstruct_theory?universe ❘ # Umult ❙
+      op  @ rtimes ❘ # 1 ⋅ 2 prec 6❙
+      unit @ rone ❘ # I ❙
+    ❚
+    unitset = ⟨ x: U | ⊦ x ≠ O ⟩ ❙
+    axiom_distributive : ⊦ prop_distributive rplus rtimes ❙
+    axiom_oneNeqZero : ⊦ I ≠ O ❙
+    axiom_leftUnital : ⊦ ∀[x : U] I ⋅ x ≐ x ❙
+    axiom_rightUnital : ⊦ ∀[x : U] x ⋅ I ≐ x ❙
+  ❚
+  ring = Mod ring_theory ❙
+❚
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/MitM/smglom/blob/master/source/algebra/ringsfields.mmt}}
+\begin{mmtcode}[caption={A Theory of Fields \protect\footnotemark},label={lst:lf:rec:mv2}]
+theory Field : base:?Logic =
+  include ?Ring ❙
+
+  theory field_theory : base:?Logic =
+    include ?Ring/ring_theory ❙		
+    inverse : unitset ⟶ unitset ❘ # 1 ⁻¹  prec 24 ❙
+    axiom_inverse : ⊦ ∀ [x : unitset] x ⋅ (x ⁻¹) ≐ I ❙
+    axiom_commutative : ⊦ ∀[x : U]∀[y] (x ⋅ y) ≐ (y ⋅ x) ❙
+  ❚
+  field : kind ❘ = Mod field_theory ❙
+❚
+\end{mmtcode}
+\footnotetext{Ibid.}
+\begin{mmtcode}[caption={A Theory of Modules \protect\footnotemark},label={lst:lf:rec:mv3}]
+theory Module : base:?Logic =
+  include ?Ring ❙
+
+  theory module_theory : base:?Logic > scalars : ring ❘ =
+    scaltp : type ❘ = scalars.universe ❙
+    include ?AbelianGroup/abeliangroup_theory ❙
+    scalarmult : scaltp ⟶ U ⟶ U ❘ # 1 ⋅ 2 ❙
+    axiom_dist1 : ⊦ prop_dist1 scalarmult op❙
+    axiom_dist2 : ⊦ prop_dist2 scalarmult (scalars.rplus) op ❙
+    axiom_associative_scalars : ⊦ prop_associative_scalars scalarmult (scalars.rtimes) ❙
+    axiom_unit_scalars : ⊦ prop_unit_scalars scalarmult (scalars.rone) ❙
+  ❚ 
+  module = [R : ring] Mod module_theory R ❙
+❚
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/MitM/smglom/blob/master/source/algebra/modulsvectors.mmt}}
+\begin{mmtcode}[caption={A Theory of Vector Spaces \protect\footnotemark},label={lst:lf:rec:mv4}]
+theory Vectorspace : base:?Logic =
+  include ?Field ❙
+  include ?Module ❙
+
+  theory vectorspace_theory : base:?Logic > scalars : field ❘ =
+    include ?Module/module_theory (scalars) ❙
+  ❚ 
+  vectorspace : field ⟶ kind ❘ = [F : field] Mod vectorspace_theory F ❙
+❚
+\end{mmtcode}
+\footnotetext{Ibid.}

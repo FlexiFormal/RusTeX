@@ -1,0 +1,111 @@
+%Brackets
+\newcommand{\norm}[1]{\left\Vert#1\right\Vert}
+\newcommand{\abs}[1]{\left\vert#1\right\vert}
+\newcommand{\set}[1]{\left\{#1\right\}}
+\newcommand{\rang}[1]{\langle#1\rangle}
+\newcommand{\widerang}[1]{$<$#1$>$}
+
+
+%Symbols and Styles
+\renewcommand{\epsilon}{\varepsilon}
+\newcommand{\eps}{\varepsilon}
+\newcommand{\yps}{\upsilon}
+\newcommand{\ups}{\upsilon}
+\newcommand{\Ypsilon}{\Upsilon}
+\renewcommand{\phi}{\varphi}
+\renewcommand{\theta}{\vartheta}
+\newcommand{\vu}{\nu}
+\newcommand{\To}{\longrightarrow}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\n}{\mathbb{N}^*}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\app}{\approx}
+\newcommand{\tim}{\times}
+\newcommand{\sq}{\subseteq}
+\newcommand{\Sq}{\supseteq}
+\newcommand{\impl}{\Rightarrow}
+\newcommand{\Arr}{\Rightarrow}
+\newcommand{\Darr}{\Leftrightarrow}
+\renewcommand{\iff}{\Darr}
+\newcommand{\arr}{\rightarrow}
+\newcommand{\larr}{\leftarrow}
+\newcommand{\darr}{\leftrightarrow}
+\newcommand{\harr}{\hookrightarrow}
+\newcommand{\marr}{\mapsto}
+\newcommand{\caret}{\hat{\;}}
+\newcommand{\nin}{\not\in}
+\newcommand{\sm}{\setminus}
+\newcommand{\es}{\varnothing}
+\newcommand{\pwr}{\mathcal{P}}
+\newcommand{\isom}{\cong}
+\newcommand{\rewrites}{\rightsquigarrow}
+\renewcommand{\|}{\;|\;}
+\newcommand{\mi}[1]{\mathit{#1}}
+
+
+%semantics of genfrac: #1, #2 delimiters; #3 line tickness; #4 scriptsize (0-3); #5, #6 items
+\newcommand{\myatop}[3][]{\genfrac{}{}{0pt}{#1}{#2}{#3}} %two items on top of each other, optional argument: 0-3 for normal-small script
+\newcommand{\myatopp}[3]{\myatop{\myatop[0]{#1}{#2}}{#3}} %three items on top of each other
+\newcommand{\ov}[1]{\overline{#1}}
+\newcommand{\und}[1]{\underline{#1}}
+\newcommand{\cas}[1]{\begin{cases}#1\end{cases}}
+\newcommand{\bcas}[1]{\left.\cas{#1}\right\}}
+\newcommand{\mathll}[2][l]{\providecommand{\nl}[1][.2cm]{\\[##1]}\begin{array}{#1}#2\end{array}}
+\newcommand{\Ceq}[1]{\;\stackrel{#1}{=}\;}
+\newcommand{\bracebelow}[2]{\underbrace{#1}_{#2}}
+\newcommand{\braceabove}[2]{\overbrace{#1}^{#2}}
+\newcommand{\op}[1]{\mathit{#1}}
+\newcommand{\rew}[2]{#1\rewrites #2}
+\newcommand{\equat}[2]{\begin{equation}\label{#1}#2\end{equation}}
+\newcommand{\equatpt}[3]{\begin{equation*}\label{#1}\tag{#2\;\theequation}#3\stepcounter{equation}\end{equation*}}
+\newenvironment{myeqnarray}[1][=] %\nl for new line right of the = symbol
+ {\newcommand{\nl}{\\\multicolumn{1}{c}{}&}\begin{equation*}\begin{array}{l@{\;#1\;}l@{\tb}l}}
+ {\end{array}\end{equation*}}
+
+%mappings
+\newcommand{\dom}[1]{\op{dom}(#1)}
+\newcommand{\cod}[1]{\op{cod}(#1)}
+\newcommand{\img}[1]{\op{im}(#1)}
+
+%Mathematical Text
+\newcommand{\mof}{\;\mathrm{of}\;}
+\newcommand{\mif}{\;\mathrm{if}\;}
+\newcommand{\mthen}{\;\mathrm{then}\;}
+\newcommand{\mfor}{\;\mathrm{for}\;}
+\newcommand{\mand}{\;\mathrm{and}\;}
+\newcommand{\msome}{\;\mathrm{some}\;}
+\newcommand{\mall}{\;\mathrm{all}\;}
+\newcommand{\mforall}{\;\mathrm{for}\;\mathrm{all}\;}
+\newcommand{\mforsome}{\;\mathrm{for}\;\mathrm{some}\;}
+\newcommand{\mnot}{\;\mathrm{not}\;}
+\newcommand{\mno}{\;\mathrm{no}\;}
+\newcommand{\mor}{\;\mathrm{or}\;}
+\newcommand{\minn}{\;\mathrm{in}\;}
+\newcommand{\mwith}{\;\mathrm{with}\;}
+\newcommand{\mwhere}{\;\mathrm{where}\;}
+\newcommand{\mexists}{\;\mathrm{exists}\;}
+\newcommand{\miff}{\;\mathrm{iff}\;}
+\newcommand{\mimplies}{\;\mathrm{implies}\;}
+\newcommand{\msuchthat}{\;\mathrm{such}\;\mathrm{that}\;}
+\newcommand{\motherwise}{\;\mathrm{otherwise}\;}
+\newcommand{\mtext}[1]{\;\mathrm{#1}\;}
+%Changed command! For old documents uncomment the next line
+%\renewcommand{\mif}{&\mathrm{if}\;}
+\newcommand{\mifc}{&\mathrm{if}\;}
+\newcommand{\mothw}{&\mathrm{otherwise}}
+
+%Inferences
+\newcommand{\+}{\;+\;}
+\newcommand{\pp}{\tb+\tb}
+\newcommand{\seq}[2]{#1\;\;\mathbf{\vdash}\;\;#2}
+\newcommand{\rul}[2]{\frac{\begin{array}{c}#2\end{array}}{\begin{array}{c}#1\end{array}}}
+\newcommand{\ruln}[3]{\frac{\begin{array}{c}#3\end{array}}{\begin{array}{c}#2\end{array}}\texttt{#1}}
+\newcommand{\Rul}[3]{\begin{equation*}\label{#1}\tag{R\;\therul}\rul{#2}{#3}\stepcounter{rul}\end{equation*}}
+
+%miscellaneous
+%\newfunction{name}{presentation} supposed to define a mathematical function with one argument. If the argument is empty, it is not enclosed in round brackets. -- doesn't work
+%\def\newfunction#1#2{\def\temp{}\def\expandafter\csname#1\endcsname##1{\def\temparg{##1}#2\ifx\temp\temparg\else(##1)\fi}}
+
+\myuse{categories}

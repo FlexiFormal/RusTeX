@@ -1,0 +1,241 @@
+\subsection{Identifying Theories via Implicit Isomorphisms}\label{sec:inverse}
+
+A common need in developing large libraries (both in formal and informal developments) is to identify two theories $S$ and $T$ via a canonical choice of isomorphisms.
+In these cases, it is often desirable to use $S$-syntax and $T$-syntax interchangeably.
+But one of the major short-comings of formal theories over traditional informal developments is that formal systems usually need to spell out these isomorphisms everywhere.
+In this section, we show that implicit morphisms elegantly allow exactly that kind of intuitive identification: we mark the canonical isomorphisms as implicit.
+
+In the sequel, we present several ways to obtain implicit isomorphisms conveniently.
+In general, note that because identity morphisms are implicit, our uniqueness requirement for implicit morphisms implies that two theories $S$ and $T$ must be isomorphic if there are implicit morphisms in both directions.
+Moreover, making a pair of isomorphisms implicit is only allowed if there are no other implicit morphisms between $S$ and $T$ yet.
+
+\paragraph{Renamings}
+We say that a named morphism $r:S\to T=\{\ldots\}$ is a \textbf{renaming} if
+\begin{compactitem}
+ \item all assignments in its body are of the form $c:=c'$ for $T$-constants $c'$ without definiens
+ \item every  $T$-constant $c'$ without definiens occurs in exactly one assignment.
+\end{compactitem}
+Clearly, every renaming is an isomorphism.
+The inverse morphisms contains the flipped assignments $c':=c$.
+
+We make the following extension to syntax and semantics:
+\begin{compactitem}
+  \item A morphism declaration $r:s\to t=\{\ldots\}$ may carry the attribute \keyword{renaming}.
+  \item This is allowed if there are no implicit morphisms between $s$ and $t$ yet.
+  \item In that case, we define $r\in\IMo{s}{t}$ and $r^{-1}\in\Mo{t}{s}$.
+\end{compactitem}
+
+\begin{example}[Renaming]
+Consider a variation of the theory $\cn{Monoid}$ from Ex.~\ref{syn:incl} in a different library:
+\begin{mmtcode}
+Monoid2: $\Log$ =
+  M          : type
+  connective : M $\to$ M $\to$ M	 # 1 $\circ$ 2 
+  neutral    : M
+\end{mmtcode}
+This theory is isomorphic to the previously introduced theory \cn{Monoid} under the trivial renaming
+	\begin{mmtcode}
+renaming MonoidRen : Monoid2 -> Monoid =$^{\id{\Log}}$
+  M          := U
+  connective := op 
+  neutral    := unit
+\end{mmtcode}
+\end{example}
+
+\paragraph{Definitional Extensions}
+We say that the named theory $T$ is a \textbf{definitional extension} of $S$ if $T=S$ or the body of $T$ contains only
+\begin{compactitem}
+ \item constant declarations with definiens, and
+ \item include declarations of theories that are definitional extensions of $S$.
+\end{compactitem}
+
+If $T$ is a definitional extension of $S$, it is easy to prove that $T$ and $S$ are isomorphic: both isomorphisms map all constants without definiens to themselves. In particular, the isomorphism $T\to S$ maps $S$-constants to themselves and expands the definiens of all other constants.
+
+We make the following extension to syntax and semantics:
+\begin{compactitem}
+  \item An include declaration $\icl{S}$ of a named theory $S$ inside a theory $T$ may carry the attribute \keyword{definitional}.
+  \item In that case, we define $\id{S}\in\IMo{T}{S}$ (in addition to the implicit morphism $\id{T}\in\IMo{S}{T}$ that is induced by the inclusion).
+\end{compactitem}
+
+\begin{example}[Extension with a Theorem]
+We extend the theory $\cn{Group}$ from Ex.~\ref{syn:incl} with a theorem
+\begin{mmtcode}
+InverseInvolution: $\Log$ =
+  definitional include Group
+  inverse_invol : $\forall$[x] (x$^{-1}$)$^{-1}$$\doteq$ x  =  (proof omitted)
+\end{mmtcode}
+\end{example}
+
+\begin{remark}[Conservative Extensions]
+A definitional extension is a special case of a conservative extension.
+More generally, all retractable extensions are conservative, i.e., all extensions $S\harr T$ such that there is a morphism $r:T\to S$ that is the identity on $S$.
+But we cannot make the retractions implicit morphisms in general because they are not necessarily isomorphisms.
+\end{remark}
+
+\paragraph{Canonical Isomorphisms}
+If we have isomorphisms $m:S\to T$ and $n:T\to S$, we simply spell them out in morphism declarations and add the keyword \keyword{implicit} to both.
+This requires no language extensions.
+
+\begin{example}\label{group:iso}
+Having declared the morphism $\cn{DG2G}$ (as in Ex.~\ref{ex:dg2g}) implicit, we do the same with the reverse morphism  $\cn{G2DG}$:
+\begin{mmtcode}
+implicit G2DG : Group -> DivGroup =$^{\id{\Log}}$
+  U       := U
+  op      := [a,b] a/(unit/b) 
+  unit    := unit
+  inverse := [a] unit/a
+\end{mmtcode}
+\end{example}
+
+While making one of these isomorphisms implicit is straightforward, doing it for both requires checking that $m$ and $n$ are actually isomorphisms.
+Otherwise, the uniqueness condition would be violated.
+Thus, we have to check $m;n=\id{s}$ and $n;m=\id{t}$.
+In general, the equality of two morphisms $f,g:A\to B$ is equivalent to $\vdash_B f(c)=g(c)$ for all $(c:E)\in\flt{A}$.
+Thus, if equality of expressions is decidable in the logic that \mmt is instantiated with, then \mmt can check this directly.
+
+However, this does not work in practice.
+Already elementary examples require stronger, undecidable equality relations:
+
+\begin{example}
+Consider the isomorphism from Ex.~\ref{group:iso}.
+The result of mapping $x\circ y$ from $\cn{Group}$ to $\cn{DivGroup}$ and back is $x\circ(\cn{unit}\circ y^{-1})^{-1}$.
+Clearly, the group axioms imply that this is equal to $x\circ y$.
+But formally, that requires working with the undecidable equality of first-order logic.
+\end{example}
+
+Therefore, in our running example, we can only make one of the two isomorphisms implicit at this point.
+
+In the sequel, we design a general solution to this problem.
+It allows systematically proving the equality of two morphisms and using that to make both isomorphisms implicit.
+This is novel work that requires significant prerequisites and is only peripherally related to implicit morphisms.
+Therefore, we only sketch the idea and leave the details to future work.
+
+We add a language feature to \mmt to prove equalities between morphisms:
+We add the productions
+\begin{grammar}
+Dia   & \rep{(TDec \alt MDec\alt MEq)}  &\\
+MEq   & \keyword{equal} M=M:T\to T \keyword{by} \{\rep{Ass}\} &\\
+\end{grammar}
+
+%Firstly, the intuition of $\keyword{equality} T = \{c:=E,\ldots\}$ is that it provides to every base type $c:\type$ of $T$ a judgment $E:c\to c\to \type$ that defines the $T$-specific equality relation for objects of type $c$.
+%Technically, this must be a binary logical relation in the sense of \cite{RS:logrels:12} on $\id{T}$.
+%As described in \cite{RS:logrels:12}, this induces an equality predicate $\cn{Equal}_E:E\to E\to \type$ on every type $E$.
+
+We define the declaration $\keyword{equal} M=N:S\to T \keyword{by} \{\sigma\}$ to be well-formed iff
+\begin{compactitem} 
+  \item $M:S\to T$ and $N:S\to T$ are well-formed morphisms
+  \item $\sigma$ contains exactly one assignment $c:=p$ for every $(c:E)\in\flt{S}$
+  \item for each of these assignments $c:=p$, the term $p$ is a proof of $\vdash_T M(c)=N(c)$.
+\end{compactitem}
+
+\begin{example}[Isomorphisms]
+With the above extension in place, we can make both isomorphisms $m$ and $n$ from above implicit:
+\[\keyword{implicit}:\cn{DG2G}:\cn{DivGroup}\to\cn{Group}=\text{(as above)}\]
+\[\keyword{implicit}:\cn{G2DG}:\cn{Group}\to\cn{DivGroup}=\text{(as above)}\]
+\[\keyword{equal}\cn{G2DG};\cn{DG2G}=\id{\cn{Group}}:\cn{Group}\to\cn{Group}=\text{(omitted)}\]
+\[\keyword{equal}\cn{DG2D};\cn{G2DG}=\id{\cn{DivGroup}}:\cn{DivGroup}\to\cn{DivGroup}=\text{(omitted)}\]
+where the isomorphisms are as above and we omit all the equality proofs.
+
+There is a subtle difficulty in marking \cn{G2DG} as \keyword{implicit}: the implicit-diagram only commutes after proving the equalities, which are only declared later.
+One option is to delay the commutativity check until the equalities have been checked.
+In that case, care must be taken to avoid using the implicitness of \cn{G2DG} while proving the equalities.
+But we obtain a more elegant solution from the observation that it is always sound and harmless to automatically make the inverse of an implicit isomorphism implicit as well.
+Thus, we can omit the attribute \keyword{implicit} on \cn{G2DG} altogether and use an implementation that infers that \cn{G2DG} is the inverse of an implicit isomorphism.
+\end{example}
+
+\subsection{Fine-Granular and Flexible Theory Hierarchies}\label{sec:granular}
+\input{sections/lf/implicit/example}
+
+\subsection{Logic Morphisms}
+
+So far, we have assumed all theories use the same fixed meta-theory, e.g., $\Log$ in the running examples.
+But in practice, we usually develop theories heterogeneously by using the weakest possible meta-theory for each module.
+A strength of \mmt is that meta-theories are normal theories so that the same structuring formalism can be used for them, e.g., morphisms, includes, pushouts, and implicit morphisms are directly available for meta-theories.
+
+For example, consider the example from Figure~\ref{fig:magmas}.
+We could use first-order logic \cn{FOL} as the common meta-theory of all theories.
+But actually the much weaker logic \cn{Horn} (which uses restricted logical connectives that only allow creating Horn formulas) is sufficient for most of them.
+
+We do not want to declare a direct include $\cn{Horn}\to\cn{FOL}$ for the same reasons as discussed in  Section~\ref{sec:granular}.
+Instead, we want to give a morphism $\cn{EmbedHorn}:\cn{Horn}\to\cn{FOL}$, which maps all Horn formula constructors to their \cn{FOL} counterparts.
+We can now make \cn{EmbedHorn} implicit, thus capturing the fact that Horn logic is a fragment of \cn{FOL}.
+
+Moreover, assume we have built the diagram in Figure~\ref{fig:magmas} using the meta-theory \cn{Horn} where possible and \cn{FOL} where necessary.
+An example for the latter is \cn{TotalOrder}, which also uses $\vee$.
+Without implicit morphisms, we would have to write
+\[\cn{TotalOrder}:\cn{FOL}=\{\icl{\cn{EmbedHorn}(\cn{PartialOrder})},\ldots\}\]
+Here the \cn{Horn}-theory \cn{PartialOrder} must be explicitly translated to \cn{FOL} before including it, which is awkward for users both when writing and reading.
+But using implicit morphisms and the semantics of Ex.~\ref{impl:incl2}, we can simply write $\icl{\cn{PartialOrder}}$ --- the logic translation remains transparent to the user.
+
+In practice, many logic morphisms are naturally implicit, either because they are includes to begin with or because they represent a canonical logic embedding.
+
+\subsection{Transparent Refactoring}
+
+A major drawback of using modular theories is that it can preclude transparent refactoring (to insert intermediate theories as mentioned in Section~\ref{sec:granular}).
+As an example, we consider a theory $t=\{\icl{r},\icl{s}\}$, and assume we want to move a constant declaration $D$ for the name $n$ from $s$ to $r$.
+This change should be straightforward as it does not change the semantics of $t$.
+
+However, this is not a local change.
+It also requires updating every qualified reference from $s?n$ to $r?n$.
+Even if the source files always use the unqualified reference $n$ (because the checker is smart enough to dynamically disambiguate them), this still requires a global rebuild to reach a consistent state again.
+But such references can occur anywhere where $t$ is used, and that may include files that the person who does the refactoring does not know about or does not have access to.
+One option in this case is to use an extra-logical refactoring tool that propagates such changes.
+But when managing releases of big libraries, it is often desirable to deprecate the original theories but still ensure backwards compatibility.
+Then after a transition period the original theories are removed from the library and users are expected to propagate the refactoring.
+
+With implicit morphisms, we can solve this problem by making only the following local changes:
+\begin{compactenum}
+  \item We keep $r$ and $s$ as they are.
+  \item We create a new theory $r'=\{\icl{r},\,D\}$.
+  \item We create a new theory $s'$ that is like $s$ except for deleting the declaration $D$.
+  \item We change $t$ to $t=\{\icl{r'},\icl{s'}\}$.
+  \item We add implicit morphisms $s'\to s$ (mapping $s'?x$ to $s?x$ for all $x$) and $s\to t$ (mapping $s?n$ to $r'?n$ and $s?x$ to $s'?x$ for all $x\neq n$).
+\end{compactenum}
+The situation before (left) and after (right) refactoring is given below.
+Note that the right diagram commutes.
+\begin{center}
+\begin{tikzpicture}[scale=1]
+  \node (t) at (0,0) {$t$};
+  \node (r) at (-1,-2) {$r$};
+  \node (s) at (1,-1) {$s$};
+  \draw[right hook-latex] (r) to (t) {};
+  \draw[right hook-latex] (s) to (t) {};
+  
+  %\node[thy,inner sep=.3cm,fill=gray] (t1) at (0,0) {};
+  %\node at (t1.north west) {$S$};
+  %\node at (t1) {$D$};
+  %\node[thy,inner sep=.5cm,fill=lightgray] (s2) at (2,0) {};
+  %\node[thy,inner sep=.3cm,fill=gray] (t2) at (2,0) {};
+  %\node at (t2.north west) {$T$};
+  %\node at (t2) {$C$};
+  %\draw[view] (t1) to[out=10,in=170] node[above] {$\sigma$} (t2);
+\end{tikzpicture}
+\tb
+\begin{tikzpicture}[scale=1]
+  \node (t) at (0,0) {$t$};
+  \node (rp) at (-1,-1) {$r'$};
+  \node (s) at (1,-1) {$s$};
+  
+  \node (r) at (-1,-2) {$r$};
+  \node (sp) at (1,-2) {$s'$};
+  \draw[right hook-latex] (r) to (rp) {};
+  \draw[arrow] (sp) to (s) {};
+  
+  \draw[right hook-latex] (rp) to (t) {};
+  \draw[right hook-latex] (sp) to (t) {};
+  
+  \draw[arrow] (s) to (t);
+  
+  %\node[thy,inner sep=.3cm,fill=gray] (t1) at (0,0) {};
+  %\node at (t1.north west) {$S$};
+  %\node at (t1) {$D$};
+  %\node[thy,inner sep=.5cm,fill=lightgray] (s2) at (2,0) {};
+  %\node[thy,inner sep=.3cm,fill=gray] (t2) at (2,0) {};
+  %\node at (t2.north west) {$T$};
+  %\node at (t2) {$C$};
+  %\draw[view] (t1) to[out=10,in=170] node[above] {$\sigma$} (t2);
+\end{tikzpicture}
+\end{center}
+Afterwards, $t$ has the desired new structure.
+But all old references to $r$ and $s$ stay well-formed so that no global changes are needed.
+Now $r$ and $s$ can be deprecated and eventually removed in favor of $r'$ and $s'$.

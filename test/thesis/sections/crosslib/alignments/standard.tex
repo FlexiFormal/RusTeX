@@ -1,0 +1,72 @@
+Based on the observations of the previous sections, we now define a standard for alignments.
+Because many of the alignment types described in \autoref{sec:crosslib:alignments:types} are very difficult to handle rigorously and additional alignment types may be discovered in the future, we opt for a very simple and flexible definition.
+
+Concretely, we use the following formal grammar for collections of alignments:
+\begin{center}
+\begin{tabular}{l@{\tb}c@{\tb}l}
+	Collection  & \bbc  & $\rep{\bnfbracket{\mathrm{Comment} \bnfalt \mathrm{NSDef} \bnfalt \mathrm{Alignment}}}$\\
+	Comment & \bbc & // String \\
+	NSDef & \bbc  &\texttt{namespace} String URI\\
+	Alignment & \bbc & URI URI $\rep{\bnfbracket{\mathrm{String} = "\mathrm{String}"}}$
+\end{tabular}
+\end{center}
+Our definition aims at practicality, especially considering the typical case where researchers exchange and manipulate large collections of alignments.
+Therefore, our grammar allows for comments and for the introduction of short namespace definitions that abbreviate long namespaces.
+Our grammar represents each individual alignment as a pair of two URIs with arbitrary additional data stored as a list of key-value pairs.
+
+The additional data in alignments makes our standard extensible: any user can standardize individual keys in order to define specific types of alignments.
+For example, for alignments up to argument order, we can add a key for giving the argument order.
+Moreover, this can be used to annotate metadata such as provenance or system versions.
+
+Below we standardize some individual keys and use them to implement the most important alignment types from \autoref{sec:crosslib:alignments:types}.
+In all definitions below, we assume that $a_1$ and $a_2$ are the aligned symbols.
+
+\begin{definition}
+The key \cn{direction} has the possible values \cn{forward}, \cn{backward}, or \cn{both}.
+Its presence legitimizes, respectively, the translation that replaces every occurrence of $a_1$ with $a_2$, its inverse, or both.
+\end{definition}
+Alignments with \cn{direction} key subsume the alignment types of perfect alignments (where the direction is \cn{both}) and the unidirectional types of alignment up to totality of functions or up to associativity, and alignment for certain arguments.
+The absence of this key indicates those alignment types where no symbol-to-symbol translation is possible, in particular opaque alignments.
+
+\begin{definition}\label{def:crosslib:alignments:arguments}
+The key \cn{arguments} has values of the form $(r_1,s_1)\ldots(r_k,s_k)$ where the $r_i$ and $s_i$ are natural numbers.
+Its presence legitimizes the translation of $a_1(x_1,\ldots,x_m)$ to $a_2(y_1,\ldots,y_n)$ where each $y_k$ is defined by
+\begin{compactitem}
+ \item if $k=s_i$ for some $i$: the recursive translation of $x_{r_i}$ 
+ \item otherwise: inferred from the context.
+\end{compactitem}
+\end{definition}
+Alignments with \cn{arguments} key subsume the alignment types of alignments up to argument order and of alignment up to determined arguments.
+
+\begin{example}
+We obtain the following argument alignments for some of the examples from \autoref{sec:crosslib:alignments:types}:
+\[\begin{array}{c}
+    \cn{Nat}_1 \; \cn{Nat}_2 \; \cn{direction}="\cn{both}"\\
+    \cn{eq}_1 \; \cn{eq}_2 \; \cn{arguments}="(1,2)(2,3)"\\
+    \cn{contains}_1 \; \cn{in}_2 \; \cn{arguments}="(1,1)(2,3)(3,2)"
+  \end{array}
+  \]
+\end{example}
+
+%Another possible case is when two symbols are aligned in the same library.
+%Although can be recovered by comparing their URIs, it is made explicit by the following tag.
+%\begin{definition}
+%  An \textbf{intracorporal alignment} uses the key \cn{self} with the unique value \cn{true}.
+%\end{definition}
+
+Finally, we standardize a key for probabilistic alignments:
+\begin{definition}
+The key \cn{similarity} has values that are real numbers in $[0;1]$.
+If used together with other keys like \cn{direction} and \cn{arguments}, it represents a certainty score for the correctness of the corresponding translation.
+If absent, its value is $1$ indicating perfect certainty.
+\end{definition}
+%When working with a large set of alignments between a fixed pair of corpora, this key describes the similarity score is most indicative when comparing alignments found in the same pair of corpora.
+%This is the case for many of the alignments we have found so far.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "paper-cicm2"
+%%% End:
+
+%  LocalWords:  bnfbracket mathrm bnfalt mathrm bnfalt mathrm standardize cn cn cn cn
+%  LocalWords:  ldots ldots

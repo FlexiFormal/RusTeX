@@ -1,0 +1,252 @@
+\makeatletter
+\newcommand{\oset}[3][0ex]{
+	\mathrel{\mathop{#3}\limits^{\vbox to#1{\kern-2\ex@\hbox{$\scriptstyle#2$}}}}
+}
+\makeatother
+
+% Expressions -------------------------------------------------------------------------------------------------------
+
+\newcommand{\expr}[1]{%
+    \Colorbox{backcolor}{\ensuremath{\mathtt{ #1 }}}%
+}
+
+% MMT -----------------------------------------------------------------------------------------------------------------
+% judg, mmt
+
+\newcommand{\judgmentscolor}{RedViolet}
+\newcommand{\mmtcolor}{Turquoise}
+
+\newcommand{\oma}[2]{\ensuremath{#1\left(#2\right)}}
+\newcommand{\ombind}[3]{\ensuremath{#1\left[#2\right]\left(#3\right)}}
+
+\newcommand{\judg}[2]{#1 \mylink{\judgmentscolor}{judg}{\vdash} #2}
+\newcommand{\gjudg}[1]{\judg\Gamma{#1}}
+\newcommand{\tjudg}[2]{\judg{\Theta;#1}{#2}}
+\newcommand{\tgjudg}[1]{\tjudg{\Gamma}{#1}}
+\newcommand{\infertype}[2]{ #1 \mylink{\judgmentscolor}{judg}{\Rightarrow} #2 }
+\newcommand{\hastype}[2]{ #1 \mylink{\judgmentscolor}{judg}{\Leftarrow} #2 }
+\newcommand{\judgequt}[2]{ #1 \mylink{\judgmentscolor}{judg}{\equiv} #2}
+\newcommand{\judgeq}[3]{\judgequt{#1}{#2}\;\mylink{\judgmentscolor}{judg}{:}#3}
+\newcommand{\judgeqc}[2]{ #1 \mylink{\judgmentscolor}{judg}{\rewrites} #2}
+\newcommand{\subtp}[2]{ #1 \mylink{\judgmentscolor}{judg}{<:} #2}
+\newcommand{\wfctx}[1]{\vdash #1\;\mylink{\judgmentscolor}{judg}{\mathtt{ctx}}}
+\newcommand{\gwfctx}{\wfctx\Gamma}
+\newcommand{\judginh}[1]{#1\;\mylink{\judgmentscolor}{judg}{\mathtt{inh}}}
+\newcommand{\judguniv}[1]{#1\;\mylink{\judgmentscolor}{judg}{\mathtt{univ}}}
+\newcommand{\judgmatchinf}[2]{ #1 \mylink{\judgmentscolor}{judgmatching}{\oset[-.45ex]\Rightarrow\equiv} #2 }
+
+\newcommand\incl[1]{\mylink{\mmtcolor}{mmt}{\mathtt{include}}\ #1}
+\newcommand\viewto[2]{#1 \mylink{\mmtcolor}{mmt}{\to} #2}
+\newcommand\mmttp[1]{\mylink{\mmtcolor}{mmt}{\;:\;}#1}
+\newcommand\mmtdf[1]{\mylink{\mmtcolor}{mmt}{\;=\;}#1}
+\newcommand\mmtass[1]{\mylink{\mmtcolor}{mmt}{\;\mapsto\;}#1}
+
+
+% LF ---------------------------------------------------------------------------------------------------------------------
+%lfpi, jat,max
+
+\newcommand{\lfcolor}{ForestGreen}
+\newcommand\dedcolor{BurntOrange}
+
+\newcommand{\umax}[1]{\mylink{\lfcolor}{max}{\max\left\{ \vphantom{#1} \right. } #1 \mylink{\lfcolor}{max}{\left. \vphantom{#1} \right\} }}
+
+\newcommand{\type}{\mylink{\lfcolor}{lfpi}{\ensuremath{\mathtt{type}}}\xspace}
+\newcommand{\kind}{\mylink{\lfcolor}{lfpi}{\ensuremath{\mathtt{kind}}}\xspace}
+\newcommand\lfpisym{\mylink{\lfcolor}{lfpi}{\ensuremath{\prod}}\xspace}
+\DeclareMathOperator*\lfpisymm{\mylink{\lfcolor}{lfpi}{\ensuremath{\prod}}}
+\newcommand\lfpi[2]{\lfpisymm_{#1}#2}
+\newcommand\lflambdasym{\mylink{\lfcolor}{lfpi}{\ensuremath{\lambda}}}
+\newcommand\lflambda[2]{\lflambdasym_{#1}.\;#2}
+\newcommand\lfarrowsym{\mylink{\lfcolor}{lfpi}{\ensuremath{\to}}}
+\newcommand\lfarrow[2]{#1\; \lfarrowsym\; #2}
+
+\newcommand\ded{\mylink{\dedcolor}{jat}{\textsc{\smaller DED}\;}\xspace}
+
+% Sigma ------------------------------------------------------------------------------------------------------------------------------
+% sigmatp
+
+\newcommand\sigmacolor{Brown}
+
+\newcommand{\sigmasymnolink}{\ensuremath{\sum}\xspace}
+\newcommand{\sigmasym}{\hyperlink{sigmatp}{\textcolor{\sigmacolor}{\sigmasymnolink}}\xspace}
+\DeclareMathOperator*{\sigmasymm}{\hyperlink{sigmatp}{\textcolor{\sigmacolor}{\sigmasymnolink}}\xspace}
+\newcommand{\sigmatp}[2]{\sigmasymm_{#1}\;#2}
+\newcommand{\pair}[2]{\mylink{\sigmacolor}{sigmatp}{\left\langle \vphantom{#1 #2} \right.} #1\hyperlink{sigmatp}{\textcolor{\sigmacolor}{\;,\;}} #2 \mylink{\sigmacolor}{sigmatp}{\left. \vphantom{#1 #2}\right\rangle}}
+\newcommand{\projlsym}{\hyperlink{sigmatp}{\textcolor{\sigmacolor}{\ensuremath{\pi_\ell}}}\xspace}
+\newcommand{\projl}[1]{\mylink{\sigmacolor}{sigmatp}{\projlsym\left( \vphantom{#1} \right.}#1\mylink{\sigmacolor}{sigmatp}{\left. \vphantom{#1}\right)}}
+\newcommand{\projrsym}{\hyperlink{sigmatp}{\textcolor{\sigmacolor}{\ensuremath{\pi_r}}}\xspace}
+\newcommand{\projr}[1]{\mylink{\sigmacolor}{sigmatp}{\projrsym\left( \vphantom{#1} \right.}#1\mylink{\sigmacolor}{sigmatp}{\left. \vphantom{#1}\right)}}
+\newcommand{\simpleprod}[2]{#1 \hyperlink{sigmatp}{\textcolor{\sigmacolor}{\times}} #2}
+
+% Coproducts ----------------------------------------------------------------------------------------------------------------------
+% coprod, funcadd
+
+\newcommand\coprodcolor{NavyBlue}
+
+\newcommand{\coprodsym}{\mylink{\coprodcolor}{coprod}{\ensuremath{\bigoplus}}\xspace}
+\renewcommand{\coprod}[2]{#1 \coprodsym #2}
+\newcommand{\injlsym}{\mylink{\coprodcolor}{coprod}{\ensuremath{\hookrightarrow_\ell}}\xspace}
+\newcommand{\injrsym}{\mylink{\coprodcolor}{coprod}{\ensuremath{\prescript{}{r}\hookleftarrow}}\xspace}
+\newcommand{\injl}[2]{#1 \injlsym #2}
+\newcommand{\injr}[2]{#2 \injrsym #1}
+\newcommand{\cmatchsymnolink}{\ensuremath{\textbf{match}}\xspace}
+\newcommand\cmatchsym{\mylink{\coprodcolor}{coprod}{\cmatchsymnolink}\xspace}
+\newcommand{\cmatch}[5]{\cmatchsym_{#1}\mylink{\coprodcolor}{coprod}{\left\{ \vphantom{#2 #3 #4 } \right. } #2 \mylink{\coprodcolor}{coprod}{\Longrightarrow}_{#5}\; #3 \; \mylink{\coprodcolor}{coprod}{\left. \vphantom{#2 #3 #4} \middle|\; \right.} #4 \mylink{\coprodcolor}{coprod}{\left. \vphantom{#2 #3 #4} \right\} } }
+\newcommand{\funcadd}[2]{#1 \mylink{\coprodcolor}{funcadd}{\oplus} #2}
+
+% Finite Types-------------------------------------------------------------------------------------------------------------------------
+% emptytype,unit,enum
+
+\newcommand{\finitetypecolor}{Magenta}
+
+\newcommand{\emptytype}{\ensuremath{\mylink{\finitetypecolor}{emptytype}{\emptyset}}\xspace}
+\newcommand{\unitnolink}{\ensuremath{\textsc{Unit}}\xspace}
+\newcommand{\unit}{\mylink{\finitetypecolor}{unit}{\unitnolink}\xspace}
+\newcommand{\unite}{\ensuremath{\mylink{\finitetypecolor}{unit}{\star}}\xspace}
+\newcommand{\finel}[2]{\mylink{\finitetypecolor}{emptytype}{\hookrightarrow}_{#2}#1}
+\newcommand{\enumsym}{\ensuremath{\mylink{\finitetypecolor}{enum}{\textsf{enum}}}\xspace}
+\newcommand{\enum}[1]{\enumsym\mylink{\finitetypecolor}{enum}{\left( \vphantom{#1} \right. } #1 \mylink{\finitetypecolor}{enum}{\left. \vphantom{#1}\right) }}
+\newcommand\enumusym{\ensuremath{\mylink{\finitetypecolor}{enum}{\textsf{case}}}\xspace}
+\newcommand{\enume}[2]{\enumusym_{#2}\mylink{\finitetypecolor}{enum}{\left( \vphantom{#1} \right.}#1\mylink{\finitetypecolor}{enum}{\left. \vphantom{#1} \right) }}
+\newcommand{\enumu}[1]{\enumusym\mylink{\finitetypecolor}{enum}{\left( \vphantom{#1}\right.}#1\mylink{\finitetypecolor}{enum}{\left. \vphantom{#1}\right)}}
+\newcommand\numtp[1]{\mylink{\finitetypecolor}{unit}{\textbf{#1}}}
+\newcommand\numel[1]{\mylink{\finitetypecolor}{unit}{\underline{#1}}}
+
+% W-Types------------------------------------------------------------------------------------------------------------------------------
+%wtype,wsup,wrec
+
+\newcommand{\wtypecolor}{Melon}
+
+\DeclareMathOperator*{\wtypesymm}{\mylink{\wtypecolor}{wtype}{\textsf{\larger W}}}
+\newcommand{\wtypesym}{\ensuremath{\wtypesymm}}
+\newcommand{\wtype}[2]{\wtypesym_{#1} #2}
+\newcommand{\wsupsym}{\mylink{\wtypecolor}{wsup}{\ensuremath{\sup}}\xspace}
+\newcommand{\wsup}[3]{\wsupsym_{#1}\mylink{\wtypecolor}{wsup}{\left\{ \vphantom{#2 #3}\right.} #2 \mylink{\wtypecolor}{wsup}{\Longrightarrow} #3\mylink{\wtypecolor}{wsup}{\left. \vphantom{#2 #3}\right\}}}
+
+\newcommand{\wsupu}[4]{
+\wsupsym_{#1}\mylink{\wtypecolor}{wsup}{\left\{\vphantom{#2 #3 #4}\right. } #2 \mylink{\wtypecolor}{wsup}{\Longrightarrow}_{#4} #3\mylink{\wtypecolor}{wsup}{\left.\vphantom{#2 #3 #4}\right\}} }
+
+\newcommand{\wrecsym}{\ensuremath{\mylink{\wtypecolor}{wrec}{\textsf{rec}}}\xspace}
+\newcommand{\wrec}[7]{\wrecsym\mylink{\wtypecolor}{wrec}{ \left( \vphantom{#2} \right.}#2\mylink{\wtypecolor}{wrec}{\left. \vphantom{#2}\right)}\mylink{\wtypecolor}{wrec}{\left\{ \left( \vphantom{#4 #5 #6} \right. \vphantom{#7} \right. } #4,#5,#6\mylink{\wtypecolor}{wrec}{\left. \vphantom{#4 #5 #6} \right)} \mylink{\wtypecolor}{wrec}{\Longrightarrow}_{#3} #7 \mylink{\wtypecolor}{wrec}{\left. \vphantom{#4 #5 #6 #7} \right\} } }
+
+% Hierarchy-----------------------------------------------------------------------------------------------------------------------------
+%univ
+
+\definecolor{darkred}{RGB}{100,0,0}
+\newcommand{\univcolor}{darkred}
+
+\newcommand\univ[1]{\mylink{\univcolor}{univ}{{\mathcal U}}_{#1}}
+
+% Equality Types----------------------------------------------------------------------------------------------------------------------
+%eq
+
+\newcommand{\eqcolor}{Tan}
+
+\newcommand\eqtp[3]{#1\mylink{\eqcolor}{eqtp}{\,\doteq\,}_{#3}#2}
+\newcommand\refl[1]{\mylink{\eqcolor}{eqtp}{\mathtt{refl}}_{#1}}
+\newcommand\eqindsym{\mylink{\eqcolor}{eqtp}{\ensuremath{\mathtt{ind}}}\xspace}
+\newcommand\eqind[6]{\eqindsym_{#1} \mylink{\eqcolor}{eqtp}{\left\{ \vphantom{#6,#2,\ _{#5},#3,#4} \right.} #2,#3,#4 \mylink{\eqcolor}{eqtp}{\Longrightarrow}_{#5} #6 \mylink{\eqcolor}{eqtp}{\left. \vphantom{#6,#2,\ _{#5},#3,#4}\right\}} }
+
+% Subypes----------------------------------------------------------------------------------------------------------------------
+%stp,inttp,predsubtp
+
+\newcommand{\stpcolor}{CadetBlue}
+
+\newcommand\stpsym{\ensuremath{\mylink{\stpcolor}{stp}{<\ast}}}
+\newcommand\stp[2]{\ensuremath{#1 \,\stpsym\, #2 }}
+\newcommand\inttpsym{\ensuremath{\mylink{\stpcolor}{inttp}{\sqcap}}}
+\newcommand\inttp[2]{\ensuremath{#1 \,\inttpsym\, #2}}
+\newcommand\predsubtp[3]{ 
+	\mylink{\stpcolor}{predsubtp}{\left\langle \vphantom{ #1 #2 #3} \right.}
+		#1 : #2 \; \mylink{\stpcolor}{predsubtp}{\left\mid \vphantom{ #1 #2 #3} \right.} \;
+		#3 \mylink{\stpcolor}{predsubtp}{\left. \vphantom{ #1 #2 #3} \right\rangle}
+}
+\newcommand\predofsym{\mylink{\stpcolor}{predsubtp}{\ensuremath{\mathtt{predOf}}}}
+\newcommand\predof[1]{\mylink{\stpcolor}{predsubtp}{\predofsym\left( \vphantom{#1} \right. } #1
+\mylink{\stpcolor}{predsubtp}{\left. \vphantom{#1} \right)}
+}
+
+% Records (TODO) -------------------------------------------------------------------------------------------------------------------
+%records, models, subsume
+
+\newcommand{\recordcolor}{RubineRed}
+
+\newcommand{\leftrectype}[1]{\mylink{\recordcolor}{records}{\left\lsem\vphantom{#1}\right.}}
+\newcommand{\rightrectype}[1]{\mylink{\recordcolor}{records}{\left.\vphantom{#1}\right\rsem}}
+\newcommand{\rectype}[1]{\leftrectype{#1} #1 \rightrectype{#1}}
+%\newcommand{\leftrecexp}{\mylink{\recordcolor}{records}{\left\langlebar}}
+%\newcommand{\rightrecexp}{\mylink{\recordcolor}{records}{\right\ranglebar}}
+\newcommand{\recsym}{\,\mylink{\recordcolor}{records}{\mathrlap{\succ}}-\,}
+\newcommand{\recexp}[1]{\mylink{\recordcolor}{records}{\left\langlebar\vphantom{#1}\right.} #1 \mylink{\recordcolor}{records}{\left.\vphantom{#1}\right\ranglebar}}
+\newcommand{\recexpi}[2]{\recexp{ #1 \recsym #2}}
+\newcommand{\self}{\mylink{\recordcolor}{records}{\mathtt{self}}}
+\newcommand{\recproj}[2]{#1\mylink{\recordcolor}{records}{.}#2}
+
+\newcommand{\modelsofF}{\mylink{\recordcolor}{models}{\mathtt{Mod}}}
+\newcommand{\modelsof}[1]{\modelsofF\mylink{\recordcolor}{models}{\left(\vphantom{#1}\right.}#1\mylink{\recordcolor}{models}{\left.\vphantom{#1}\right)}}
+\newcommand{\subsume}[2]{#1 \mylink{\recordcolor}{subsume}{\harr} #2}
+
+\newcommand{\recmergesym}{\mylink{\recordcolor}{merge}{+}}
+\newcommand{\recmerge}[2]{#1\recmergesym #2}
+\newcommand{\contmergesym}{\mylink{\recordcolor}{merge}{\mp}}
+\newcommand{\contmerge}[2]{#1\contmergesym #2}
+
+% Others----------------------------------------------------------------------------------------------------------------------------------
+
+\newcommand{\nat}{\ensuremath{\textsc{Nat}}\xspace}
+\newcommand{\sub}[2]{\mylink{Bittersweet}{subst}{\left[ \vphantom{#1 /_{#2}} \right. } #1 \mylink{Bittersweet}{subst}{/}_{#2}\mylink{Bittersweet}{subst}{\left. \vphantom{#1 /_{#2}} \right]}}
+
+% Old? -------------------------------------------------------------------------------------------------------------------------------------
+
+\newcommand{\Log}{\cn{Log}}
+\newcommand{\keyword}[1]{\ensuremath{\operatorname{\mathbf{#1}}}}
+\newcommand{\imp}{\hookrightarrow}
+\newcommand{\hvee}{\sqcup}
+\newcommand{\hwedge}{\sqcap}
+\newcommand{\set}[1]{\left\lbrace #1 \right\rbrace}
+\newcommand{\abs}[1]{\left| #1 \right|}
+\newcommand{\mm}{\mathfrak{mm}}
+\newcommand{\pid}{\textsf{PID}}
+\newcommand{\pfa}{\textsf{PFA}}
+\newcommand{\gch}{\textsf{GCH}}
+\newcommand{\PI}{\mathcal P_{\mathcal I}}
+\newcommand{\ipc}[3]{#2\stackrel{#1}{\harr}#3}
+\newcommand{\ipce}[2]{#1\stackrel{\ast}{\harr}#2}
+\newcommand{\icl}[1]{\incl{#1}}
+\newcommand{\dom}[1]{\mathtt{dom}(#1)}
+\newcommand{\flt}[1]{#1^\flat}
+\newcommand{\Exp}[1]{\mathtt{Obj}(#1)}
+
+\newcommand{\flti}[1]{#1^{\flat i}}
+\newcommand{\Expi}[1]{\mathtt{Obj}^i(#1)}
+\newcommand{\smt}[1]{\sqrbrc{#1}}
+\newcommand{\thy}{\mathtt{thy}}
+\newcommand{\Thy}{\mathtt{Thy}}
+\newcommand{\mo}[2]{\mathtt{mor}(#1,#2)}
+\newcommand{\Mo}[2]{\mathtt{Mor}(#1,#2)}
+\newcommand{\IMo}[2]{\mathtt{Mor^i}(#1,#2)}
+\newcommand{\strc}[2]{\keyword{struct}{\;#1:#2}}
+\newcommand{\fltd}[2]{#2^{\flat}}
+\newcommand{\cls}[1]{\ov{#1}}
+
+
+\renewcommand{\bnf}[1]{{\color{red}#1}}
+
+%\newcommand{\recsub}[2]{[#1 / #2]}
+\def\defemph{\textbf}
+
+\newcommand{\SL}{\mathtt{Semilattice}}
+\newcommand{\SLO}{\mathtt{SemilatticeOrder}}
+\newcommand{\csl}{\mathtt{interSL}}
+\newcommand{\cslo}{\mathtt{interSLO}}
+
+\def\cB{\mathcal{B}}
+\def\cL{\mathcal{L}}
+
+
+\newcommand{\gray}[1]{{\color{gray}#1}}
+\newcommand{\red}[1]{{\color{red}#1}}
+
+
+\def\Domain#1{\text{Dom}(#1)}
+\def\conc{::}

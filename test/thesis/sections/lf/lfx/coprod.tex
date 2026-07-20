@@ -1,0 +1,285 @@
+\hypertarget{coprod}{Coproducts} $\coprod AB$ can be seen as \emph{disjoint union types} -- their introduction form is a simple embedding, the elimination a case distinction on the constituent types $A$ and $B$. In particular, coproducts give us a relatively simply implementable mechanism for pattern matching. 
+
+Under propositions-as-types, coproducts are the type-level correspondants to logical disjunction. Additionally, they arise rather naturally as the (cateogory theoretical) dual notion to simple Cartesian products.
+
+ To be more precise:
+\begin{itemize}
+	\item For every $a:A$ and every type $B$, there is an element $(\injl aB):\coprod AB$ and an element $(\injr aB):\coprod BA$
+	\item For $c_1,c_2:C$ and $c : \coprod AB$, we have the elimination form $(\cmatch cx{c_1}{c_2}C)$ of type $C\sub xc$ (where $x:A$ may occur in $c_1$, $x:B$ may occur in $c_2$ and $x:\coprod AB$ may occur in $C$ -- the details regarding instantiating $C$ are apparent from the rules in \autoref{fig:lf:lfx:coprodrules})
+	\item We have $(\cmatch {\injl aB}x{c_1}{c_2}C)=c_1\sub xa:C\sub x{\injl aB}$ and $(\cmatch {\injr bA}x{c_1}{c_2}C)=c_2\sub xb:C\sub x{\injr bA}$.
+\end{itemize}
+The grammar for coproducts is given in \autoref{fig:lf:lfx:coprodgrammar}
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+  \begin{framed}
+	      \begin{tabular}{rcl@{\quad}l}
+        $\gray{\Gamma}$ & $\gray{::=}$ & $\gray{\cdot \mid \Gamma, x[:T][:=T]}$ & \gray{contexts}\\
+	  	   $\gray T$ & $\gray{::=}$ & $\gray{x \mid \type \mid \kind }$ & \gray{variables and universes}\\
+	  	   	& $\mid$ & $\coprod TT \mid \injl TT \mid \injr TT \mid \cmatch TxTTT$ & $\coprodsym$-types
+%       		    & $\mid$ & $\lfpi{x:T'}T \mid \lflambda{x:T'}T \mid T_1 T_2$ & dependent function types
+%	  & $\mid$ &  $\rectype{(x : T)^\ast} \mid \recexp{(x := T)^\ast} \mid T.x$ & record types
+      \end{tabular}
+  \end{framed}
+  \caption{Grammar for Coproduct-Types}\label{fig:lf:lfx:coprodgrammar}%\vspace*{-1em}
+\end{figure}
+
+\begin{remark}[Function Addition]
+\hypertarget{funcadd}{The elimination form basically gives us functions on \coprodsym-types via case distinction}, each case of which we can think of as a lambda expression. Hence it makes sense to add the following abbreviation:
+\begin{definition}
+	For $f:\lfpi{x:A}{C(\injl xB)}$ and $g:\lfpi{x:B}{C(\injr xA)}$, let:
+	 \[\funcadd fg \;:=\; \lflambda{y:\coprod AB}{\cmatch yx{f(x)}{g(x)}{C(x)}} \quad : \lfpi{x:\coprod AB}{C(x)} \]
+	
+	(In the independent case $f:\lfarrow AC$ and $g:\lfarrow BC$, we get $\funcadd fg:\lfarrow{\coprod AB}C$)
+\end{definition}
+The implementation consists of a single computation rule for terms $\funcadd fg$.
+
+Notably, \cite{hottbook} uses lambda-expressions in the elimination form of \coprodsym-types directly. While this is equivalent to our treatment in the presence of dependent function types, it makes \coprodsym-types entirely dependent on function types, thus breaking modularity.
+\end{remark}
+
+ The basic rule system is given in \autoref{fig:lf:lfx:coprodrules}, but can be extended for a more desirable behavior in presence of subtyping.
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+\begin{framed}
+{\small For any $U$ with $\gjudg{\judguniv U}$:}
+\begin{flushleft}
+\textbf{Formation:}
+\[
+\trule{\gjudg{\infertype AU} \quad \gjudg{\infertype B{U'}} }{\gjudg{\infertype{\coprod AB}{\umax{U,U'}}}} 
+\]
+\textbf{Introduction:}
+\[
+\trule{\gjudg{\infertype aA} \quad \gjudg{\infertype BU}}{\gjudg{\infertype{\injl aB}{\coprod AB}}} \qquad
+\trule{\gjudg{\infertype bB} \quad \gjudg{\infertype AU}}{\gjudg{\infertype{\injr bA}{\coprod AB}}}
+\]
+\textbf{Elimination:}
+\[
+\trule{\judg{\Gamma,x:A}{\infertype CU} \quad \gjudg{\judgmatchinf p{\coprod AB}} \quad \judg{\Gamma,x:A}{\hastype {c_1}{C \sub x{\injl xB}}} \quad \judg{\Gamma,x:B}{\hastype {c_2}{C\sub x{\injr xA}}}}
+{\gjudg{\infertype{\cmatch px{c_1}{c_2}C}{C\sub xp}}}
+\]
+% \textbf{Type Checking:}
+%\[
+%\_
+%\trule{\gjudg{\hastype aA} \quad \gjudg{\subtp{B'}B}}{\gjudg{\hastype{\injl a{B'}}{\coprod AB}}} \qquad
+%\trule{\gjudg{\hastype bB} \quad \gjudg{\subtp{A'}A}}{\gjudg{\hastype{\injr b{A'}}{\coprod AB}}}
+%\trule{\gjudg{\infertype p{\coprod AB}} \quad \judg{\Gamma,x:A}{\hastype {c_1}{C'}} \quad \judg{\Gamma,x:B}{\hastype {c_2}{C'}}}
+%{\gjudg{\hastype{(\cmatch px{c_1}{c_2}C)}{C'}}}
+%\]
+% \textbf{Equality:}
+%\[ \_
+%\trule{ \gjudg{\infertype p{\coprod AB}} \quad \gjudg{\infertype qT} \quad \gjudg{\judgeq T{\coprod AB}U} \quad \gjudg{\judgeq {C\sub xp}{C'\sub yq}U} \\ \judg{\Gamma,x:A}{\judgeq{c_1}{c'_1\sub yx}{C\sub x{\injl xB}}} \quad \judg{\Gamma,x:B}{\judgeq{c_2}{c'_2\sub yx}{C\sub x{\injr xA}}}  }
+%{\gjudg{\judgeq{\cmatch px{c_1}{c_2}C}{\cmatch qy{c'_1}{c'_2}{C'}}{C\sub xp}}}
+% \trule{\gjudg{\judgeq{(\cmatch px{c_1}{c_2})}{(\cmatch {p'}y{})}C}}
+%\]
+\textbf{Computation:}
+\[
+\trule{\gjudg{\infertype BU} \quad \judg{\Gamma,x:B}{\hastype {c_2}{C\sub x{\injr xA}}} }{ \gjudg{\judgeqc {\cmatch {\injl aB}x{c_1}{c_2}C}{c_1\sub xa} } } \qquad
+\trule{\gjudg{\infertype AU} \quad \judg{\Gamma,x:A}{\hastype {c_1}{C\sub x{\injl xB}}} }{ \gjudg{\judgeqc {\cmatch {\injr bA}x{c_1}{c_2}C}{c_2\sub xb} } }
+\]
+%\[
+%	\trule{\gjudg{\infertype p{\coprod AB}} \quad \judg{\Gamma,x:A,y:B}{\judgeq{C\sub x{\injl xB}}{C\sub x{\injr yA}}U} \quad \judg{\Gamma,x:A,y:B}{\judgeq{c_1}{(c_2\sub xy)}{C\sub x{\injl xB}}}}{\gjudg{\judgeqc{\cmatch px{c_1}{c_2}C}{c_1}}}
+%\]
+% Implies Axiom K, 
+
+%\textbf{Subtyping:}
+%\[
+%\trule{\gjudg{\subtp {A'}A} \quad \gjudg{\subtp {B'}B}}{\gjudg{\subtp{\coprod{A'}{B'}}{\coprod AB}}}
+%\]
+\end{flushleft}\end{framed}%\vspace*{-.5em}
+\caption{Rules for Coproducts}\label{fig:lf:lfx:coprodrules}%\vspace*{-1em}
+\end{figure}
+
+%\ednote{Elimination: make sure C is well-typed}
+%\ednote{Computation 3: nonsense}
+
+
+In a categorial setting, coproducts are \emph{dual} to certesian products as covered in \autoref{sec:lf:lfx:sigma}. As a result, the roles of introduction and elimination forms in our rule pattern are somewhat reversed. Consequently, there are a couple of things to note about our rules:
+\begin{itemize}
+	\item Under the Curry-Howard correspondence, coproducts $\coprod AB$ correspond to disjunctions $A\vee B$. 
+	\item This time, we have two introduction forms and one elimination form.
+	\item The premises in the computation rules again guarantee that the preconditions for computation rules are satisfied. If the injection and \cmatchsym expressions are known to be well-typed, the premises can be skipped.
+	\item Before, the type checking rules always governed generic expressions of the newly introduced type -- more precisely: a term type checks against the type constructor, if all applications of the elimination forms to the term have the expected type. This works well for dependent functions (by applying the function to a generic variable and checking against the codomain) and \sigmasym-types (by checking the two projections against the expected types). In the case of coproducts this would translate to \emph{``a term $p$ checks against $\coprod AB$ if all pattern matches with cases $A,B$ are applicable to $p$''}. This rule would look like this:
+	\[ \irule{\text{For }C=\cmatch xyABU:\quad \gjudg{\hastype{\cmatch pxxxC}{C\sub xp}} }{\gjudg{\hastype p{\coprod AB}}} \]
+	
+The crucial premise here is the second one, since to evaluate the \cmatchsym-expression, we will need to infer the type of $p$. Hence this typing rule would in practice reduce to checking whether the inferred type of $p$ is a subtype of $\coprod AB$, something the solver checks as a default anyway.
+	\item A representation (or $\eta$) rule in the sense that \emph{``every element of a $\coprodsym$-type can be represented as an introduction form''} does not exist. In general, a term $p:\coprod AB$ can not be coerced to be an introductory form, since while \emph{morally} $p$ is \emph{either} an injection from $A$ \emph{or} from $B$, it is impossible to determine which without $p$ already being an injection. 
+	\item Note that the rules given here seem to break extensionality for functions: Assume $f:\lfarrow{\coprod AB}C$. Then $\lflambda{x:\coprod AB}{\cmatch xy{f(\injl yB)}{f(\injr yA)}C}$ is not equal to $f$, even though for any \emph{particular} introduction form for $\coprod AB$ both functions agree.
+	
+	It is thus debatable whether ``equal for any particular introduction form'' should imply ``equal everywhere''. If we answer this question positively we imply axiom K~\cite{axiomk}, which is equivalent to term irrelevance for equality types\footnote{Many thanks to Claudio Sacerdoti Coen for pointing this out to me.} and hence incompatible with e.g. HoTT (see \autoref{sec:lf:lfx:hott}) and similar constructive systems. Hence, if we want to add an equality rule to preserve extensionality, we should do so in a separate theory and exclude it when formalizing constructive logics and type theories.
+	 
+	% Similarly to the type checking rule, the equality rule can not govern the introduction form, but the equality rule given here is necessary to e.g. allow for alpha renaming in a \cmatchsym expression. Note that this rule states (basically) that two eliminitations are equal iff they are equal at all inputs. This is unproblematic in a classical proof-irrelevant setting, but implies axiom K~\cite{axiomk} which is equivalent to term irrelevance for equality types.\footnote{Many thanks to Claudio Sacerdoti-Coen for pointing this out to me.} For proof-relevant type theories such as homotopy type theory (see \autoref{sec:lf:lfx:hott}) this rule needs to be excluded.
+	
+%	\item In the presence of function types, the third computation rule is needed to preserve extensionality of functions:
+%	
+%	Given a function $f:\lfarrow{\coprod AB}C$, extensionality would imply
+%	\[f = \lflambda{x:\coprod AB}{\cmatch xy{f x}{f x}C}\]
+%	but the corresponding equality rule (see \autoref{fig:prelim:lf:prodrules}) demands as premise
+%	\[\judg{\Gamma,x:\coprod AB}{\judgeq{f x}{\cmatch xy{f x}{f x}C}C}\]
+%	which requires the computation rule for \cmatchsym. 
+%	
+%	Alternatively, in the presence of judgments-as-types or equality types (see \autoref{sec:lf:lfx:eq}) we can recover extensionality as an object level theorem, by using the elimination rule of coproducts to construct an element of the corresponding equality (or proof) type.
+\end{itemize}
+
+\subsection{Subtyping Behavior of Coproducts}
+
+We have previously used the type checking rules as a justification for derivable subtyping rules. Since a type checking rule for arbitrary elements of $\coprod AB$ does not exist (in a meaningful way), we can instead introduce a subtyping rule and use that to derive type checking rules for the introductory forms. The obvious guiding criterion to use is that any pattern match on $\coprod AB$ needs to be applicable to any $x:S$ for $\subtp S{\coprod AB}$. This implies the following covariance rule:
+\[
+\irule{\gjudg{\subtp {A'}A} \quad \gjudg{\subtp {B'}B}}{\gjudg{\subtp{\coprod{A'}{B'}}{\coprod AB}}}
+\]
+from which we can derive the following typing rules:
+\[
+\irule{\gjudg{\hastype aA} \quad \gjudg{\subtp{B'}B}}{\gjudg{\hastype{\injl a{B'}}{\coprod AB}}} \qquad
+\irule{\gjudg{\hastype bB} \quad \gjudg{\subtp{A'}A}}{\gjudg{\hastype{\injr b{A'}}{\coprod AB}}}
+%\trule{\gjudg{\infertype p{\coprod AB}} \quad \judg{\Gamma,x:A}{\hastype {c_1}{C'}} \quad \judg{\Gamma,x:B}{\hastype {c_2}{C'}}}
+%{\gjudg{\hastype{(\cmatch px{c_1}{c_2}C)}{C'}}}
+\]
+This is especially useful in the presence of an empty type \emptytype (see \autoref{sec:lf:lfx:finite}), where $\injl a\emptytype$ now type checks against any $\coprod A\_$ (analogously for \injrsym). However, we also need to add an additional equality rule then, since all left injections $\injl a{B_i}$ should be equal (at some \coprodsym-type). Hence:
+\[
+	\irule{\gjudg{\judgeq{a_1}{a_2}A}}{\gjudg{\judgeq{\injl {a_1}{B_1}}{\injl {a_2}{B_2}}{\coprod AB}}} \qquad
+	\irule{\gjudg{\judgeq{b_1}{b_2}B}}{\gjudg{\judgeq{\injr {b_1}{A_1}}{\injr {b_2}{A_2}}{\coprod AB}}}
+\]
+
+\subsection{Implementation}\label{sec:lf:lfx:coprod:impl}
+
+Given the rules in \autoref{fig:lf:lfx:coprodrules} and the examples in \autoref{sec:lf:lfx:sigma}, an implementation of Coproducts is rather straight-forward.
+%\begin{example}
+%	The equality rule for Coproducts is an example for *TermHeadBasedEqualityRule*s, since it fires on the heads of the two terms instead of the type at which the equality is to be proven, and is presented in \autoref{fig:lf:lfx:coprod:eqrule}.
+%\begin{labeling}{Lines 10--13}
+%	\item[Line 2] (the class parameters) determines that this rule is applicable iff both terms have a \cmatchsym as their head symbol.
+%	\item[Line 6] deconstructs the two terms.
+%	\item[Line 8] infers the type of *t1* and instructs the solver to simplify the result until it is of the form $\coprod AB$ (i.e. until the *unapply*-method of the helper object *Coprod* returns *Some(_)*).
+%	\item[Lines 12--19] check all the equalities in the premises of the rule.
+%	\item[Line 20] finally returns (since all checks have passed) *true*, only wrapped in a *Continue*.
+%\end{labeling}
+%	
+%	\begin{nscalacode}[label=fig:lf:lfx:coprod:eqrule,caption={The Equality Rule for \cmatchsymnolink-terms  (\cite{mmtlfx:git}\cn{/scala/.../Coproducts/Rules.scala})},emph={cmatch,Coprod,inl,inr}]
+%object MatchEquality extends TermHeadBasedEqualityRule(Nil,
+%	cmatch.path,cmatch.path) {
+%  def apply(solver: CheckingCallback)(tm1: Term, tm2: Term, 
+%  	tp: Option[Term])(implicit stack: Stack, history: History)
+%  	: Option[Continue[Boolean]] = (tm1,tm2) match {
+%    case (cmatch(t1,x1,left1,right1,to1),
+%    	cmatch(t2,x2,left2,right2,to2)) =>
+%      val tp1 = solver.inferType(t1,true).map(t => 
+%      	solver.safeSimplifyUntil(t)(Coprod.unapply)._1)
+%      tp1 match {
+%        case Some(cp@ Coprod(tpA,tpB)) =>
+%          val tp2 = solver.inferType(t2).getOrElse(return None)
+%          solver.check(Equality(stack,cp,tp2,None))
+%          solver.check(Equality(stack,to1 ^? (x1 / t1),to2 ^? (x2/t2),
+%          	None))
+%          solver.check(Equality(stack ++ x1%tpA,left1,left2^?x2/OMV(x1),
+%          	Some(to1 ^? (x1/inl(OMV(x1),tpB)))))
+%          solver.check(Equality(stack ++ x1%tpB,right1,right2^?x2/OMV(x1),
+%          	Some(to1 ^? (x1/inr(OMV(x1),tpA)))))
+%          Some(Continue(true))
+%        case _ => None
+%      }
+%    case _ => None // should be impossible
+%  }
+%}
+%	\end{nscalacode}
+%\end{example}
+
+\autoref{lst:lf:lfx:coprod:symbols} and \autoref{lst:lf:lfx:coprod:test} show excerpts of the associated \mmt theory and a toy example for testing the implementation. Notably, both \coprodsym and \cmatchsym are implemented with flexary notations; a helper object (similar to \sigmasym-types, see Chapter \autoref{sec:lf:lfx:sigma}) takes care of deconstructing expressions with multiple arguments into binary applications of the symbol.
+
+Notably, coproducts are not very useful in and of themselves; however, in conjunction with a unit type they are sufficient to construct finite types (see \autoref{sec:lf:lfx:finite}), and are used to construct \wtypesym-types (see \autoref{sec:lf:lfx:wtypes}).
+
+\begin{figure}
+\centering{Theories for Coproducts\protect\footnotemark}
+%\scaled[0.98\textwidth]{
+\begin{multicols}{2}
+\begin{mmtcode}[caption={Symbols and Rules (\cn{Coproducts.mmt})},label=lst:lf:lfx:coprod:symbols]
+theory Symbols =
+  Coprod # 1⨁…  prec -10000❙
+  inl # 1 ↪l 2 prec -5 ❙
+  inr # 2 r↩ 1 prec -5 ❙
+  coprodmatch 
+    # 2 match V1 . 3|… to 4 
+      prec -9000❙
+❚
+	
+theory FuncaddSymbol =
+  Addfunc # 1⊕… prec 0❙
+❚
+	
+theory SimpleRules =
+   rule rules?CoprodTerm ❙
+   rule rules?inlTerm ❙
+   rule rules?inrTerm ❙
+   rule rules?MatchTerm ❙
+   rule rules?MatchComp ❙
+   rule rules?MatchEquality ❙
+   rule rules?CoprodSubType ❙
+❚
+
+theory TypedCoproduct 
+    : ur:?TermsTypesKinds =
+  include ?Symbols ❙
+  include ?SimpleRules ❙
+❚
+
+
+theory FuncaddRules =
+  rule rules?AddFuncComp ❙
+❚
+
+theory LFCoprod =
+  include ?FuncaddSymbol ❙
+  include ?FuncaddRules ❙
+  include ?TypedCoproduct ❙
+  include ur:?LF ❙
+❚
+\end{mmtcode}
+\columnbreak
+%\scaled[0.48\textwidth]{
+\begin{mmtcode}[caption={Example Theory Testing Coproducts (\cn{Test.mmt})},label=lst:lf:lfx:coprod:test]
+theory coprodtest 
+    : LFX/Coproducts?LFCoprod =
+  A: type ❙
+  B: type ❙
+  a:A ❙
+  b:B ❙
+  C:type ❙
+  t: A⨁B ❙
+	
+  inla: A⨁B ❘ = (a ↪l B) ❙
+  inlb: A⨁B ❘ = (A r↩ b) ❙
+	
+  // shouldfail: A⨁B ❘ = (B r↩ a) ❙
+	
+  f:A ⟶ C ❙
+  g:B ⟶ C ❙
+  addfuncA: C ❘ = (f ⊕ g) t ❙
+  // shouldfail2 : C ❘ = (f ⊕ g) a ❙
+	
+  Pred : C ⟶ type ❙
+  p: Pred (t match x . 
+    f x | g x to C) ❙
+  q: Pred (t match y . 
+    f y | g y to C) ❘ 
+    = p ❙
+	
+  refleq: {c} Pred c ❙
+  claim2: Pred ((a ↪l B) match x . 
+    f x | g x to C) ❘ 
+    = refleq (f a) ❙
+  typecheck: (A ⨁ B) ⟶ C ❘ 
+    = (f ⊕ g) ❙
+  claim: Pred ((f ⊕ g) (a ↪l B)) ❘ 
+    = refleq (f a) ❙
+❚
+\end{mmtcode}
+\end{multicols}
+%}
+\end{figure}
+\footnotetext{\url{https://gl.mathhub.info/MMT/LFX/tree/master/source}}
+
+\begin{remark}
+	The notation of coproducts as an ``additive'' construct $\coprod AB$ is suggestive of a more general correspondance:
+	
+	Thinking of coproducts as sums, we can think about the result of iteratively taking the coproduct of a fixed type $B$ over some index type $A$; i.e. $\underbrace{B\coprodsym B\coprodsym\ldots \coprodsym B}_{\mid A\mid\text{ times}}$. Naturally, an element of this type consists of some element $b:A$ and its \emph{index} $a:A$; i.e. we can identify this type with the type $\simpleprod AB$. Analogously, taking an indexed coproduct over a type \emph{family} $B(a)$ we can think of the type $\bigoplus_{a:A} B(a)$ as the dependent sigma type $\sigmatp{a:A}{B(a)}$. In other words: A product is an iterated sum, reminiscent of arithmetics.
+	
+	Analogously, we can think of a dependent function type $\lfpi{a:A}{B(a)}$ as the iterated product $B(a_1)\times B(a_2) \times\ldots$, an element of which consists of exactly one element $b:B(a)$ for each $a:A$, which we can naturally interpret as a set of pairs, i.e. a function.
+	
+	Note that this is merely an intuitive correspondence, but neither relevant nor helpful from an implementation perspective.
+\end{remark}

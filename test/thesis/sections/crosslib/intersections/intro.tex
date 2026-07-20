@@ -1,0 +1,25 @@
+\begin{disclaimer*}
+	A significant part of the contents of this chapter  has been previously published as Work-in-Progress as
+\cite{KohMue:cicm15} with coauthor Michael Kohlhase. Both the writing as well as the theoretical results were developed in close collaboration between the authors, hence it is impossible to precisely assign authorship to individual authors.
+	
+	My contribution in this chapter consists of all implementations described herein.
+\end{disclaimer*}
+
+An important driver of mathematical development is the discovery of new ma\-the\-ma\-ti\-cal objects, concepts and theories. Even though there are many different situations that give rise to a new theory, it seems that a common instance is the discovery of common\-alities between apparently different mathematical structures (if such exist). In fact, many of the algebraic theories in Bourbaki naturally arise as the ``common part'' of two (or more) different mathematical structures -- for instance, one could interpret the theory of groups as the common theory of $(\mathbb Z,+,0)$ and the set of symmetrical operations on e.g. a square.
+
+In \cite{Kohlhase:mkmtobbtg14}, Kohlhase proposes a notion of \emph{theory
+  intersection} -- elaborating an earlier formalization from~\cite{Normann:phd} to \mmt~\cite{RabKoh:WSMSML13,HorKohRab:emfsl12} 
+ that captures this phenomenon in a formal setting: Let two theories $S$ and $T$, a partial view $\sigma:\viewto ST$ with domain $D$ and codomain $C$, and
+its partial inverse $\delta$ (as in \autoref{fig:theory-intersection} on the
+left) be given. Then we can pass to a more modular theory graph, where
+$S':=S\backslash D$ and $T':=T\backslash C$ (as in \autoref{fig:theory-intersection} on the
+right). In this case we think of the isomorphic theories $D$
+and $C$ as the \emph{intersection} of theories $S$ and $T$ along $\sigma$ and $\delta$. 
+
+\begin{figure}[ht]\centering
+  \begin{tabular}{|c|c|}\hline
+    Situation & Theory Intersection\\\hline
+    \tikzinput{img/int-partial-biview}&\tikzinput{img/int-theory-intersection}\\\hline
+  \end{tabular}
+  \caption{Theory Intersection}\label{fig:theory-intersection}
+\end{figure}

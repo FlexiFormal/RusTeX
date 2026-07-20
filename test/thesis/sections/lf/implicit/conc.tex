@@ -1,0 +1,55 @@
+\paragraph{Implicit Conversions}
+The need for implicit conversions has been recognized in many formal systems.
+In all cases, similar uniqueness constraints are employed as in ours.
+
+\textbf{Type-level} conversions are functions between types such as the conversion from natural numbers to integers.
+\textbf{Theory-level} conversions are morphisms between theories, like in this paper, or similar constructs.
+The latter can be seen as a special case of the former: if every theory is seen as the type of its models (as in \cite{MRK:modelsof:18}), then reduction along an implicit morphism $S\to T$ induces a conversion from $T$-models to $S$-models.
+Type-level conversions are present in many systems, e.g., the Coq proof assistant \cite{coq} or the Scala programming language.
+%In both cases, this includes theory-level conversions between the respective analogues of theories
+The novelty in our approach is to restrict conversions two-fold: firstly to the theory level, secondly to those conversion functions that can be expressed as theory morphisms.
+This significantly reduces the complexity and permits an elegant logic-independent semantics, while still being practically useful.
+
+Some formal systems support theory-level conversions without explicitly using theory morphisms.
+This is common in systems that use type classes as an analogue to theories.
+For example, the \texttt{sublocale} declarations of the proof assistant Isabelle \cite{isabelle_locales} or the \texttt{deriving} declarations of the programming language Haskell can be seen as implicit morphisms even though no primitive concept of morphism objects is employed.
+Our implicit morphisms yield a simpler and more expressive theory-level conversion system at the price of having an additional primitive concept.
+% Löh paper on deriving via not published yet
+%\cite{gonthier_packaging}
+
+\paragraph{Structuring Theories}
+In systems that maintain large diagrams of theories, the problems solved by our approach have been recognized for some time.
+For example, the IMPS system \cite{imps} allowed using theory morphisms to retroactively add defined constants to a previously declared theory.
+This corresponds to a definitional extension with an implicit retraction morphism as in Sect.~\ref{sec:inverse}.
+
+In \cite{realms}, the idea of \emph{realms} was introduced as a way to bundle a set of isomorphic theories and their definitional extensions into a single interface.
+The paper called for an implementation of realms as a new primitive concept in addition to theories and morphisms.
+In contrast, the much simpler feature of implicit morphisms achieves very similar goals: realms can be recovered by marking all isomorphisms as \emph{implicit} and all extensions as \emph{definitional}.
+
+It remains future to investigate the relationship between implicit morphisms and other generalizations of the set-theoretic notion of inclusion such as factorization or inclusion systems.
+
+%\begin{compactitem}
+%\item a set of isomorphic theories $B_1,\ldots,$
+%\item for each $B_i$, a set of retractable extensions $E^i_1,\ldots,$
+%\item a theory $F$ including all of the above.
+%\end{compactitem}
+%The intuition is that the $B_i$ are alternative definitions of a theory; the $E^i_j$ add definitions and theorems; and $F$ aggregates everything into the outwardly visible interface (the face) of the realm.
+%A good example is the realm of topological spaces with the $B_i$ corresponding to the various possible definitions (via neighborhoods, open sets, closure operator, etc.).
+%
+%Users of the realm include only the face and thus (i) gain access to all derived knowledge in the theory of topological spaces, and (ii) do not have to commit to one particular definition.
+%Indeed, this corresponds more closely to the way how conventional mathematics sees the theory of topological spaces.
+
+\paragraph{Scalability and Scoping}
+Future work will focus on utilizing and evaluating implicit morphisms in large libraries, i.e., diagrams with thousands of theories and as many implicit morphisms as possible.
+
+In doing so, we will pay particular attention to some problems that implicit conversions can cause at large scale.
+Users can be confused when implicit conversions are applied that they are not aware of, and different users may also have different preferences for which conversions should be implicit.
+Moreover, critically, different developments may be incompatible if they introduce different implicit morphisms between the same theories.
+For those reasons, Scala, for example, only applies implicit conversions that are imported into the current namespace.
+
+We anticipate that these problems will lead to an evolution of our solution that allows more localized control over which morphisms are implicit.
+Thus, instead of a single global diagram of implicit morphisms, every context may carry its own local one.
+But we defer this until the current implementation has been used to conduct very large case studies.
+
+%Moreover, the use of qualified identifiers in \mmt means that readers can always tell where an identifier is implicitly-included from, and the \mmt IDE can always show the implicit morphism along which it is imported.
+

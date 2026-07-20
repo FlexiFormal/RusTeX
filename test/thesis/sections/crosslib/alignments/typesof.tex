@@ -1,0 +1,218 @@
+Let us assume two corpora $C_1,C_2$ with underlying foundational logics $F_1,F_2$.  We
+examine examples for how two concepts $a_i$ from $C_i$ can be aligned.
+Importantly, we allow for the case where $a_1$ and $a_2$ represent the same abstract mathematical concept without there being a direct, rigorous translation between them.
+
+The types of alignments in this section are purely phenomenological in nature:
+they exemplify the difficulty of the problem and provide benchmarks for rigorous definitions.
+While some types are relatively straightforward, others are so difficult that giving a rigorous definitions remains an open problem.
+This is because alignments ideally legitimize translations from $F_1$ to $F_2$ that replace $a_1$ with $a_2$.
+But in many situations these translations, while possible in principle, are much more difficult than simply replacing one symbol with another.
+The alignment types below are roughly ordered by increasing difficulty of this translation.
+
+\paragraph{Perfect Alignment}
+If $a_1$ and $a_2$ are logically equivalent (modulo a translation $\phi$ between
+  $F_1$ and $F_2$ that is fixed in the context), we speak of a perfect alignment.  More
+precisely, all formal properties (type, definition, axioms) of $a_1$ carry over to $a_2$
+and vice versa.
+%
+Typical examples are primitive types and their associated operations. Consider:
+\[\expr{Nat_1:Type}\qquad \expr{Nat_2 :Type}\]
+then translations between $C_1$ and $C_2$ can simply interchange $a_1$ and $a_2$.
+
+The above example is deceptively non-trivial for two reasons.  Firstly, it hides the problem
+that $F_1$ and $F_2$ do not necessarily share the symbol $\expr{Type}$.  Therefore, we need
+to assume that there are symbols $\expr{Type_1}$ and $\expr{Type_2}$, which have been already
+aligned (perfectly).  Such alignments (on the foundations of $C_1$ and $C_2$) are crucial for all fundamental constructors that
+occur in the types and characteristic theorems of the symbols we want to align such as
+$\cn{Type}$, $\to$, $\cn{bool}$, $\wedge$, etc.  These alignments can be handled with the
+same methodology as discussed here.  Therefore, here and below, we assume we have such
+alignments and simply use the same fundamental constructors for $F_1$ and $F_2$.
+
+Secondly, it ignores that we usually want (and can reasonably expect) only certain formal
+properties to carry over, namely those in the \emph{interface theory} in the sense of
+\cite{KR:qed:14} --- i.e. those properties that are still meaningful after abstracting away from the specific foundational logics $F_i$.
+We will look at some examples for perfect alignments between symbols that use different but equivalent definitions in \autoref{sec:crosslib:alignments:examples}.
+
+\paragraph{Alignment up to Argument Order}
+Two function symbols can be perfectly aligned except that their arguments must be reordered when translating.
+
+The most common example is function composition, whose arguments may be given in application order ($g\circ f$) or in diagram order ($f;g$).
+Another example is given
+\[\mathll{\expr{contains_1:(T:Type)\to SubSet\,T\to T\to\cn{bool}} \nl
+\expr{in_2: (T:Type)\to T\to SubSet\,T\to bool}}\]
+Here the expressions $\expr{contains_1(T,A,x)}$ and $\expr{in_2(T,x,A)}$ can be translated to each other.
+
+\paragraph{Alignment up to Determined Arguments}
+The perfect alignment of two function symbols may be broken because they have different types even though they agree in most of their properties.
+This often occurs when $F_1$ uses a more fine-granular type system than $F_2$, which requires additional arguments.
+
+Examples are untyped and typed (polymorphic, homogeneous) equality: The former is binary, while the latter is ternary
+\[\mathll{ \expr{eq_1 : Set\to Set\to bool} \nl
+\expr{eq_2:(T:Type)\to T\to T\to bool}}.\]
+The types can be aligned, if we apply $\cn{eq}_2$ to $\varphi(\cn{Set})$.
+Similar examples arise between simply- and dependently-typed foundations, where symbols in the latter take additional arguments.
+
+These additional arguments are uniquely determined by the values of the other arguments, and
+%Indeed, they are usually omitted (implicit) in the human-facing syntax and reconstructed by the system.
+a translation from $C_1$ to $C_2$ can drop them, whereas the reverse translations must
+infer them -- but $F_1$ usually has functionality for that (e.g. the type parameter of polymorphic equality is usually uniquely determined).
+
+%A similar but less straightforward example occurs when 
+The additional arguments can also be proofs, used for example
+to represent partial functions as total functions, such as
+a binary and a ternary division operator
+\[\mathll{\expr{div_1 : Real\to Real\to Real} \nl
+\expr{div_2: Real\to(d: Real)\to \,\ded d\neq 0 \to Real}}\]
+Here inferring the third argument is undecidable in general, and it is unique only in the
+presence of proof irrelevance.
+
+\paragraph{Alignment up to Totality of Functions}
+The functions $a_1$ and $a_2$ can be aligned everywhere where both are defined.
+%except for $a_1$ being total whereas $a_2$ is partial.
+This happens frequently since it is often convenient to represent partial functions as total ones by assigning values to all arguments.
+The most common example is division.
+Two implementations $\cn{div}_1$ and $\cn{div}_2$ might both have the type $\cn{Real}\to\cn{Real}\to\cn{Real}$ with $x\,\cn{div}_1\,0$ undefined and $x\,\cn{div}_2\,0=0$.
+
+Here a translation from $C_1$ to $C_2$ can always replace $\cn{div}_1$ with $\cn{div}_2$.
+The reverse translation can usually replace $\cn{div}_2$ with $\cn{div}_1$ but not always.
+In translation-worthy data-expressions, it is typically sound; in formulas, it can easily be unsound because theorems about $\cn{div}_2$ might not require the restriction to non-zero denominators.
+
+\paragraph{Alignment for Certain Arguments}
+Two function symbols may be aligned only for certain arguments.
+This occurs if $a_1$ has a smaller domain than $a_2$.
+
+The most fundamental case is the function type constructor $\to$ itself.
+For example, $\to_1$ may be first-order in $F_1$ and $\to_2$ higher-order in $F_2$.
+Thus, a translation from $C_1$ to $C_2$ can replace $\to_1$ with $\to_2$, whereas the reverse translation must be partial.
+
+Another important class of examples is given by subtyping (or the lack thereof).  For
+example, we could have
+\[\mathll{\expr{plus_1: Nat \to Nat\to Nat}
+\nl
+\expr{plus_2: Real\to Real \to Real}}.\]
+
+%Then the types of $+$ in both libraries do not actually match, but the subtyping relation $\mathbb N <: \mathbb R$ still allows them to be aligned.
+
+% CK: This is actually an alignment up to a determined argument.
+%Another way for $a_1$ to have a smaller domain is to take less arguments.
+%For example, we might have
+%\[\cn{ln}_1:\cn{Real}\to \cn{Real}
+%\qquad
+%\cn{log}_2: \cn{Real}\to \cn{Real}\to \cn{Real}\]
+%where $\cn{ln}_2(x)$ can be translated to $\cn{log}_2(e,x)$.
+
+\paragraph{Alignment up to Associativity}
+An associative binary function (either logically associative or notationally right- or left-associative) can be defined as a flexary function, i.e., a function taking an arbitrarily long sequence of arguments.
+In this case, translations must fold or unfold the argument sequence.
+For example
+\[\expr{plus_1:  Nat \to Nat \to Nat}\qquad
+\expr{plus_2: List\, Nat\to Nat}.\]
+
+\paragraph{} All of the above types of alignments allow us to translate expressions between our corpora by modifying the lists of arguments the respective symbols are applied to, even if not always in a straight-forward way. The following types of alignments are more abstract, and any translation along them might be more dependent on the specifics of the symbols under consideration.
+
+\paragraph{Contextual Alignments}
+Two symbols may be alig\-ned only in certain contexts.  For example, the complex numbers
+are represented as pairs of real numbers in some proof assistant libraries and as an
+inductive data type in others.  Then only selected occurrences of pairs of real numbers
+can be aligned with the complex numbers.
+% aligned with the set of pairs of reals, but only in certain use cases (e.g. where multiplication on complex numbers doesn't come into play).
+
+\paragraph{Alignment with a Set of Declarations}
+Here a single declaration in $C_1$ is aligned with a set of declarations in $C_2$.
+An example is a conjunction $a_1$ in $C_1$ of axioms aligned with a set of single axioms in $C_2$.
+More generally, the conjunction of a set of $C_1$-statements may be equivalent to the conjunction of a set of $C_2$-statements.
+
+Here translations are much more involved and may require aggregation or projection operators.
+
+\paragraph{Alignment between the Internal and External Perspective on Theories}
+When reasoning about complex objects in a proof assistant (such as algebraic
+structures, or types with comparison) it is convenient to express them as
+theories that combine the actual type with operations on it or even properties
+of such operations. The different proof assistants often have incompatible
+mechanisms of expressing such theories including type classes, records and
+functors, with the additional distinction whether they are first-class objects or not. This roughly corresponds to the distinction between \emph{stratified} and \emph{integrated} groupings in \autoref{sec:lf:records}.
+
+We define the crucial difference for alignments here only by example.
+We speak of the internal perspective ($\approx$ stratified grouping) if we use a theory like
+\[\expr{\mathtt{theory}\; \cn{Magma}_1 = \{u_1:\cn{Type},\;\circ_1:u_1\to u_1\to u_1\}}\]
+and of the external perspective ($\approx$ integrated grouping) if we use operations like
+\[\mathll{\expr{\cn{Magma}_2:\cn{Type},\; u_2:\cn{Magma}_2\to\cn{Type},\;} \nl
+  \expr{\circ_2:(G:\cn{Magma})\to u_2\, G \to u_2\, G\to u_2\, G}}\]
+Here we have a non-trivial, systematic translation from $C_1$ to $C_2$. A reverse may also be possible, depending on the details of $F_1$.\footnote{In \mmt, we can bridge these two representations using the \cn{Mod}-types described in \autoref{sec:lf:records}}
+ 
+\paragraph{Corpus-Foundation Alignment}
+Orthogonal to all of the above, we have to consider alignments, where a symbol is primitive in one system but defined in another.
+More concretely, $a_1$ can be built-into $F_1$ whereas $a_2$ is defined  in $F_2$.
+This is common for corpora based on significantly different foundations, as each foundation is likely to select different primitives.
+Therefore, it mostly occurs for the most basic concepts. % because these are more likely to be chosen as primitives.
+For example, the boolean connectives, integers and strings are defined in some systems but primitive in others, as in some foundations they may not be easy to define.
+
+The corpus-foundation alignments can be reduced to previously considered cases if we
+follow the approach generally followed in this thesis, where the foundations
+themselves are represented in an appropriate logical framework.  Then $a_1$ is simply an
+identifier in the corpus of foundations of the framework $F_1$.
+
+\paragraph{Opaque Alignments}
+The above alignments focused on logical corpora, partially because logical corpora allow for precise and mechanizable treatment of logical equivalence.
+Indeed, alignments from a logical into a computational or narrative corpus tend to be opaque: Whether and in what way the aligned symbols correspond to each other is not (or not easily) machine-understandable.
+For example, if $a_2$ refers to a function in a programming language library, that function's specification may be implicit or given only informally.
+Even worse, if $a_2$ is a wiki article, it may be subject to constant revision.
+
+Nonetheless, such alignments are immensely useful in practice and should not be discarded.
+Therefore, we speak of opaque alignments if $a_2$ refers to a symbol whose semantics is unclear to machines.
+
+\paragraph{Probabilistic Alignments}
+Orthogonal to all of the above, the correctness of an alignment may be known only to some degree of certainty.
+In that case, we speak of probabilistic alignments.
+These occur in particular when machine-learning techniques are used to find large sets of alignments automatically.
+This is critical in practice to handle the existing large corpora.
+
+The problem of probabilistically estimating the similarity of concepts in different corpora was studied before in~\cite{tgck-cicm14}.
+I briefly restate the relevant aspects in our setting, as described by Thibault Gauthier in~\cite{MueGauKal:cacfms17}.
+
+Let $T_i$ be the set of top level expressions occurring in $C_i$, e.g., the types of all constants and the formulas of all theorems.
+We assume a fixed set $F$ of alignments, covering in particular the foundational concepts in $F_1$ and $F_2$.
+
+\begin{definition}
+The pattern $P(f)$ of an expression $f$ is obtained by normalizing $f$ to $N(f)$ and abstracting over all occurrences of concepts that are not in $F$, resulting in $P(f) = \lambda c_1 \ldots c_n.\ N(f)$.
+If two formulas $f\in T_1$ and $g\in T_2$ have $\alpha$-equivalent patterns 
+$\lambda d_1 \ldots d_m.\ N(g)$ and $\lambda e_1 \ldots e_m.\ N(h)$, we 
+define their induced alignments by
+ $I(f,g) = \{(d_1,e_1),\ldots,(d_m,e_m)\}$.
+We write $J(p)$ for the union of all $I(f,g)$ with $P(f) =_\alpha P(g) =_\alpha p$.
+\end{definition}
+
+\begin{example}
+For the formula $\forall x.\ x = 2\cdot\pi \Rightarrow \textit{cos}(x) = 0$ with $F$ not covering the concepts $2$, $\pi$, $0$, and $\textit{cos}$,
+and using a normal form $N$ that exploits the symmetry of equality, we get the pattern
+$\lambda c_1\ c_2\ c_3\ c_4.\ \forall x.\ x = c_1 \cdot c_2 
+\Rightarrow c_3 = c_4(x)$.
+\end{example}
+
+Let $a_1,\ldots,a_n$ be the set of all alignments in any $J(p)$.
+We first calculate an initial vector containing the similarities $sim_i$ for each $a_i$ by
+  \[ sim_i=
+     \sum_{\{p \ |\ a_i \in J(p)\} } \frac{1}{\textit{ln} (2 + card\ \{\ f\ |\ P(f) 
+  = 
+  p\ \})} 
+  \]
+Intuitively, an alignment has a high similarity value if it was produced by a 
+large number of rare patterns.
+
+Secondly, we iteratively transform this vector until its values stabilize.
+The idea behind this dynamical system is that the similarity score of an alignment should depend on the quality of its co-induced alignments.
+Each iteration step consists of two parts:
+we multiply the vector with the matrix
+  \[ cor_{kl} =
+     card\ \lbrace\ (f,g)\ |\ \ a_k \in I(f,g) \wedge a_l \in 
+     I(f,g)\ \rbrace
+  \]
+which measures the correlation between $a_k$ and $a_l$, and then (in order to ensure convergence and squash all values into the interval $[0;1]$) apply the function $x\mapsto \frac{x}{x+1}$ to each component.
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "paper-cpp"
+%%% End:
+
+%  LocalWords:  cn cn qquad cn cn emph circ mathll varphi neq subtyping mathbb mathbb
+%  LocalWords:  flexary mathtt mechanizable

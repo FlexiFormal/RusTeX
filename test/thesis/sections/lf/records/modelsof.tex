@@ -1,0 +1,294 @@
+%\paragraph{Preliminaries: Theories}
+%
+%We introduce a minimal definition of stratified theories and theory morphisms, which can be seen as a very simple fragment of the \textsf{MMT} language \cite{RK:mmt:10}.
+%The \textbf{grammar} is given in Figure \ref{fig:mmtgrammar}, again graying out the previously introduced parts.
+%
+%\begin{figure}[ht]\centering%\vspace*{-1em}
+%  \begin{framed}
+%    \begin{tabular}{rcl@{\quad}l}
+%      $\Theta$ & $::=$ & $\cdot \mid \Theta,\;X=\{\Gamma\} \mid \Theta,\; X : X_1 \to X_2 = \{\Gamma \} $ & theory level \\
+%      \gray{$\Gamma$} & \gray{$::=$} & $\gray{\cdot \mid \Gamma, x [:T] [:=T] } \mid \Gamma,\;\incl{X}$ & includes \\
+%      \gray{$T$} & \gray{$::=$} & \gray{$x \mid \type \mid \kind $} &\\
+%               & \gray{$\mid$} & \gray{$\prod_{x:T'}T \mid \lambda x:T'. T \mid T_1 T_2$} &\\
+%               & \gray{$\mid$} &  \gray{$\rectype{\Gamma} \mid \recexp\Gamma \mid T.x \mid T_1+T_2$}&\\
+%    \end{tabular}
+%  \end{framed}%\vspace*{-.5em}
+%  \captionof{figure}{A Simple Stratified Language}\label{fig:mmtgrammar}%\vspace*{-1em}
+%\end{figure}
+%
+%Each of the two levels has its own context:
+%Firstly, the \textbf{theory level} context $\Theta$ introduces names $X$, which can be either theories $X=\{\Gamma\}$ or morphisms $X:P\to Q=\{\Gamma\}$, where $P$ and $Q$ are the names of previously defined theories.
+%Secondly, the \textbf{expression level} context $\Gamma$ is as before but may additionally contain includes $\incl{X}$ of other theories resp. morphisms $X$.
+%We call a context \textbf{flat} if it does not contain includes.
+%
+%\ednote{try to add notations somewhere if it can be done elegantly}
+
+%\begin{figure}[ht]\centering
+%\begin{tabular}{lcll}
+%	$Thy$ & := & $Str [: p] = Dec^\ast$ & Theories\\\hline
+%	$Dec$ & := & $c[:o][=o][\#N] \; |\; \textsf{include }p$ & Declarations\\
+%	$o$ & := & $c\; |\;x\; |\;c((x[:o])^\ast;o^\ast)$ & Objects/Terms\\
+%	$N$ & := & & Notations\\\hline
+%	$c$ & := & & Symbol URIs \\
+%	$p$ & := & & Module URIs \\
+%	$Str$ & := & &Strings
+%\end{tabular}\\
+%$x$ represents variables, URIs are used for referencing previously declared symbols and theories. In particular, each URI has a \emph{name} component. The \textsf{Str} in \textsf{Thy} is the name of the theory, the optional $: p$ component is the theory's meta-theory.
+%\caption{The Full Grammar of \textsf{MMT} Theories}\label{fig:mmtgrammar}
+%\end{figure}
+
+%All \textbf{judgments} are as before except that they acquire a second context, e.g., the typing judgment now becomes $\tgjudg{\hastype t T}$.
+%With this modification, all rules for function and record types remain unchanged.
+%However, we add the restriction that $\Gamma$ in $\rectype{\Gamma}$ and $\recexp{\Gamma}$ must be flat.
+%
+%We omit the \textbf{rules} for theories and morphisms for brevity and only sketch their intuitions.
+%We think of theories as named contexts and of morphisms as named substitutions between contexts.
+%Includes allow forming both modularly by copying over the declarations of a previously named object.
+%While theories may contain arbitrary declarations, morphisms are restricted:
+%Let $\Theta$ contain $P=\{\Gamma\}$ and $Q=\{\Delta\}$.
+%Then a morphism $V:P\to Q=\{\delta\}$ is well-typed if $\delta$ is fully defined (akin to record terms) and contains for each declaration $x:T$ of $P$ a declaration $x=t$ where $t$ may refer to all names declared in $Q$.
+%$V$ induces a homomorphic extension $\ov{V}$ that maps $P$-expressions to $Q$-expressions.
+%The key property of morphisms is that,
+%if $V$ is well-typed, then $\tjudg{P}{\hastype t T}$ implies $\tjudg{Q}{\hastype{\ov{V}(t)}{\ov{V}(T)}}$ and accordingly for equality checking and subtyping.
+%Thus, theory morphisms preserve judgments and (via propositions-as-types representations) truth.
+%Moreover, it is straightforward to extend the above with identity and composition so that theories and morphisms form a category.
+%We refer to \cite{rabe:howto:14} for details.
+
+
+ For the purposes of this section, let $\Theta$ be the \emph{global context} of available modules.
+
+% \begin{definition}\rm
+% Given a theory $\mathcal T=\{d_1,\ldots,d_n\}$:
+% \begin{enumerate}
+%	\item We define the \emph{flat (}or \emph{inner) context } $\mathtt{fl}(\mathcal T)$ in $\Theta$ recursively: 
+%	
+%	For a declaration $d$ we let
+%		\begin{itemize}
+%			\item If $d = x[:T][:=t][\# N]$, then $\mathtt{fl}(d)=x[:T][:=t]$,
+%			\item If $d$ is a view, then $\mathtt{fl}(d)=\cdot$,
+%			\item If $d = \mathtt{include\ X}$ and $(X= \{ \ldots \})\in\Theta$, then $\mathtt{fl}(d)=\mathtt{fl}(X)$,
+%		\end{itemize}
+%		and
+%			\[\mathtt{fl}(\mathcal T)=\mathtt{fl}(d_1),\ldots,\mathtt{fl}(d_n)\]
+%	\item For a view $\mathcal V : \mathcal T_1 \to \mathcal T_2 = \{ d_1,\ldots d_n \}$ we define
+%		\begin{itemize}
+%			\item If $d=\mathtt{include\ }\mathcal T := X$ and $(X : \mathcal T_1 \to \mathcal T_2= \{ \ldots \})\in\Theta$, then $\mathtt{fl}_v(d)=\mathtt{fl}_v(X)$,
+%			\item If $d=(x:=t)$, then $\mathtt{fl}_v(d)=(x:=t)$,
+%		\end{itemize}
+%		and
+%		\[\mathtt{fl}_v(\mathcal V)=\mathtt{fl}_v(d_1),\ldots,\mathtt{fl}_v(d_n)\]
+%	\item Given an appropriate context $\delta$, we let
+%		\[\mathcal T(\delta)=(\modelsof {\mathcal T})(\delta)=\recexp{\modelsof{\mathcal T} \uplus \delta}\]
+%	
+% \end{enumerate}
+% \end{definition}
+% Note, that $\mathtt{fl}_v$ is always fully defined if the view is well-formed.
+
+%\paragraph{Internalization}
+
+\hypertarget{models}{We can now add the internalization operator, for which everything so far was preparation.
+We add one production to the \textbf{grammar}:}
+\[T ::= \modelsof X\]
+
+The intended meaning of $\modelsof X$ is that it turns a theory $X$ into a record type and a morphism $X:\viewto PQ$ into a function $\lfarrow {\modelsof Q}{\modelsof P}$.
+For simplicity, we only state the rules for the case where all include declarations are at the beginning of theory/morphism:
+\[
+	\irule{P=\{\incl{P_1},\ldots,\incl{P_n},\Delta\} \minn\Theta \quad \Delta\text{ flat} \quad \umax P \text{ defined}}
+		{\tgjudg{\judgeqc{\modelsof P}{\modelsof{P_1}\recmergesym\ldots\recmergesym\modelsof{P_n}\recmergesym\rectype{\Delta}}}}
+		%{\mathcal R_{\modelsof{\mathcal T}}}
+\]
+\[
+	\irule{V : P \to Q =\{\incl{V_1},\ldots,\incl{V_n},\delta \} \minn\Theta \quad \delta\text{ flat}}
+		{\tgjudg{\judgeqc{\modelsof V}{\lambda r:\modelsof{Q}.\;\modelsof{P}\recmergesym(\modelsof{V_1}r)\recmergesym\ldots\recmergesym(\modelsof{V_n}r)\recmergesym\recexp{\delta[r]}}}}
+	%	{\mathcal R_{\modelsof{\mathcal V}}}
+\]
+%\[
+%	\nrule{\judg{\Theta,\Gamma}{X : T \to \cdot =\{\ldots \}} \quad 
+%			\judg{\Theta,\Gamma}{\judgeq{\modelsof T}{\rectype\Delta}U}
+%		}
+%		{\judg{\Theta,\Gamma}{\judgeq{\modelsof X}{\recexpi{\rectype{\Delta}}{\mathtt{fl}_v(X)}}{\rectype\Delta}}}
+%		{\mathcal R_{\modelsof{\mathcal VI}}}
+%\]
+where we use the following abbreviations:
+\begin{compactitem}
+	\item In the rule for theories, $\umax P$ is the biggest universe occurring in any declaration transitively included into $P$, i.e.,
+		$\umax P = \umax{\umax{P_1},\ldots, \umax{P_n},\umax \Delta}$ (undefined if any argument is).
+	\item In the rule for morphisms, $\delta[r]$ is the result of substituting in $\delta$ every reference to a declaration of $x$ in $Q$ with $\recproj rx$.
+\end{compactitem}
+In the rule for morphisms, the occurrence of $\modelsof{P}$ may appear redundant; but it is critical to (i) make sure all defined declarations of $P$ are part of the record and (ii) provide the expected types for checking the declarations in $\delta$.
+
+\begin{example}\label{ex:mod}
+  Consider the theories in \autoref{fig:sltheory}. Applying
+  $\modelsof\cdot$ to these theories yields exactly the record types of the same name introduced in \autoref{sec:lf:records:def} (Figures \ref{fig:semilattices1} and \ref{fig:semi2}), i.e., we have $\hastype{\csl}{\modelsof{\SL}}$ and $\hastype{\cslo}{\modelsof{\SLO}}$.
+  In particularly, $\modelsofF$ preserves the modular structure of the theory.
+  
+%\begin{figure}[ht]\centering%\vspace*{-1em}
+\begin{framed}\footnotesize
+  \begin{eqnarray*}
+\mathtt{theory\ Semilattice}  & =&  \left\{
+  \begin{array}{ll}
+	U &:\; \type \\
+	\wedge &:\; \lfarrow U{\lfarrow UU} \\
+	\mathtt{assoc} &:\; \ded \forall x,y,z:U.\; (x \wedge y) \wedge z \doteq x \wedge (y \wedge z) \\
+	\mathtt{commutative} &:\;\ldots \\
+	\mathtt{idempotent} &:\;\ldots \\
+    \end{array}
+    \right\}\\
+    \mathtt{theory\ SemilatticeOrder} & = & \left\{
+  \begin{array}{ll}
+	\mathtt{include} &\mathtt{Semilattice} \\
+	\mathtt{order} &:\; \lfarrow U{\lfarrow UU} := \lflambda{x,y:U}{x \doteq x\wedge y}\\
+	\mathtt{refl} &\;: \ded \forall a:U.\; a \leq a := \text{ (proof)}\\
+	\ldots
+  \end{array}
+  \right\}
+  \end{eqnarray*}
+\end{framed}%\vspace*{-.5em}
+\captionof{figure}{A Theory of Semilattices}\label{fig:sltheory}%\vspace*{-1em}
+%\end{figure}
+\end{example}
+
+The basic properties of $\modelsof X$ are collected in the following theorem:
+
+\begin{theorem}[Functoriality]\label{thm:functor}
+$\modelsof\cdot$ is a monotonic contravariant functor from the category of theories and morphisms ordered by inclusion to the category of types (of any universe) and functions ordered by subtyping.
+In particular,
+\begin{compactitem}
+\item if $P$ is a theory in $\Theta$ and $\max P\in\{\type,\kind\}$, then $\tgjudg{\hastype{\modelsof P} \max P}$
+\item if $V:\viewto PQ$ is a theory morphism in $\tgjudg{\hastype{\modelsof V}{\modelsof Q\to \modelsof P}}$
+\item if $P$ is transitively included into $Q$, then $\tgjudg{\subtp{\modelsof Q}{\modelsof P}}$
+\end{compactitem}
+\end{theorem}
+\begin{proof}
+  \begin{itemize}
+  \item Follows immediately by the computation rule for $\modelsof P$.
+  \item Follows immediately by the computation rule for $\modelsof V$ and the type checking rule for $\lambda$.
+  \item Follows immediately by the computation rule for $\modelsof P$ and \autoref{thm:plusrules}.
+  \end{itemize}
+\end{proof}
+
+An immediate advantage of $\modelsof\cdot$ is that we can now use the expression level to define expression-like theory level operations.
+As an example, we consider the \textbf{intersection} $P\cap P'$ of two theories, i.e., the theory that includes all theories included by both $P$ and $P'$.
+Instead of defining it at the theory level, which would begin a slippery slope of adding more and more theory level operations, we can simply build it at the expression level:
+\[P\cap P':=\modelsof{Q_1}\recmergesym\ldots\recmergesym\modelsof{Q_n}\]
+where the $Q_i$ are all theories included into both $P$ and $P'$.\footnote{Note that because $P\cap P'$ depends on the syntactic structure of $P$ and $P'$, it only approximates the least upper bound of $\modelsof{P}$ and $\modelsof{P'}$ and is not stable under, e.g., flattening of $P$ and $P'$. But it can still be very useful in certain situations.}
+%We can now prove that $\subtp{P_1\cap P_2}{P_i}$ as well as $\subtp{\modelsof{P}}{P_i}$ for $i=1,2$ implies $\subtp{\modelsof{P}{P_1\cap P_2}$ \ednote{the latter only holds if we use P?x URIs
+
+Note that the computation rules for $\modelsofF$ are efficient in the sense that the structure of the theory level is preserved.
+In particular, we do not flatten theories and morphisms into flat contexts, which would be a huge blow-up for big theories.\footnote{The computation of $\umax P$ may look like it requires flattening. But it is easy to compute and cache its value for every named theory.}
+
+However, efficiently \emph{creating} the internalization is not enough.
+$\modelsof X$ is defined via $\recmergesym$, which is itself only an abbreviation whose expansion amounts to flattening.
+Therefore, we establish admissible rules that allow \emph{working with} internalizations efficiently, i.e., without computing the expansion of $\recmergesym$:
+
+\begin{theorem}\label{thm:models}
+Fix well-typed $\Theta$, $\Gamma$ and $P=\{\incl{P_1},\ldots,\incl{P_n},\Delta\}$ in $\Theta$.
+Then the following rules are admissible:
+  	{\footnotesize\[
+  		\irule{ 
+  				\overbrace{\tgjudg{\hastype r{\modelsof{P_i}}}}^{1\leq i\leq n} \quad
+  				\overbrace{\tgjudg{\hastype{\recproj rx}{T\sub r P}}}^{x:T\in\Delta} \quad
+  				\overbrace{\tgjudg{\judgeq{\recproj rx}{t\sub r P}{T\sub r P}}}^{x:T:=t\in\Delta}\quad
+      	  \gjudg{\infertype rR}}
+			{\tgjudg{\hastype r{\modelsof P}}}
+  	\]
+  	\[
+  		\irule{ 
+  				\overbrace{\tgjudg{\hastype {r_i}{\modelsof{P_i}}}}^{1\leq i\leq n} \quad
+  				\overbrace{\tgjudg{\judgeq{r_i}{r_j}{P_i\cap P_j}}}^{1\leq i,j\leq n} \quad
+  				\tgjudg{\hastype{\recexp{\delta}\sub r P}{\rectype{\Delta}}\quad
+      	  \gjudg{\infertype r R}}}
+			{\tgjudg{\infertype{\underbrace{\modelsof P\recmergesym r_1\recmergesym\ldots\recmergesym r_n\recmergesym\recexp{\delta}}_{=:r}}{\modelsof P}}}
+ 	\]}
+where $\sub r P$ abbreviates the substitution that replaces every $x$ declared in a theory transitively-included into $P$ with $\recproj rx$.
+\end{theorem}
+\footnotetext{In practice, these substitutions are easy to implement without flattening $r$ because we can cache for every theory which theories it includes and which names it declares.}
+
+The first rule in \autoref{thm:models} uses the modular structure of $P$ to check $r$ at type $\modelsof P$.
+If $r$ is of the form $\recexp{\delta}$, this is no faster than flattening $\modelsof{P}$ all the way.
+But in the typical case where $r$ is also formed modularly using a similar structure as $P$, this can be much faster.
+The second rule performs the corresponding type inference for an element of $\modelsof P$ that is formed following the modular structure of $P$.
+In both cases, the last premise is again only needed to make sure that $r$ does not contain ill-typed fields not required by $\modelsof P$.
+Also note that if we think of $\modelsof P$ as a colimit and of elements of $\modelsof P$ as morphisms out of $P$, then the second rule corresponds to the construction of the universal morphisms out of the colimit.
+
+\begin{example}\label{ex:modcheck}
+	We continue \autoref{ex:mod} and assume we have already checked
+	$\hastype{\csl}{\modelsof{\SL}}$ (*).
+	
+	We want to check
+	$\hastype{\recmerge\csl{\recexp{\delta}}}{\modelsof{\SLO}}$.
+	Applying the first rule of \autoref{thm:models} reduces this to multiple premises, the first one of which is (*) and can thus be discharged without inspecting $\csl$.
+\end{example}
+
+\autoref{ex:modcheck} is still somewhat artificial because the involved theories are so small.
+But the effect pays off enormously on larger theories.
+
+ \paragraph{} Additionally, we can explicitly allow views \emph{within} theories into the current theory. Specifically, given a theory $T$, we allow a view
+ 	\[ T = \{ \ldots, V : \viewto{T'}\cdot = \{ \ldots \},\ldots\quad\} \]
+ 	the codomain of which is the containing theory $T$ (up to the point where $V$ is declared). %\footnote{We'll omit the adapted grammar for now.} 
+ 	This view induces a view $T/V:\viewto{T'} T$ in the top-level context $\Theta$, but importantly, within $T$ (and its corresponding inner context $\Gamma$) every variable in $V$ is defined via a valid term in $\Gamma$. Correspondingly, $\modelsof V$ is -- in context $\Gamma$ --  a constant function $\lfarrow{\modelsof T}{\modelsof{T'}}$ which we can consider as an element of $\modelsof{T}$ directly. 
+ 	
+ 	This allows for conveniently building instances of $\modelsof\cdot$ and all checking for well-formedness is reduced to structurally checking the view to be well-formed, effectively carrying over all efficiency advantages of structure checking and modular development of theories/views:
+ 	
+ 	\begin{theorem}\label{thm:viewsasrecords}
+ 		Let $\Theta,\Gamma$ be well-formed and $T/V:\viewto{T'} T=\{\ldots\}$ in $\Theta$, where $\Gamma$ is the current context within theory $T$ containing $V:\viewto{T'}\cdot=\{\ldots\}$. The following rule is admissible:
+ 		\[
+ 			\irule{}{\tgjudg{\hastype{\modelsof V}{\modelsof{T'}}}}
+ 		\]
+ 	\end{theorem}
+ 	\begin{proof}
+	We consider $\modelsof V$ an abbreviation for $\modelsof{T/V}(\recexp\cdot)$. Since all definitions in $\modelsof{T/V}$ are well-typed terms in context $\Gamma$, the record $\recexp\cdot$ does not actually occur anywhere in the simplified application $\modelsof{T/V}(\recexp\cdot)$, which makes this expression well-typed.
+\end{proof}
+%\end{oldpart}
+%\hrulefill
+%\ednote{Old stuff from here on}
+%
+%
+%
+% We'll look at a simple example first. Consider the theory of semigroups given in Figure \ref{fig:sgroup}.	
+%
+%\begin{figure}[ht]\centering
+%  \fbox{\includegraphics[width=0.65\textwidth]{sgroup}}
+%  \caption{Theories for Semigroups and Monoids}\label{fig:sgroup}
+%\end{figure}
+%
+%Taking the context of $\Theta_\textsf{SemiGroup}$ and constructing the corresponding record type yields
+%\begin{align*}
+% &\modelsof{\mathtt{SemiGroup}} : \kind = \\
+% &\rectype{ \mathtt U : \type; \mathtt{op} : \mathtt U \to \mathtt U \to \mathtt U;\mathtt{assoc} :\; \vdash \forall [x:\mathtt U]\forall [y:\mathtt U]\forall [z:\mathtt U] x \circ (y\circ z) \doteq (x \circ y) \circ z }.
+% \end{align*}
+% 
+%Correspondingly, any record $r : \modelsof{\mathtt{SemiGroup}}$ implements the fields $\mathtt U, \mathtt{op}$ and $\mathtt{assoc}$ with the corresponding types and thus consists of a universe $\textsf U$, a binary operation $\textsf{op}$ and a proof  that $\textsf{op}$ is associative, meaning $r$ is an actual model of the theory $\mathtt{SemiGroup}$.
+%
+%Furthermore, because we work with the flattened context (with includes substituted by the containing declarations), applying \textsf{ModelsOf} to the theory \textsf{Monoid} that includes \textsf{SemiGroup} yields a subtype of $\modelsof{\mathtt{SemiGroup}}$ as intended, since by construction the former record type is an extension of the latter.
+% 
+% Defined constants in theories become defined fields in the corresponding record type, which is convenient for providing actual instances of a \textsf{ModelsOf}-type. Take as an example a theory \textsf{Lattice} as in Figure \ref{fig:lattice} that implements the algebraic first-order definition of lattices. Since the order-theoretic definition of lattices is equivalent, we can define an order \textsf{order} in \textsf{Lattice} the usual way and prove that all of the order-theoretic lattice axioms hold. If we want to construct an instance $r:\modelsof{\mathtt{Lattice}}$, we only need to provide the algebraic signature (\textsf U, \textsf{wedge} and \textsf{vee}) of the theory and proofs for the algebraic axioms (e.g. \textsf{idem\_wedge}) and start the record with the field $\self:\textsf{Lattice}$ . Then $r.\mathtt{order}$ is a well-formed expression, has the type $r.\mathtt U \to r.\mathtt U \to \mathtt{bool}$ and inherits the definition $[a,b : r.\mathtt U] a \doteq a\; r.\wedge b$ as well as proofs for the order-theoretic lattice axioms (e.g. $r.\mathtt{refl}$ yields a proof that $r.\mathtt{order}$ is reflexive).
+%
+% \begin{figure}[ht]\centering
+%  \fbox{\includegraphics[width=0.85\textwidth]{lattice}}
+%  \caption{A Theory for Lattices}\label{fig:lattice}
+%\end{figure}
+%
+%\ednote{Talk about parametric theories?}
+%
+%\subsection{Admissible Rules for \textsf{ModelsOf}}
+%
+%\subsection{Further examples}
+%
+%\ednote{Moduls / Vectorspaces over a Ring/Field, Group homomorphisms}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "paper.tex"
+%%% End:
+
+%  LocalWords:  textsf fig:mmtgrammar centering fbox rcl mathtt cdot rectype uplus recexp
+%  LocalWords:  uplus vspace hline ast;o emph ednote mathcal mathcal leq leq biguplus_
+%  LocalWords:  fig:sltheory fig:semilattices1 Semilattice assoc vdash forall x,y,z:U a,b
+%  LocalWords:  doteq ldots x,y:U refl Semilattices irule tjudg tgjudg subtp hastype circ
+%  LocalWords:  infertype judgeq hrulefill fig:sgroup includegraphics textwidth sgroup
+%  LocalWords:  Monoids circ circ circ Monoid Vectorspaces mdframed textbf graying nrule
+%  LocalWords:  subtyping Internalization judgeqc judg compactitem eqnarray Functoriality
+%  LocalWords:  thm:functor internalizations thm:models overbrace recsub gjudg i,j
+%  LocalWords:  ifshort thm:plusrules underbrace oldpart well-formedness
+%  LocalWords:  thm:viewsasrecords

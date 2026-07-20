@@ -1,0 +1,11 @@
+\RequirePackage{xcolor}
+\RequirePackage{listings}
+\lstdefinelanguage{mmt}{
+  keywords=[1]{},keywords=[2]{theory,view,include},
+  otherkeywords={:,=,\#,\{,\}},
+  comment=[l]//,morecomment=[s]{/*,*/},
+  literate={\ ->\ }{{\ }{$\to$}{\ }}4{\ <-\ }{{\ }{$\leftarrow$}{\ }}4
+}
+\lstset{basicstyle=\footnotesize,breaklines,mathescape,columns=[c]fixed,
+  language=mmt,keywordstyle=[1]\color{red},keywordstyle=[2]\bf,commentstyle=\color{gray},
+  emphstyle=[1]\color{red},emphstyle=[2]\color{blue},emphstyle=[3]\color{olive}}

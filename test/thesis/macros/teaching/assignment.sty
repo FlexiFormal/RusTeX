@@ -1,0 +1,68 @@
+%%
+%% This is file `assignment.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% assignment.dtx  (with options: `package')
+%% 
+\RequirePackage{keyval}[1997/11/10]
+\RequirePackage{teaching/problem}
+\NeedsTeXFormat{LaTeX2e}[1999/12/01]
+\ProvidesPackage{assignment}[2006/01/13 v0.9a assignment documents]
+\newif\iftest\testfalse
+\DeclareOption{test}{\testtrue\solutionsfalse}
+\newif\ifmultiple\multiplefalse
+\DeclareOption{multiple}{\multipletrue}
+\DeclareOption*{\PassOptionsToPackage{\CurrentOption}{problem}}
+\DeclareOption{showsection}{\renewcommand{\prob@showsection}[1]{#1}} %show section numbers in problem numbers
+\ProcessOptions
+\define@key{assig}{number}{\def\ass@num{#1}}
+\define@key{assig}{title}{\def\ass@title{#1}}
+\define@key{assig}{type}{\def\ass@type{#1}}
+\define@key{assig}{given}{\def\ass@given{#1}}
+\define@key{assig}{due}{\def\ass@due{#1}}
+\def\AssignmentType#1{\gdef\ass@default@type{#1}}
+\def\ass@default@type{Assignment}
+\def\Ass@Type{\@ifundefined{ass@type}{\ass@default@type}{\ass@type}}
+\def\Ass@Title{\@ifundefined{ass@title}{}{\ass@title~}}
+\def\given@due#1#2{%
+\@ifundefined{ass@given}{}{\@ifundefined{ass@due}{}{#1}}%
+\@ifundefined{ass@given}{}{Given {\ass@given}}%
+\@ifundefined{ass@given}{}{\@ifundefined{ass@due}{}{, }}%
+\@ifundefined{ass@due}{}{Due {\ass@due}}%
+\@ifundefined{ass@given}{}{\@ifundefined{ass@due}{}{#2}}}
+\newenvironment{assignment}[1][]% keyval args
+{\setkeys{assig}{#1}% collect the keys and correct them from the outside
+\@ifundefined{incl@ass@title}{}{\def\ass@title{\incl@ass@title}}
+\@ifundefined{incl@ass@type}{}{\def\ass@type{\incl@ass@type}}
+\@ifundefined{incl@ass@num}{}{\def\ass@num{\incl@ass@num}}
+\@ifundefined{incl@ass@due}{}{\def\ass@due{\incl@ass@due}}
+\@ifundefined{incl@ass@given}{}{\def\ass@given{\incl@ass@given}}
+\@ifundefined{ass@num}{\stepcounter{section}}%
+{\setcounter{section}{\ass@num}\setcounter{problem}{0}}
+\ifmultiple%
+\section*{\Ass@Type~\arabic{section}:~\Ass@Title\given@due{\\(})}
+  \addcontentsline{toc}{section}{\Ass@Type~{\arabic{section}}:~\Ass@Title}
+\else
+\begin{center}
+%\Large\Course@Title\\
+{\bf{\Ass@Type}~{\arabic{section}}:~\Ass@Title\strut\\\large{\given@due()}}
+\end{center}
+\fi%ifmultiple
+}{}
+\define@key{incl@assig}{number}{\def\incl@ass@num{#1}}
+\define@key{incl@assig}{title}{\def\incl@ass@title{#1}}
+\define@key{incl@assig}{type}{\def\incl@ass@type{#1}}
+\define@key{incl@assig}{given}{\def\incl@ass@given{#1}}
+\define@key{incl@assig}{due}{\def\incl@ass@due{#1}}
+\newcommand{\includeassignment}[2][]{\bgroup\setkeys{incl@assig}{#1}\include{#2}\egroup}
+\def\CourseTitle#1{\gdef\Course@Title{#1}}
+\def\testspace#1{\iftest\vspace*{#1}\fi}
+\def\testnewpage{\iftest\newpage\fi}
+\def\testemptypage{\iftest
+%\begin{center}This page was intentionally left blank for extra space\end{center}\vfill
+\hbox{\tb}\eject\else\fi}
+\endinput
+%%
+%% End of file `assignment.sty'.

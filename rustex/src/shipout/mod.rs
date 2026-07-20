@@ -1,6 +1,5 @@
 pub(crate) mod annotations;
 pub(crate) mod html;
-pub(crate) mod nodes;
 pub(crate) mod state;
 pub(crate) mod utils;
 
@@ -12,6 +11,7 @@ use crate::shipout::state::{
 };
 use crate::shipout::utils::{HNodes, MNode, MNodes, VNodes};
 use crate::utils::{Flex, Margin};
+use tex_engine::engine::fontsystem::Font;
 use tex_engine::engine::stomach::methods::ParLineSpec;
 use tex_engine::pdflatex::nodes::{PDFDest, PDFNode};
 use tex_engine::tex::nodes::NodeTrait;
@@ -47,7 +47,7 @@ pub fn shipout(engine: Refs, n: VNode<Types>) -> Res<()> {
             let children = get_page_inner(children.into_vec());
             /*println!("--------------------------------------------");
             for c in &children {
-                println!("{}",c.display());
+                println!("{}", c.display());
             }*/
             ShipoutState::split_state(engine, |state| state.do_vlist(&mut children.into()))
                 .map_err(|e| TeXError::General(format!("Not allowed in V-Mode: {e:?}")))?;
@@ -450,22 +450,24 @@ impl<Mode: HLike> Shipout<'_, '_, Mode> {
     fn do_hlist(&mut self, children: &mut HNodes) -> Result<(), Option<HNode<Types>>> {
         while let Some(c) = children.next() {
             match c {
-                HNode::Custom(RusTeXNode::PDFNode(
-                    PDFNode::PDFOutline(_)
-                    | PDFNode::PDFPageAttr(_)
-                    | PDFNode::PDFPagesAttr(_)
-                    | PDFNode::PDFCatalog(_)
-                    | PDFNode::PDFSave
-                    | PDFNode::PDFAnnot(_)
-                    | PDFNode::PDFLiteral(_)
-                    | PDFNode::XForm(_)
-                    | PDFNode::Obj(_),
-                ))
+                HNode::Custom(
+                    RusTeXNode::PDFNode(
+                        PDFNode::PDFOutline(_)
+                        | PDFNode::PDFPageAttr(_)
+                        | PDFNode::PDFPagesAttr(_)
+                        | PDFNode::PDFCatalog(_)
+                        | PDFNode::PDFSave
+                        | PDFNode::PDFAnnot(_)
+                        | PDFNode::PDFLiteral(_)
+                        | PDFNode::XForm(_)
+                        | PDFNode::Obj(_),
+                    )
+                    | RusTeXNode::PageBegin
+                    | RusTeXNode::PageEnd
+                    | RusTeXNode::HAlignEnd,
+                )
                 | HNode::Penalty(_)
-                | HNode::Mark(..)
-                | HNode::Custom(
-                    RusTeXNode::PageBegin | RusTeXNode::PageEnd | RusTeXNode::HAlignEnd,
-                ) => (),
+                | HNode::Mark(..) => (),
                 HNode::Custom(RusTeXNode::PGFEscape(bx)) => children.prefix(vec![HNode::Box(bx)]),
                 HNode::Custom(RusTeXNode::PDFNode(PDFNode::Color(act))) => self.do_color(act),
                 HNode::Custom(RusTeXNode::FontChange(font, global)) => self.open_font(font, global),
@@ -632,6 +634,20 @@ impl<Mode: HLike> Shipout<'_, '_, Mode> {
                 HNode::Custom(RusTeXNode::PDFNode(PDFNode::XImage(img))) => {
                     self.push(ShipoutNodeH::Img(img))
                 }
+                HNode::AccentChar { accent, font } => match children.next() {
+                    Some(HNode::Char { char, font: f2 }) if f2.name() == font.name() => {
+                        let r = ShipoutNodeH::accent(
+                            char,
+                            accent,
+                            font,
+                            self.engine,
+                            &mut self.top_state.font_data,
+                        );
+                        self.push(r);
+                    }
+                    Some(o) => children.prefix(vec![o]),
+                    None => (),
+                },
                 HNode::Accent { accent, char, font } => {
                     let r = ShipoutNodeH::accent(
                         char,

@@ -1,0 +1,31 @@
+\documentclass{standalone}
+\usepackage{tikz,stex,amstext,amssymb}
+\usetikzlibrary{shapes,arrows,mmt}
+\begin{document}
+\begin{tikzpicture}[xscale=.95]
+\draw[arrow] (-4,2.5) --node[above] {translation} +(2,0);
+\draw[dashed,arrow] (-4,2) --node[above] {inclusion} +(2,0);
+\draw[dotted,arrow] (-4,1.5) --node[above] {meta-theory} +(2,0);
+\node (A) at (0,2.5)  {$\cn{LF}$};
+\node (A') at (2,2.5)  {$\cn{LF}+X$};
+\node (C) at (-1,1.5)   {$\cn{FOL}$};
+\node (C') at (1,1.5) {$\cn{HOL}$};
+\node (E) at (-2.5,0) {$\cn{Monoid}$};
+\node (E'') at (-.5,0) {$\cn{cgroup}$};
+\node (E') at (2,0)  {$\cn{Ring}$};
+\draw[dotted,arrow](A) -- (C);
+\draw[dotted,arrow](A) -- (C');
+\draw[dotted,arrow](C) -- (E);
+\draw[dotted,arrow](C) -- (E'');
+\draw[dotted,arrow](C) to[out=-20,in=140] (E');
+\draw[dashed,arrow](A) -- node[above] {$m$} (A');
+\draw[arrow](C) -- node[above] {$m'$} (C');
+\draw[dashed,arrow](E'') to[out=-15,in=-165] node[above] {$\cn{add}$} (E');
+\draw[dashed,arrow](E) to[out=15,in=165] node[above] {$\cn{mult}$} (E');
+\draw[arrow](E) -- (E'');
+\end{tikzpicture}
+\end{document}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

@@ -1,0 +1,109 @@
+One crucial aspect of connecting libraries of mathematical knowledge to a universal framework -- whether they come from theorem provers, computer algebra systems, databases or other systems -- is to specify the ontological primitives of the system within the framework. Correspondingly, sufficiently expressive logical frameworks are needed to specify all the features such a system might offer.
+
+A logical framework like LF \cite{HarperEtAl:affdl93}, Dedukti \cite{dedukti}, or $\lambda$-Prolog \cite{lambdaprolog} tends to admit very elegant definitions for a certain class of logics (such as first-order or higher-order logic, modal logics or classical type theories), but definitions can get awkward quickly if logics fall outside that fragment.
+
+This often boils down to the question of shallow vs. deep encodings.  The former
+represents a logic feature (e.g., subtyping) in terms of a corresponding framework
+feature, whereas the latter applies a logic encoding to remove the feature (e.g., encode
+subtyping in a logical framework without subtyping by using a subtyping predicate and
+coercion functions).  Deep encodings have two disadvantages: 
+\begin{enumerate}
+	\item They destroy structure of
+the original formalization, often in a way that is not easily invertible and blow up the
+complexity of library translations.  
+	\item They require the library translation to apply
+non-trivial and error-prone steps that become part of the trusted code base.  In fact,
+many logical frameworks were specifically designed to allow for more logics to be defined elegantly, for example Dedukti.
+\end{enumerate}
+
+Even if we ignore the proof theory (and thus the use of decision procedures) entirely, \pvs (which we discuss more in-depth and integrate in \autoref{ch:import:pvs}) is particularly challenging in this regard, and hence serves as a good example for the challenges involved:
+\begin{itemize}
+\item The \pvs typing relation is undecidable due to predicate subtyping: selecting a subtype
+of $\alpha$ by giving a predicate $p$ as in $\{x\in\alpha\mid p(x)\}$.  Thus, a shallow
+encoding is impossible in any framework with a decidable typing relation. Practical experience (discussed below) shows, that the most adequate solution is to design a new framework that allows for undecidable typing and then
+use a shallow encoding.
+
+\item \pvs uses anonymous record types (like in SML) as a primitive feature.  This includes
+record subtyping and a complex variant of record/product/function updates.  A deep
+encoding of anonymous record types is extremely awkward: the simplest encoding would be
+to introduce a new named product type for every occurrence of a record type in the
+library.  Even then it is virtually impossible to formalize an axiom like ``two records
+are equal if they agree up to reordering of fields'' elegantly in a declarative logical framework.
+Therefore, the most feasible option again is to design a new framework that has anonymous record types as a primitive.
+
+\item \pvs uses several types of built-in literals, namely arbitrary-precision integers, rational numbers, and strings.
+Not every logical framework provides exactly the same set of built-in types and operations on them.
+
+\item \pvs allows for (co)inductive types.  While these are relatively well-understood by now,
+most logical frameworks do not support them.  And even if they do, they are unlikely to
+match the idiosyncrasies of \pvs such as automatically declaring a predicate subtype for every
+constructor.  Again it is ultimately more promising to mimic \pvs's idiosyncrasies in the
+logical framework so that we can use a shallow encoding.
+
+\item \pvs uses a module system that, while not terribly complex, does not align perfectly with
+the modularity primitives of existing logical frameworks.  Concretely, theories are
+parametric, and a theory may import the same theory multiple times with different
+parameters, in which case any occurrence of an imported symbol is ambiguous.  Simple deep
+encodings can duplicate the multiply-imported symbols or treat them as functions that are
+applied to the parameters.  Both options seem feasible at first but ultimately do not
+scale well -- already the \pvs Prelude (the small library of \pvs built-ins) causes
+difficulties.  In \autoref{ch:import:pvs}, we will mimic \pvs-style parametric
+imports in the logical framework as well to allow for a shallow encoding.
+\end{itemize}
+
+\subparagraph{}
+Florian Rabe has extensively investigated definitions of \pvs in logical frameworks, going back more
+than 10 years when a first (unpublished) attempt to define \pvs in \LF was made by
+Sch\"urmann as part of the Logosphere project~\cite{logosphere}.  In the end, all of the above-mentioned
+difficulties pointed in the same direction: the logical framework must adapt to the
+complexity of \pvs -- any attempt to adapt \pvs to an existing logical framework (by
+designing an appropriate deep encoding) is likely to be doomed.  This negative result is
+in itself a notable contribution of \cite{KohMueOwr:mpagsiuf17}, where the \pvs import described in \autoref{ch:import:pvs} was first published.  Since publication, we have found this to also hold for similarly complex object logics such as Coq.
+
+%If done naively, developing a new framework that permits a shallow encoding would scale badly:
+%it would lack mature implementation support and would not make future integrations of \pvs with other provers any easier.
+%Therefore, we have spent several years developing the \mmt framework.  It is born out of
+%the tradition of logical frameworks but systematically allows future extensions of the
+%framework.  Its main strength is that such extensions, e.g., the features needed for \pvs,
+%can be added at comparatively low cost: whereas most logical frameworks would require
+%reimplementing most parts starting from the kernel, \mmt allows plugging in language
+%features as a routine part of daily development.
+%Importantly, all \mmt level automation (including parsing, type reconstruction, and IDE, which are crucial for writing logic definitions in practice) is generic and thus remains applicable even when new language features are added.
+%Moreover, \mmt supports modular composition of language features so that all developments we made for \pvs can be reused when working with other provers.
+%
+%It is beyond the scope of this paper to present the architecture of \mmt, and we only sketch the extension pathways most critical for \pvs.
+%
+%Firstly, \mmt expressions are generic syntax trees including variable binding and labeling
+%\cite{rabe:howto:14}.  Besides constants (global identifiers) and bound variables (local
+%identifiers), the leaves of the syntax tree may also be arbitrary literals
+%\cite{rabe:literals:14}.  An \mmt theory defining the language $T$ declares one constant
+%for each expression constructor of $T$.  For example, the \mmt theory for LF declares $4$
+%symbols for $\texttt{type}$, $\lambda$, $\Pi$, and application.
+%
+%Secondly, the key algorithms of the \mmt kernel -- including parsing, type reconstruction, and
+%computation -- are rule-based \cite{rabe:recon:17}.  Each rule is an object in the
+%underlying programming language that can be generated from a declarative formulation or
+%(in the general case) implemented directly.  In either case, the current context
+%determines which rules are used.  For example, the \mmt theory for LF declares three
+%parsing rules, ten typing/equality rules, and one computation rule. Together, these are
+%sufficient to recover type reconstruction for LF.
+%
+%Thirdly, \mmt allows for \emph{derived} declarations \cite{Iancu:phd}.  Each derived
+%declaration indicates the language \emph{feature} that defines its semantics.  And the
+%individual features can be easily implemented by \mmt plugins, usually by elaborating
+%derived declarations to more primitive ones.  For example, we can declare the feature of
+%inductive types, as a derived declaration containing the constructors in its body.
+%Notably, while elaboration defines the meaning of the derived declaration, many \mmt
+%algorithms can work with the unelaborated version, e.g., by supplying appropriate
+%induction rules to the type reconstruction algorithm.
+
+
+%%% Local Variables:
+%%% mode: LaTeX
+%%% TeX-master: "paper"
+%%% End:
+
+%  LocalWords:  HarperEtAl:affdl93 Dedukti dedukti subtyping subtyping subtyping emph A,f
+%  LocalWords:  subtyping Iancu:phd expr expr prec tpjudg setsub centering lstlisting
+%  LocalWords:  pvspi pvsapply a:expr fig:pvsmmtbasics hrule tp,prop doName,expr
+%  LocalWords:  fig:pvsmmtsubtypes

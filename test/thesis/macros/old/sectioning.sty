@@ -1,0 +1,18 @@
+%internal variable for the base directory
+\newcommand{\sec@basedir}{.}
+%This sets the base directory for the following file system commands.
+\newcommand{\setbasedir}[1]{\renewcommand{\sec@basedir}{#1}}
+%This turn a relative path into an absolute one.
+\newcommand{\mypath}[1]{\sec@basedir/#1}
+%This is like \input{#2} but path is relative to the base directory. The optional first argument can be used to shift the sectioning one level down.
+\newcommand{\myinput}[2][0]{\advance\sec@level by #1\input{\mypath{#2}}\advance\sec@level by -#1}
+
+%internal variable for the sectioning level
+\newcount\sec@level \sec@level=0
+%This sets the sectioning level for sectioning commands.
+\newcommand{\setsectionlevel}[1]{\sec@level=#1}
+%This produces a chapter (0), section (1), subsection (2), subsubsection (3), or paragraph (else) depending on the value of \sec@level
+\newcommand{\sec@section}[1]{\ifcase\sec@level \chapter{#1}\or\section{#1}\or\subsection{#1}\or\subsubsection{#1}\else\paragraph{#1}\fi}
+%This produces a \SEC{#2} where SEC is determined by the value of \sec@level (see \sec@section).
+%The optional first argument shifts the sectioning level down.
+\newcommand{\mysection}[2][0]{\advance\sec@level by #1 \sec@section{#2} \advance\sec@level by -#1}

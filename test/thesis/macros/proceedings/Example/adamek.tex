@@ -1,0 +1,1439 @@
+%---------%---------%---------%---------%---------%---------%---------%
+% Upper-case    A B C D E F G H I J K L M N O P Q R S T U V W X Y Z
+% Lower-case    a b c d e f g h i j k l m n o p q r s t u v w x y z
+% Digits        0 1 2 3 4 5 6 7 8 9
+% Exclamation   !           Double quote "          Hash (number) #
+% Dollar        $           Percent      %          Ampersand     &
+% Acute accent  '           Left paren   (          Right paren   )
+% Asterisk      *           Plus         +          Comma         ,
+% Minus         -           Point        .          Solidus       /
+% Colon         :           Semicolon    ;          Less than     <
+% Equals        =           Greater than >          Question mark ?
+% At            @           Left bracket [          Backslash     \
+% Right bracket ]           Circumflex   ^          Underscore    _
+% Grave accent  `           Left brace   {          Vertical bar  |
+% Right brace   }           Tilde        ~
+
+\documentclass{entcs}
+\usepackage{prentcsmacro}
+\usepackage[leqno]{amsmath}
+\usepackage{amssymb}
+\usepackage{latexsym}
+\usepackage{mathrsfs,euscript}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Setting the correct page numbers                      %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+  \input{procnum.tex}
+  \numbering{cmcs03db}{adamek}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% CALLING XY-Pic version 3.5                            %
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\usepackage[matrix,arrow]{xy}
+
+
+\newcommand{\Set}{\ensuremath{\St}}
+\newcommand{\aps}{\ensuremath{\mathrel{\approx^*}}}
+\newcommand{\sims}{\ensuremath{\mathrel{\sim^*}}}
+\newcommand{\simx}{\ensuremath{\mathrel{\sim_X}}}
+\newcommand{\simxs}{\ensuremath{\mathrel{\sim_X^*}}}
+\newcommand{\vxs}{\ensuremath{\mathrel{\approx_X^*}}}
+\newcommand{\Pf}{\ensuremath{\mathscr{P}_{\!\!f}}}
+\newcommand{\AAA}{\ensuremath{\mathscr{A}}}
+\newcommand{\PP}{\ensuremath{\mathscr{P}}}
+\newcommand{\TT}{\ensuremath{\mathscr{T}}}
+\newcommand{\RR}{\ensuremath{\mathscr{R}}}
+\newcommand{\SSS}{\ensuremath{\mathscr{S}}}
+\newcommand{\llll}{l}
+\newcommand{\dia}{\mathbin{\Diamond}}
+\newcommand{\ctv}{\mathbin{\Box}}
+\newcommand{\ac}{\text{\textnormal{ac}}}
+
+\DeclareMathOperator{\St}{\textnormal{\textbf{Set}}}
+\DeclareMathOperator{\id}{id}
+\DeclareMathOperator{\Id}{Id}
+\DeclareMathOperator{\Alg}{\textnormal{\textbf{Alg}}}
+\DeclareMathOperator{\Coalg}{\textnormal{\textbf{Coalg}}}
+\DeclareMathOperator*{\colim}{colim}
+\DeclareMathOperator{\inl}{inl}
+\DeclareMathOperator{\inr}{inr}
+\DeclareMathOperator{\CIM}{CIM}
+\DeclareMathOperator{\IM}{IM}
+\DeclareMathOperator{\card}{card}
+
+\newenvironment{pv}[1]{\begin{trivlist}
+\item[\hspace{\labelsep}\normalfont\bfseries#1]}%
+{\end{trivlist}}
+
+\def\lastname{Ad\'{a}mek}
+
+\begin{document}
+
+\begin{frontmatter}
+\title{On a Description of Terminal Coalgebras and Iterative
+Theories}
+\author{Ji\v r\'\i\ Ad\'amek\thanksref{mail}\thanksref{CZ}}
+\address{Technical University of Braunschweig}
+\thanks[mail]{Email:\href{mailto:adamek@iti.cs.tu-bs.de}
+        {\texttt{\normalshape adamek@iti.cs.tu-bs.de}}}
+\thanks[CZ]{The support of the Grant Agency of the Czech
+            Republic under the Grant No.~201/02/0148
+            is gratefully acknowledged.}
+\begin{keyword}
+terminal coalgebra, iterative theory, finitary functor, basic equation
+\end{keyword}
+\begin{abstract}
+A concrete description of terminal coalgebras, $T$, of all finitary
+endofunctors of \Set\ is presented: each such a functor is a quotient of
+the polynomial endofunctor of some finitary signature~$\Sigma$
+modulo some ``basic'' equations. Then $T$~can be described as the
+algebra of all infinite $\Sigma$-labeled trees modulo the congruence
+obtained by applying the basic equations finitely or infinitely
+many times (a concept defined below). As a consequence, free
+iterative theories in the sense of Calvin Elgot are described over
+all finitary endofunctors of \Set: they are the theories of all
+rational $\Sigma$-labeled trees (i.e., trees having only finitely
+many subtrees) modulo the above congruence.
+\end{abstract}
+\end{frontmatter}
+
+
+\section{Introduction}
+Iterative algebraic theories have been introduced by Calvin Elgot
+(see~\cite{e}) in his attempt to model potentially infinite
+computations algebraically. For example, a computation using binary
+operations $\alpha$ and~$\beta$ and having the following form
+\begin{equation}
+\alpha(0, \beta(1,\alpha(0, \beta(1,\dots
+\end{equation}
+can be described by iterative equations as follows:
+\begin{equation}
+x_1=
+\vcenter{
+\xy
+\POS (05,10)*+{\alpha} = "t"
+   , (00,00)*+{0}      = "l"
+   , (10,00)*+{x_2}    = "r"
+%%%
+\POS "l" \ar@{-} "t"
+\POS "r" \ar@{-} "t"
+\endxy
+}
+\quad
+\quad
+x_2=
+\vcenter{
+\xy
+\POS (05,10)*+{\beta}  = "t"
+   , (00,00)*+{1}      = "l"
+   , (10,00)*+{x_1}    = "r"
+%%%
+\POS "l" \ar@{-} "t"
+\POS "r" \ar@{-} "t"
+\endxy
+}
+\end{equation}
+One of the main result of Elgot's group is a description of free
+iterative theories generated by an arbitrary signature~$\Sigma$ (see
+~\cite{ebt}): it is the theory of all rational
+$\Sigma$-trees\footnote{Trees are always considered up-to
+isomorphism (of labeled trees) throughout the paper.}, i.e.,
+$\Sigma$-trees which have only finitely many subtrees. Example: the
+tree~(1) above is rational, it has 4~subtrees.
+
+One fundamental lack of Elgot's theory is that almost no other
+concrete examples have been presented. In the
+present paper we take the first steps towards new examples: we
+describe all iterative theories freely generated by finitary
+endofunctors of \Set. Or, equivalently, freely generated by
+equational presentations using \textit{basic equations} only, where
+a basic equation is an equation between two \textit{flat terms}
+which are terms $\sigma(x_1,\dots,x_n)$ where $\sigma\in\Sigma$ is
+an $n$-ary operation symbol and $x_1,\dots,x_n$ are (not necessarily
+distinct) variables.
+
+\begin{pv}{1.1 Example}
+Let $H\colon\Set\to\Set$
+be the functor assigning
+to every set~$X$ the set~$HX$ of all nonordered
+pairs~$\{x,y\}$ in~$X$. This is a quotient of the functor
+$H_\Sigma\colon X\mapsto X\times X$ via the epitransformation
+$\varepsilon\colon H_\Sigma\to H$ defined
+by $\varepsilon(x,y)=\{x,y\}$. Or,
+equivalently, we consider the signature~$\Sigma$ of one binary
+operation (say,~$\diamond$) satisfying the commutativity law.
+Observe that the equation
+\[x\diamond y=y\diamond x\]
+is indeed basic. The free iterative theory is formed by all
+rational binary trees modulo the congruence \aps\ merging two
+rational trees $s$ and~$r$ iff we can obtain~$r$ from~$s$ by
+applying the commutativity law (i.e., by swapping the two children
+of some parent) finitely or infinitely many times.
+
+This ``infinite application'' of equations can be described simply
+and precisely by introducing the operator
+\[\partial_k\]
+which cuts every tree at depth~$k$ and labels all leaves of
+depth~$k$ by an auxiliary symbol~$\perp$. Let us denote by~$\sim$
+the congruence defining a free algebra of our variety. That is, if
+we think of terms as finite binary trees, then $s\sim r$ means that
+we can obtain~$r$ from~$s$ by applying the commutativity law
+finitely many times. Then for all rational trees $s$ and~$r$ we can
+define
+\[s\aps r\qquad\text{iff}\qquad \partial_ks\sim\partial_kr\quad
+\text{for all $k\in\omega$.}\]
+\end{pv}
+
+\begin{pv}{Remark}
+The above definition of~\aps\ is meaningful for all basic equational
+presentations, since the congruence~$\sim$ defining the free algebra
+of the given variety satisfies
+\[s\sim r\qquad\text{implies}\qquad \partial_ks\sim\partial_kr\quad
+\text{for all $k\in\omega$}\]
+(for all finite trees $s$ and~$r$). In contrast, this is not
+meaningful e.g. for the associativity law.
+\end{pv}
+
+\begin{pv}{1.2 Example}
+The iterative theory generated by the finite-power-set functor
+\[\Pf X=\{M\subseteq X; M\text{ finite}\}.\]
+On morphisms $h\colon X\to Y$, we have
+\[\Pf h\colon M\mapsto f[M]\qquad\text{for all $M\in\Pf X$.}\]
+There is a natural presentation of~\Pf\ as the quotient functor of
+the polynomial functor
+\[H_\Sigma X=1+X+(X\times X)+(X\times X\times X)+\dotsb\]
+corresponding to the signature~$\Sigma$ which has for every
+$n\in\omega$ precisely one $n$-ary operation~$\sigma_n$: define a
+natural epitransformation
+\[\varepsilon\colon H_\Sigma\to\Pf\]
+by
+\[(x_1,\dots,x_n)\mapsto\{x_1,\dots,x_n\}.\]
+Or, equivalently, consider the following basic equations
+\[\sigma_n(y_1,\dots,y_n)=\sigma_m(z_1,\dots,z_m)\]
+where $n,m\in\omega$ are arbitrary and $y_i$ and~$z_j$ are arbitrary
+variables such that the sets $\{y_1,\dots,y_n\}$
+and~$\{z_1,\dots,z_m\}$ are equal.
+
+Here, again, the corresponding iterative theory is formed by all
+rational $\Sigma$-trees modulo the congruence~\aps\ obtained by
+applying the given equations finitely or infinitely many times.
+
+Let us recall that an initial \Pf-algebra $I$ can be described as
+the algebra of all sets of
+the class $V_\omega=\bigcup_{n\in\omega}V_n$ of
+the cumulative hierarchy (with $V_0=\emptyset$ and $V_{n+1}=\Pf
+V_n$). Or directly: $I$~is the algebra of all finite, non-ordered
+\textit{extensional trees}, i.e., trees such that any two
+distinct siblings
+define nonisomorphic subtrees.
+%In fact, there is a canonical bijection
+%between $V_\omega$ and such trees, as the following examples
+%demonstrate:
+%\[\psset{radius=2pt,levelsep=5mm,linewidth=.6pt}
+%\begin{array}{lcc}
+%\text{Set}&\rule{3em}{0em}&\text{tree}\\
+%\hline
+%\phantom{\{}\emptyset&\rule{0pt}{13pt}&
+%\pstree{\TC*}{}\\
+%\{\emptyset\}&&
+%\raisebox{3mm}{\pstree{\TC*}{\TC*}}\\[13pt]
+%\{\emptyset,\{\emptyset\}\}&&
+%\raisebox{6mm}{\pstree{\TC*}{\TC* \pstree{\TC*}{\TC*}}}\\[13pt]
+%\{\{\emptyset\}\}&&
+%\raisebox{6mm}{\pstree{\TC*}{\pstree{\TC*}{\TC*}}}\\
+%\quad\vdots&&\vdots
+%\end{array}\]
+In the latter description we obtain~$I$ as a quotient of the initial
+$\Sigma$-algebra~$I_\Sigma$ (of all finite trees---here we can drop
+the labeling since $\Sigma$~has a unique operation for any arity)
+modulo the following congruence~$\sim$:
+\[s\sim r\quad\text{iff $s$ and $r$ have the same extensional
+quotient.}\]
+(The \textit{extensional quotient} of a finite tree is the extensional tree
+obtained by repeated identification of siblings defining isomorphic
+subtrees.)
+\end{pv}
+
+The above two examples are typical: we will show that every finitary
+endofunctor~$H$ of~\Set\ can be presented, for some signature
+$\Sigma=\bigcup_{n\in\omega}\Sigma_n$, as a quotient of the
+\textit{polynomial functor}~$H_\Sigma$ defined on objects by
+\[H_\Sigma X=\coprod_{n\in\omega}\Sigma_n\times X^n\]
+and analogously on morphisms, $H_\Sigma f=\coprod_{n\in\omega}
+(\id_{\Sigma_n}\times f^n)$. That is, there is an epitransformation
+(a natural transformation whose components are epimorphisms)
+\[\varepsilon\colon H_\Sigma\to H.\]
+Or, equivalently, $H$~represents the equational presentation
+by all the basic
+equations $\sigma(x_1,\dots,x_n)=\varrho(y_1,\dots,y_m)$ for
+all $\sigma\in\Sigma_n$, $\varrho\in\Sigma_m$ and all
+variables~$x_i,y_j$ in a set~$X$ such that $\varepsilon_X$~merges
+the two elements $\sigma(x_i)$ and~$\varrho(y_j)$ of~$H_\Sigma X$.
+Now let $\sim$~be the congruence on the initial $\Sigma$-algebra (of
+all finite $\Sigma$-trees) defining a free $H$-algebra, i.e., the
+congruence of applications of the given basic equations finitely
+many times. Then for the congruence~\sims\ on the algebra of all
+finite and infinite trees given by possibly infinite applications of
+the given equations we prove that
+\begin{enumerate}
+\item[(a)]
+a terminal $H$-coalgebra is the quotient of the terminal
+$\Sigma$-algebra (of all infinite $\Sigma$-trees) modulo~\sims
+\end{enumerate}
+and
+\begin{enumerate}
+\item[(b)]
+a free iterative theory on~$H$ is the theory of all rational
+$\Sigma$-trees modulo the congruence~\aps\ defined analogously
+to~\sims\ but for trees with variables.
+\end{enumerate}
+
+The method of proving this result is coalgebraic. We first describe
+a terminal $H$-coalgebra, for every finitary endofunctor $H$,
+as~$T_\Sigma/_{\sims}$
+where $T_\Sigma$ is the coalgebra of all (infinite)
+$\Sigma$-trees and \sims~is the above congruence. We apply this,
+then, to the finitary endofunctor $H({-})+X$. Here
+we use the result of~\cite{aamv} that
+terminal coalgebras, $TX$, of the functors
+$H({-})+X$ form (the object part of) a monad~\TT\
+which is completely iterative. In fact, \TT~is a free completely
+iterative monad on~$H$. And as proved in~\cite{amv},
+a free iterative monad on~$H$ is a submonad of the
+monad~\TT\ formed by solutions of all finite systems of flat
+equations.
+
+\begin{pv}{Related Results}
+I have been much inspired by the description of a terminal
+coalgebra of~\Pf\ by M.~Barr~\cite{b}, see Example~1.2 above.
+Results of~\cite{aamv} mentioned above
+have been independently discovered by L.~Moss~\cite{m}.
+\end{pv}
+
+\section{A Description of Terminal Coalgebras}
+\begin{pv}{2.1 Assumption}
+We assume throughout the present section that a \textit{finitary}
+endofunctor~$H$ of~\Set\
+is given. Recall that this means one of the following equivalent
+properties (see 4.3 in~\cite{at}):
+\begin{enumerate}
+\item[(i)]
+$H$~preserves filtered colimits,
+\item[(ii)]
+every element of~$HX$, where $X$~is an arbitrary set, lies in the
+image of~$Hm$
+for some finite subset $m\colon M\hookrightarrow X$
+\end{enumerate}
+and
+\begin{enumerate}
+\item[(iii)]
+$H$~is a quotient of some polynomial functor~$H_\Sigma$.
+\end{enumerate}
+The last condition presents~$H$ via a finitary signature~$\Sigma$
+and a natural transformation
+\[\varepsilon\colon H_\Sigma\to H\]
+having epimorphic components. Therefore each component
+\[\varepsilon_X\colon \coprod_{n\in\omega}
+\Sigma_n\times X^n\to HX\]
+is fully described by its kernel equivalence, which we can present
+in the form of equations
+\[\sigma(x_i)=\varrho(y_j)\]
+for $\sigma,\varrho\in\Sigma$ and for tuples
+$\sigma(x_i),\varrho(y_j)$ in~$H_\Sigma X$ (where $X$~is a set of
+variables including all $x_i$ and $y_j$ and $\sigma(x_i)$ denotes the
+$n$-tuple $(x_i)$ in the summand $\{\sigma\}\times X^n$) satisfying
+$\varepsilon_X\bigl(\sigma(x_i)\bigr)=
+\varepsilon_X\bigl(\varrho(y_j)\bigr)$.
+We call the above equations \textit{$\varepsilon$-equations} for short.
+Observe that every $\varepsilon$-equation is \textit{basic}, i.e.,
+it
+equates two \textit{flat}
+trees (which means trees of depth one with variables on all leaves).
+Conversely,
+every variety of $\Sigma$-algebras presented by basic equations is
+the category of $H$-algebras for some finitary endofunctor~$H$
+of~\Set, see~3.3 in~\cite{at}.
+\end{pv}
+
+\begin{pv}{2.2 Examples}
+(i) The functor $\PP_{\!2}$ assigning to a set~$A$ the
+set~$\PP_{\!2}A$ of all subsets of power at most~2 is a quotient
+of~$H_\Sigma$ where
+\[\Sigma_0=\{b\}\quad\text{and}\quad \Sigma_2=\{\beta\}.\]
+Here
+\[\varepsilon_X\colon X\times X+1\to\PP_{\!2}X\]
+sends a pair~$(x,y)$ to~$\{x,y\}$ and the unique element of~1
+to~$\emptyset$. The $\varepsilon$-equations are all generated by the
+commutativity of~$\beta$:
+\[\beta(x,y)=\beta(y,x).\]
+
+(ii) Consider the finite-power-set functor~\Pf\ of~1.2. Here we can
+use the signature~$\Sigma$ where $\Sigma_n$~contains a unique
+$n$-ary operation for any $n=0,1,2,\dots$ and obtain a natural
+epitransformation
+\[\varepsilon_X\colon1+X+X^2+X^3+\dots\to\Pf X\]
+sending an $n$-tuple to the set of its members.
+\end{pv}
+
+\begin{pv}{2.3 Notation}
+$\Alg H$ denotes the category of \textit{$H$-algebras}, i.e.,
+sets~$A$ equipped with a structure morphism $\alpha\colon HA\to A$,
+and \textit{homomorphisms}~$f$ between $H$-al\-ge\-bras defined by the
+commutativity of the following square\vspace{1mm}
+\[                        %% o5
+\xy
+\xymatrix{
+HA
+\ar[0,1]^-{\alpha}
+\ar[1,0]_{Hf}
+&
+A
+\ar[1,0]^{f}
+\\
+HA'
+\ar[0,1]_-{\alpha'}
+&
+A'
+}
+\endxy
+\]
+\vspace{1mm}
+
+\noindent
+An \textit{initial algebra}, i.e., an initial object of~$\Alg H$
+(which exists, in fact, is given by~$\colim_{n\in\omega} H^n\emptyset$,
+since
+$H$~is finitary (see [ A]) is denoted by~$I$ and its structure
+morphism by
+\[
+\xy
+\xymatrix@1{
+HI
+\ar[0,1]^-{\varphi}
+&
+I.
+}
+\endxy
+\]
+\end{pv}
+
+\begin{pv}{2.4 Examples}
+(i) If $H=H_\Sigma$, then $\Alg H_\Sigma$~is the usual
+category of $\Sigma$-al\-ge\-bras and homomorphisms.
+There are several
+useful descriptions of~$I_\Sigma$, an initial $\Sigma$-al\-ge\-bra;
+here we consider the following:
+\[I_\Sigma=\text{the algebra of all finite $\Sigma$-trees.}\]
+Recall that a \textit{$\Sigma$-tree} is a (rooted, ordered) labeled
+tree such that every node of $n$~children is labeled by an $n$-ary
+symbol in~$\Sigma$. The structure morphism
+\[\varphi_\Sigma\colon H_\Sigma I_\Sigma\to I_\Sigma\]
+is given by tree-tupling.
+
+(ii) An initial $\PP_{\!2}$-algebra~$I$ is just an initial algebra
+of the variety of $\Sigma$-al\-ge\-bras [see 2.2~(i)], given by
+commutativity of~$\beta$. Thus
+\[I=I_{\Sigma}/_\sim\]
+where two finite binary trees $s,r\in I_{\Sigma}$ are congruent
+iff we can get~$s$ from~$r$ by swapping two siblings
+finitely many times.
+\end{pv}
+
+\begin{pv}{2.5 Remark}
+We have an embedding
+\[\Alg H\hookrightarrow\Alg H_\Sigma\]
+assigning to every $H$-algebra,
+$HA\xrightarrow{\rule{1mm}{0mm}\alpha\rule{1mm}{0mm}}A$, the
+$\Sigma$-algebra
+\[
+\xy
+\xymatrix@1{
+H_\Sigma A
+\ar[0,1]^-{\varepsilon_A}
+&
+HA
+\ar[0,1]^-{\alpha}
+&
+A.
+}
+\endxy
+\]
+In fact, $\Alg H$~is a variety of $\Sigma$-algebras (presented by
+the given basic equations). Conversely, every $\Sigma$-algebra~$B$
+has a \textit{reflection} in~$\Alg H$: it is the smallest quotient
+$j\colon B\to B/_\sim$ such that $B/_\sim$~is an $H$-algebra (more
+precisely, a $\Sigma$-algebra whose structure morphism factorizes
+trough~$\varepsilon_{B/_\sim}$):\vspace{3mm}
+\[
+\xy
+\xymatrix{
+H_\Sigma B
+\ar[0,2]^-{\beta}
+\ar[1,0]_{H_\Sigma j}
+&
+&
+B
+\ar[1,0]^{j}
+\\
+H_\Sigma(B/_\sim)
+\ar[0,1]_-{\varepsilon_{B/_\sim}}
+&
+H(B/_\sim)
+\ar[0,1]_-{\overline{\beta}}
+&
+B/_\sim
+}
+\endxy
+\]\vspace{1mm}
+\end{pv}
+
+\begin{pv}{2.6 Notation}
+Given $\varepsilon\colon H_\Sigma\to H$, denote by
+\[\Sigma^\perp\]
+the signature obtained from~$\Sigma$ by adding a new nullary
+symbol~$\perp$. Then $H_\Sigma$~is a subfunctor of~$H_{\Sigma^\perp}$
+and we denote by
+\[u\colon H_\Sigma\to H_{\Sigma^\perp}\]
+the natural transformation formed by the inclusion maps. This allows
+us to view every $\Sigma^\perp$-algebra,
+$H_{\Sigma^\perp}A\xrightarrow{\rule{1mm}{0mm}\alpha\rule{1mm}{0mm}}A$,
+as a $\Sigma$-algebra via
+\[
+\xy
+\xymatrix@1{
+H_\Sigma A
+\ar[0,1]^-{u_A}
+&
+H_{\Sigma^\perp}A
+\ar[0,1]^-{\alpha}
+&
+A.
+}
+\endxy
+\]
+In particular, the algebra~$I_{\Sigma^\perp}$ of finite
+$\Sigma^\perp$-trees is a $\Sigma$-algebra.
+\end{pv}
+
+\begin{pv}{Definition}
+\itshape
+Given a quotient $\varepsilon\colon H_\Sigma\to H$ we denote by
+\[J=I_{\Sigma^\perp/_\sim}\]
+the reflection of the $\Sigma$-algebra~$I_{\Sigma^\perp}$
+in~$\Alg H$\ with the structure morphism~$\varphi$:\vspace{3.5mm}
+\[
+\xy
+\xymatrix{
+H_\Sigma I_{\Sigma^\perp}
+\ar[0,1]^-{u_{I_{\Sigma^\perp}}}
+\ar[1,0]_{H_\Sigma j}
+&
+H_{\Sigma^\perp}I_{\Sigma^\perp}
+\ar[0,1]^-{\varphi_{\Sigma^\perp}}
+&
+I_{\Sigma^\perp}
+\ar[1,0]^{j}
+\\
+H_\Sigma J
+\ar[0,1]_-{\varepsilon_J}
+&
+HJ
+\ar[0,1]_-{\varphi}
+&
+J
+}
+\endxy
+\]\vspace{.5mm}
+
+\noindent
+In other words, for finite $\Sigma^\perp$-trees $s$ and~$r$ we have
+\[s\sim r\quad \text{iff $s$ can be obtained from $r$ by using
+$\varepsilon$-equations (finitely many times).}\]
+\end{pv}
+
+\begin{pv}{2.7 Example}
+For $\varepsilon\colon H_\Sigma\to\PP_{\!2}$ as in 2.2 (i) the
+algebra~$I_{\Sigma^\perp}$ consists of all finite binary trees with
+leaves labeled by $b$ or~$\perp$. And $\sim$~is the congruence of
+commutativity of the binary operation, i.e., $s\sim r$ if $s$~can be
+obtained from~$r$ by swapping the children of one father finitely
+many times.
+\end{pv}
+
+\begin{pv}{2.8 Notation}
+We will denote by
+$\Coalg H$ the category of \textit{$H$-coalgebras}, i.e.,
+sets~$A$
+equipped with a structure morphism $\alpha\colon A\to HA$,
+and \textit{homomorphisms}~$f$ between $H$-coalgebras defined by the
+commutativity by the following square\vspace{1mm}
+\[
+\xy
+\xymatrix{
+A
+\ar[0,1]^-{\alpha}
+\ar[1,0]_{f}
+&
+HA
+\ar[1,0]^{Hf}
+\\
+A'
+\ar[0,1]_-{\alpha'}
+&
+HA'
+}
+\endxy
+\]
+\vspace{.1mm}
+
+\noindent
+Again, a \textit{terminal coalgebra}, i.e., a terminal object
+of~$\Coalg H$, exists due to the finitarity of~$H$ (see~\cite{b}), and
+we denote it by~$T$ with the structure morphism
+\vspace{1mm}
+\[
+\xy
+\xymatrix@1{
+T
+\ar[0,1]^-{\psi}
+&
+HT.
+}
+\endxy
+\]
+Recall that by Lambek's Lemma~\cite{l}, $\psi$~is an isomorphism;
+thus $T$~can also be viewed as an $H$-algebra.
+\end{pv}
+
+\begin{pv}{Example}
+A terminal $H_\Sigma$-coalgebra can be described as the coalgebra
+\[T_\Sigma\]
+of all (finite and infinite) $\Sigma$-trees. Here
+\[\psi_\Sigma\colon T_\Sigma\to H_\Sigma T_\Sigma\]
+is given by parsing, i.e., the inverse of the tree-tupling.
+\end{pv}
+
+\begin{pv}{2.9 Definition}
+\itshape
+For every $k=0,1,2,\dots$ denote by
+\[\partial_k\colon T_\Sigma\to T_{\Sigma^\perp}\]
+the function cutting a given tree and level~$k$ at labeling all new
+leaves by~$\perp$. Define a congruence~\sims\ on the
+$\Sigma$-algebra $H_\Sigma T_\Sigma
+\xrightarrow{\rule{1mm}{0mm}\psi_\Sigma^{-1}\rule{1mm}{0mm}}
+T_\Sigma$ as follows:
+\[s\sims r\quad\text{iff $\partial_ks\sim\partial_kr$ for all
+$k=0,1,2,\dotsc$,}\]
+where $\sim$~is the congruence of Definition~2.6.
+\end{pv}
+
+\begin{pv}{Remark}
+We prove in Theorem 2.11 below that \sims~is a congruence for~$H$,
+and that the quotient coalgebra
+\[J^*=T_\Sigma/_{\sims}\]
+of the  $H$-algebra\vspace{1mm}
+\[
+\xy
+\xymatrix{
+T_\Sigma
+\ar[0,1]^-{\psi_\Sigma}
+&
+H_\Sigma T_\Sigma
+\ar[0,1]^-{\varepsilon_{T_\Sigma}}
+&
+HT_\Sigma
+}
+\endxy
+\]
+is a terminal. We denote by $j^*\colon T_\Sigma\to J^*$ the quotient
+map.
+\end{pv}
+
+\begin{pv}{2.10 Examples}
+(i) For $\varepsilon\colon H_\Sigma\to\PP_{\!2}$ of Example
+2.2~(i) we have
+\[                                   %% o6
+\vcenter{
+\xy
+\POS (00, 00) *+{b} = "b1"
+   , (05, 10)       = "t1"
+   , (10, 00)       = "t2"
+   , (05,-10) *+{b} = "b2"
+   , (15,-10)       = "t3"
+   , (10,-20) *+{b} = "b3"
+   , (20,-20)       = "t4"
+   , (25,-30)        = "x"
+%%%
+\POS "b1" \ar@{-} "t1"
+\POS "t2" \ar@{-} "t1"
+\POS "b2" \ar@{-} "t2"
+\POS "t3" \ar@{-} "t2"
+\POS "b3" \ar@{-} "t3"
+\POS "t4" \ar@{-} "t3"
+\POS "x" \ar@{.} "t4"
+\endxy
+}
+\quad\sims\quad
+\vcenter{
+\xy
+\POS ( 00, 00) *+{b} = "b1"
+   , (-05, 10)       = "t1"
+   , (-10, 00)       = "t2"
+   , (-05,-10) *+{b} = "b2"
+   , (-15,-10)       = "t3"
+   , (-10,-20) *+{b} = "b3"
+   , (-20,-20)       = "t4"
+   , (-25,-30)        = "x"
+%%%
+\POS "b1" \ar@{-} "t1"
+\POS "t2" \ar@{-} "t1"
+\POS "b2" \ar@{-} "t2"
+\POS "t3" \ar@{-} "t2"
+\POS "b3" \ar@{-} "t3"
+\POS "t4" \ar@{-} "t3"
+\POS "x" \ar@{.} "t4"
+\endxy
+}
+\]
+because in~$I_{\Sigma^\perp}$ we clearly have
+\[                                   %% o7
+\begin{array}{rcrcl}
+(k=0)
+&\qquad&
+\perp
+&\sim&
+\perp
+\\[2mm]
+(k=1)
+&&
+\xy
+\POS (00,00) *+{b}     = "b"
+   , (10,00) *+{\perp} = "p"
+   , (05,10)           = "t"
+%%%
+\POS "b" \ar@{-} "t"
+\POS "p" \ar@{-} "t"
+\endxy
+&\sim&
+\xy
+\POS (00,00) *+{\perp} = "b"
+   , (10,00) *+{b}     = "p"
+   , (05,10)           = "t"
+%%%
+\POS "b" \ar@{-} "t"
+\POS "p" \ar@{-} "t"
+\endxy
+\\[8mm]
+(k=2)
+&&
+\xy
+\POS (00, 00) *+{b} = "b1"
+   , (05, 10)       = "t1"
+   , (10, 00)       = "t2"
+   , (05,-10) *+{b} = "b2"
+   , (15,-10) *+{\perp} = "t3"
+%%%
+\POS "b1" \ar@{-} "t1"
+\POS "t2" \ar@{-} "t1"
+\POS "b2" \ar@{-} "t2"
+\POS "t3" \ar@{-} "t2"
+\endxy
+&\sim&
+\xy
+\POS ( 00, 00) *+{b} = "b1"
+   , (-05, 10)       = "t1"
+   , (-10, 00)       = "t2"
+   , (-05,-10) *+{b} = "b2"
+   , (-15,-10) *+{\perp} = "t3"
+%%%
+\POS "b1" \ar@{-} "t1"
+\POS "t2" \ar@{-} "t1"
+\POS "b2" \ar@{-} "t2"
+\POS "t3" \ar@{-} "t2"
+\endxy
+\end{array}
+\]
+etc.
+
+(ii) For $\varepsilon\colon H_\Sigma\to\Pf$ of Example 2.2~(ii)
+we can describe
+\[\parbox{91mm}{$I_{\Sigma^{\phantom{\perp}}}$
+as the algebra of all finite
+(nonlabeled) trees,\\
+$I_{\Sigma^\perp}$ as the algebra of all finite trees with leaves
+partially $\phantom{I_{\Sigma^\perp}}$~labeled by~$\perp$,}\]
+and
+\[\parbox{91mm}{$T_\Sigma$ as the algebra of all finite-branching
+trees.}\]
+(The operation labels can be left out here since $n$-ary operations
+are unique for all~$n$.) Recall the concept of extensional quotient
+of Example~1.2. The congruence~$\sim$ on~$I_{\Sigma^\perp}$ is
+easily seen to be the following:
+\[\text{$r\sim s$ iff the trees $r,s$ have the same extensional
+quotient.}\]
+It was M.~Barr who used in~\cite{b} the operation~$\partial_k$ to
+describe a terminal coalgebra of~\Pf\ as~$T_\Sigma/{\sims}$ for the
+above congruence~\sims.
+%congruent trees:
+%\[                                   %% o8
+%\psset{levelsep=7mm,treesep=6mm,radius=2pt}
+%\raisebox{11mm}{%
+%\pstree{\TC*}{\TC*
+%\pstree{\TC*}{\TC*}
+%\pstree{\TC*}{\pstree{\TC*}{\TC*}}
+%\pstree{\TC*~[tnpos=r,tnsep=6pt]{\raisebox{3pt}{$\dots$}}}{%
+%\pstree{\TC*}{\pstree{\TC*}{\TC*}}}}}
+%\quad\sim^*\quad
+%\raisebox{11mm}{%
+%\pstree{\TC*}{%
+%\pstree{\TC*}{
+%\pstree{\TC*}{
+%\pstree{\TC*}{
+%\pstree{\TC*}{\TC*~[tnpos=b,tnsep=0pt]{\vdots}}}}}
+%\TC*
+%\pstree{\TC*}{\TC*}
+%\pstree{\TC*}{\pstree{\TC*}{\TC*}}
+%\pstree{\TC*~[tnpos=r,tnsep=6pt]{\raisebox{3pt}{$\dots$}}}{%
+%\pstree{\TC*}{\pstree{\TC*}{\TC*}}}}}
+%\]
+\end{pv}
+
+\begin{pv}{2.11 Theorem}
+\itshape
+For every finitary endofunctor~$H$ a terminal coalgebra can be
+described as the quotient
+\[T_\Sigma/_{\sims}\]
+of a terminal $H_\Sigma$-coalgebra~$T_\Sigma$ (of all
+$\Sigma$-trees) modulo the congruence~\sims of Definition 2.9.
+\end{pv}
+
+\begin{pv}{Remark}
+More detailed: given a presentation of~$H$ as a quotient
+$\varepsilon\colon H_\Sigma\to H$
+and defining the quotient map $j^*\colon
+T_\Sigma\to T_\Sigma/_{\sims}$ as in 2.9, there exists a
+unique structure of a coalgebra, $\psi^*$, on~$T_\Sigma/_{\sims}$
+making~$j^*$ a homomorphism:\vspace{3.5mm}
+\[
+\xy
+\xymatrix{
+T_\Sigma
+\ar[0,1]^-{\psi_\Sigma}
+\ar[1,0]_{j^*}
+&
+H_\Sigma T_\Sigma
+\ar[0,1]^-{\varepsilon_{T_\Sigma}}
+&
+HT_\Sigma
+\ar[1,0]^{Hj^*}
+\\
+T_\Sigma/_{\sims}
+\ar[0,2]_-{\psi^*}
+&
+&
+H(T_\Sigma/_{\sims})
+}
+\endxy
+\]\vspace{1mm}
+
+\noindent
+And the coalgebra~$T_\Sigma/_{\sims}$ is terminal for~$H$.
+\end{pv}
+
+We denote $J^*=T_\Sigma/_{\sims}$.
+
+\begin{pf}
+We start with some preliminary facts.
+
+(1) For every natural number~$k$ there is unique
+morphism~$\overline{\partial}_k$ such that the following square
+\vspace{1mm}
+\[
+\xy
+\xymatrix{
+T_\Sigma
+\ar[0,1]^-{\partial_k}
+\ar[1,0]_{j^*}
+&
+I_{\Sigma^\perp}
+\ar[1,0]^{j}
+\\
+J^*
+\ar[0,1]_-{\overline{\partial}_k}
+&
+J
+}
+\endxy
+\]
+\vspace{1mm}
+
+\noindent
+commutes. Moreover, the cone $(\overline{\partial})_{k\in\omega}$ has
+the property that for every finite set $m\colon M\hookrightarrow
+J^*$ there is a~$k$ such that $\overline{\partial}_k{\cdot}m$~is a
+monomorphism.
+
+In fact, the first statement follows from the observation that given
+$s,r\in T_\Sigma$ with $j^*(s)=j^*(r)$, then
+$j(\partial_ks)=j(\partial_kr)$, due to the definition of~\sims.
+
+For the latter statement, find a finite set $m_0\colon
+M_0\hookrightarrow T_\Sigma$ such that $M$~is the image of~$M_0$
+under~$j^*$ and $j^*m_0$~is a monomorphism. For this finite
+set~$M_0$ of $\Sigma$-trees there clearly exists~$k$ such that the
+cutting of all trees of~$M_0$ at level~$k$ yields trees pairwise
+nonequivalent under~$\sim$---in other words, $j{\cdot}\partial_k{\cdot}m_0$
+is a monomorphism. Choose $f\colon M_0\to M$ with $mf=j^*m_0$ to
+conclude that, since
+\[\overline{\partial}_k{\cdot}m{\cdot}f=j{\cdot}\partial_k{\cdot}m_0\]
+is a monomorphism, also $\overline{\partial}_k{\cdot}m$~is a
+monomorphism.
+
+(2) The cone $(H\overline{\partial}_k)_{k\in\omega}$ is
+collectively monomorphic. In fact, given distinct elements $x,y\in
+HT_\Sigma$ there exists a finite nonempty set $m\colon M\to J^*$
+with $x,y \in Hm[HM]$ , see 2.1~(ii). Choose~$k$ with
+$\overline{\partial}_k{\cdot}m$ a monomorphism to conclude
+$H\overline{\partial}_k(x)\neq H\overline{\partial}_k(y)$.
+
+(3) The morphism $\varphi\colon HJ\to J$ of Definition~2.6 is a
+monomorphism. In fact, this states that given two tuples
+\[s=\sigma(s_1,\dots,s_n)\quad\text{and}\quad
+r=\varrho(r_1,\dots,r_m)\]
+in~$H_\Sigma I_{\Sigma^\perp}$ with $\sigma,\varrho\in\Sigma$, then
+if $j\varphi_{\Sigma^\perp}u_{I_{\Sigma_\perp}}$~merges these tuples, then also
+$\varepsilon_J{\cdot}H_\Sigma j$ merges them. In other words if $s$
+and~$r$ are considered as trees in~$I_{\Sigma^\perp}$
+(via~$\varphi_{\Sigma^\perp}$), then
+\[s\sim r\quad\text{implies}\quad \varepsilon_J{\cdot}H_\Sigma
+j\bigl(\sigma(s_i)\bigr) = \varepsilon_J{\cdot}H_\Sigma
+j\bigl(\varrho(r_k)\bigr).\]
+To prove this, we can restrict ourselves to the case that $s$~can be
+obtained from~$r$ by a single  application of some
+$\varepsilon$-equation. If the node of~$r$ at which this equation is
+applied is not the root,
+then that node lies in the subtree~$\varrho_{\llll}$
+for some $\llll=0,\dots,m-\nolinebreak1$. This implies
+\[s=\varrho(r_0,\dots,r_{\llll-1},s_{\llll},r_{\llll+1},\dots,r_{m-1})\]
+and $j(s_{\llll})=j(r_{\llll})$, therefore
+\[H_\Sigma j\bigl(\sigma(s_i)\bigr)=H_\Sigma
+j\bigl(\varrho(r_k)\bigr).\]
+If the above node is he root of~$r$, then the $\varepsilon$-equation
+we apply has to have form
+\[\sigma(x_0,\dots,x_{n-1})=\varrho(y_0,\dots,y_{m-1})\]
+where $x_i$ and~$y_k$ are variables of a set~$X$, and for some
+function $f\colon X\to I_{\Sigma^\perp}$ we have
+\[s_i=f(x_i)\quad\text{and}\quad r_j=f(y_j).\]
+Since the given equation is an $\varepsilon$-equation, i.e., the two
+tuples are merged by~$\varepsilon_{X}$, the naturality
+of~$\varepsilon$ yields
+\begin{align*}
+\varepsilon_J{\cdot}H_\Sigma j\bigl(\sigma(s_i)\bigr)
+&=\varepsilon_J{\cdot}H_\Sigma j{\cdot}H_\Sigma f\bigl(\sigma(x_i)\bigr)\\
+&=Hj{\cdot}Hf{\cdot}\varepsilon_X\bigl(\sigma(x_i)\bigr)\\
+&=Hj{\cdot}Hf{\cdot}\varepsilon_X{\cdot}\bigl(\varrho(y_k)\bigr)\\
+&=\varepsilon_J{\cdot}H_\Sigma j{\cdot}H\Sigma
+f\bigl(\varrho(y_k)\bigr)\\
+&=\varepsilon_J{\cdot}H_\Sigma j\bigl(\varrho(r_k)\bigr).
+\end{align*}
+
+(4) For each $k\in\omega$ the following squares
+\vspace{1.5mm}
+\[
+\vcenter{
+\xy
+\xymatrixcolsep{3pc}
+\xymatrix{
+T_\Sigma
+\ar[0,2]^-{\partial_{k+1}}
+\ar[1,0]_{\psi_\Sigma}
+&
+&
+I_{\Sigma^\perp}
+\\
+H_\Sigma T_\Sigma
+\ar[0,1]_-{u_{T_\Sigma}}
+&
+H_{\Sigma^\perp}T_{\Sigma}
+\ar[0,1]_-{H_{\Sigma^\perp}\partial_k}
+&
+H_{\Sigma^\perp}I_{\Sigma^\perp}
+\ar[-1,0]_{\varphi_{\Sigma^\perp}}
+}
+\endxy
+}
+\qquad
+\text{and}
+\qquad
+\vcenter{
+\xy
+\xymatrix{
+J^*
+\ar[0,1]^-{\overline{\partial}_{k+1}}
+\ar[1,0]_{\varphi^*}
+&
+J
+\\
+HJ^*
+\ar[0,1]_-{H\overline{\partial}_k}
+&
+HJ
+\ar[-1,0]_{\varphi}
+}
+\endxy
+}
+\]\vspace{1mm}
+
+\noindent
+commute. In fact,the left-hand square commutes because for every
+tree $s=\sigma(s_i)$ in~$T_k$ the cutting of~$s$ at
+level~$k+\nolinebreak1$ can be performed by cutting each~$s_i$ at
+level~$k$, i.e.,
+\[\partial_{k+1}s=\sigma(\partial_ks_i).\]
+To prove that the right-hand square commutes, use the fact that
+$j^*\colon T_\Sigma\to J^*$ is an epimorphism with
+\begin{align*}
+\overline{\partial}_{k+1}j^*&=j{\cdot}\partial _{k+1}&&\text{by (1) above}\\
+&=j{\cdot}\varphi_{\Sigma^\perp}{\cdot}H_{\Sigma^\perp}\partial_k{\cdot}
+u_{T_\Sigma}{\cdot}\psi_\Sigma&&\text{see the left-hand square}\\
+&=j{\cdot}\varphi_{\Sigma^\perp}{\cdot}u_{I_{\Sigma^\perp}}{\cdot}
+H_\Sigma\partial_k{\cdot}\psi_{\Sigma}&&\text{by naturality of $u$}\\
+&=\varphi{\cdot}\varepsilon_J{\cdot}H_\Sigma(j{\cdot}\partial_k){\cdot}\psi_\Sigma&&
+\text{by 2.6}\\
+&=\varphi{\cdot}H(j{\cdot}\partial_k){\cdot}\varepsilon_{T_\Sigma}{\cdot}
+\psi_\Sigma&&\text{by naturality of $\varepsilon$}\\
+&=\varphi{\cdot}H(\overline{\partial}_k{\cdot}j^*){\cdot} \varepsilon_{T_\Sigma}
+{\cdot}\psi_\Sigma&&\text{by (1) above}\\
+&=\varphi{\cdot}H\overline{\partial}_k{\cdot}\varphi^*{\cdot}j^*&&
+\text{by Remark 2.11.}
+\end{align*}
+
+(5) The morphism $\psi^*\colon J^*\to HJ^*$ is well-defined in
+the above Remark. In other words, the kernel equivalence of~$j^*$
+contains the kernel equivalence of
+\[\beta\overset{\text{def}}{=}Hj^*{\cdot}\varepsilon_{T_\Sigma}{\cdot}
+\psi_\Sigma\colon T_\Sigma\to HJ^*.\]
+Since the cone of all $\varphi{\cdot}H\overline{\partial}_k\colon
+HJ^*\to J$ ($k\in\omega$) is monomorphic by (2) and~(3) above, it is
+sufficient to show that the kernel equivalence of~$j^*$ contains
+that of the cone $(\varphi{\cdot}H\overline{\partial}_k{\cdot}\beta)$. In
+fact, we prove that
+\[\varphi{\cdot}H\overline{\partial}_k{\cdot}\beta=j{\cdot}\partial_{k+1}\qquad
+\text{for all $k\in\omega$,}\]
+which proves the statement since (by definition of \sims\ and~$j^*$)
+we have $j^*(s)=j^*(r)$ iff
+$j{\cdot}\partial_{k+1}(s)=j{\cdot}\partial_{k+1}(r)$ for all $k\in\omega$.
+The proof is as follows:
+\begin{align*}
+\varphi{\cdot}H\overline{\partial}_k{\cdot}\beta&=
+\varphi{\cdot}(H\overline{\partial}_k{\cdot}\varepsilon_{J^*}){\cdot}
+H_{\Sigma}j^*{\cdot}\psi_\Sigma&&
+\text{by definition of $\beta$}\\
+&=\varphi{\cdot}\varepsilon_J{\cdot}H_\Sigma(\overline{\partial}_kj^*)
+{\cdot}\psi_\Sigma&&\text{by naturality of $\varepsilon$}\\
+&=\varphi{\cdot}\varepsilon_J{\cdot}H_\Sigma(j{\cdot}\partial_k){\cdot}\psi_\Sigma&&
+\text{by (1) above}\\
+&=j{\cdot}\varphi_{\Sigma^\perp}{\cdot}u_{I_{\Sigma^\perp}}{\cdot}H_\Sigma
+\partial_k{\cdot}\psi_\Sigma&&\text{by Definition 2.5}\\
+&=j{\cdot}\varphi_{\Sigma^\perp}{\cdot}H_{\Sigma^\perp}\partial_k{\cdot}
+u_{T_\Sigma}{\cdot}\psi_\Sigma&&\text{by naturality of $u$}\\
+&=j{\cdot}\partial_{k+1}&&\text{by (4) above.}
+\end{align*}
+
+(6) The coalgebra~$J^*$ is terminal. In fact, given a coalgebra
+$C\xrightarrow{\rule{1mm}{0mm}\gamma\rule{1mm}{0mm}}HC$, choose a
+morphism
+\[m\colon HC\to H_\Sigma C\qquad\text{with $\varepsilon_Cm=\id$.}\]
+From the $H_\Sigma$-coalgebra
+$C\xrightarrow{\rule{1mm}{0mm}\gamma\rule{1mm}{0mm}}
+HC\xrightarrow{\rule{1mm}{0mm}m\rule{1mm}{0mm}}H_\Sigma C$ we have a
+unique homomorphism $f\colon C\to T_\Sigma$ in~$\Coalg H_\Sigma$. We
+obtain a homomorphism $j^*{\cdot}f\colon C\to J^*$ in~$\Coalg H$.
+%\vspace{1.5mm}
+%\[
+%\psset{arrows=->,nodesep=3pt}
+%\everypsbox{\scriptstyle}
+%\begin{psmatrix}
+%C&&&HC\\
+%&HC&H_\Sigma C\\
+%T_\Sigma&&H_\Sigma T_\Sigma\\
+%&&&HT_\Sigma\\
+%J^*&&&HJ^*
+%\ncline{1,1}{1,4}^\gamma
+%\ncline{1,1}{2,2}^\gamma
+%\ncline{2,2}{2,3}^m
+%\ncline{2,3}{1,4}^{\varepsilon_C}
+%\ncline{1,1}{3,1}<f
+%\ncline{2,3}{3,3}>{H_\Sigma f}
+%\ncline{3,1}{3,3}^{\psi_\Sigma}
+%\ncline{3,3}{4,4}^{\varepsilon_{T_\Sigma}}
+%\ncline{3,1}{5,1}<{j^*}
+%\ncline{4,4}{5,4}>{Hj^*}
+%\ncline{5,1}{5,4}_{\varphi^*}
+%\ncline{1,4}{4,4}>{Hf}
+%\end{psmatrix}
+%\]\vspace{1mm}
+
+To prove the uniqueness of that homomorphism, let $h_1,h_2\colon
+C\to J^*$ be homomorphisms of $H$-coalgebras. Since (1)~implies that
+cone~$(\overline{\partial}_k)_{k\in\omega}$ is collectively
+monomorphic, it is sufficient to prove
+\[\overline{\partial}_kh_1=\overline{\partial}_kh_2\qquad
+\text{for all $k\in\omega$.}\]
+We proceed by induction in~$k$.
+
+\textit{Case $k=0$}. The function~$\partial_0$ is constant (with
+value~$\perp$), thus, it follows that $\overline{\partial}_0$~is
+also constant.
+
+\textit{Induction step}. Since $h_t$~is a homomorphism for $t=1,2$,
+it follows from (4) above that
+\[\overline{\partial}_{k+1}h_t=\varphi{\cdot}H \overline{\partial}_k
+{\cdot}\varphi^*{\cdot}h_t=\varphi
+{\cdot}H(\overline{\partial}_kh_t){\cdot}\gamma.\]
+Thus, from $\overline{\partial}_kh_1=\overline{\partial}_kh_2$
+we conclude
+$\overline{\partial}_{k+1}h_1=\overline{\partial}_{k+1}h_2$.\qed
+\end{pf}
+
+\section{A Description of Completely Iterative Monads}
+
+\begin{pv}{3.1}
+We use the terminology of ~\cite{aamv}. Given a finitary endofunctor $H$,
+presented as in 2.1 above, we denote by $\TT_\Sigma$ the free completely iterative monad on $H_\Sigma$ (of infinite $\Sigma$-trees) and by $\TT_H$ the free completely iterative monad on $H$. The signature obtained from $\Sigma$ by adding new nullary
+operation symbols from a set $X$ is denoted by $\Sigma+X$.
+\end{pv}
+
+\begin{pv}{3.2 Remark}
+For every finitary functor $H$, see 2.1, and every set $X$ we have a quotient
+\[\varepsilon+\id_X\colon H_{\Sigma+X}=H_\Sigma({-})+X\to
+H({-})+X.\]
+Observe that $\varepsilon$-equations, as defined in
+~2.1, are precisely the same as
+$(\varepsilon+\id_X)$-equations. Denote by
+\[\simx\]
+the corresponding congruence on the
+$(\Sigma+X)$-algebra~$I_{\Sigma^\perp+X}$, see Definition~2.6.
+(For $X\neq\emptyset$ the choice of a new
+symbol~$\perp$ is superfluous---instead, any element of~$X$ would
+have done.)
+
+Further, let
+\[\simxs\]
+denote the congruence on $T_\Sigma X=T_{\Sigma+X}$ of
+Definition~2.9 given by applying the $\varepsilon$-equations
+finitely or infinitely many times. That is, $\Sigma$-trees
+$s$ and~$r$ over~$X$
+are congruent iff $\partial_ks\simx\partial_kr$ holds
+for all $k\in\omega$.
+\end{pv}
+
+\begin{pv}{3.3 Example}
+For $H=\PP_{\!2}$ , see 2.2~(i), the congruence~\simx\ on
+the algebra~$T_{\Sigma^\perp+X}$ (of all finite binary trees with
+leaves labeled in $X+\{b,\perp\}$ and inner nodes labeled by~$\beta$)
+is just the commutativity of the operation~$\beta$. And \simxs~is
+the congruence on the algebra~$T_{\Sigma+X}$ (of all binary trees
+with leaves labeled in $X+\{b\}$) which uses the commutativity
+finitely or infinitely many times.
+%
+%\[
+%\psset{levelsep=10mm,nodesep=3pt}
+%\raisebox{19mm}{$
+%\pstree{\TR{\beta}}{\TR{b}
+%\pstree{\TR{\beta}}{\TR{x_1}
+%\pstree{\TR{\beta}}{\TR{b}
+%\pstree{\TR{\beta}}{\TR{x_2}
+%\pstree{\TR{\beta}}{\TR{b}
+%\Tp~[tnpos=b,tnsep=0pt]{\makebox[0pt]{%
+%\kern5pt\raisebox{7pt}{.}\kern-.7pt\raisebox{3pt}{.}\kern-1.0pt%
+%\raisebox{-.9pt}{.}}}}}}}}$}\quad\simxs\quad
+%\raisebox{19mm}{$
+%\pstree{\TR{\beta}}{%
+%\pstree{\TR{\beta}}{%
+%\pstree{\TR{\beta}}{%
+%\pstree{\TR{\beta}}{%
+%\pstree{\TR{\beta}}{%
+%\Tp~[tnpos=b,tnsep=0pt]{\makebox[0pt]{%
+%\kern-4.5pt\raisebox{-1.1pt}{.}\kern-.9pt\raisebox{3pt}{.}\kern-.9pt%
+%\raisebox{7pt}{.}}}
+%\TR{b}} \Tr{x_2}} \TR{b}} \TR{x_1}} \TR{b}}$}
+%\]
+\end{pv}
+
+\begin{pv}{3.4 Theorem}
+\itshape
+For every finitary endofunctor~$H$ of~\Set\ a free completely
+iterative monad~$\TT_H$ on~$H$ can be defined as the quotient of the
+tree monad~$\TT_\Sigma$ modulo the monad congruence~\simxs\
+\textnormal{(}$X$ a set\textnormal{)}.
+\end{pv}
+
+\begin{pv}{Remark}
+More detailed: given a presentation as a quotient $\varepsilon\colon
+H_\Sigma\to H$, then for the free completely iterative monad~$\TT_H$
+on~$H$ we have a monad homomorphism $h\colon\TT_\Sigma\to\TT_H$ whose
+components~$h_X$ are epimorphisms with the kernel equivalence~\simxs.
+\end{pv}
+
+\begin{pf}
+The universal property of $\TT_\Sigma$ yields a monad homomorphism
+\linebreak
+$h\colon\TT_\Sigma\to\TT_H                        $ with surjective components. We know from
+Theorem~2.11 that a terminal coalgebra, $TX$, of the finitary
+endofunctor $H({-})+X$ can be obtained from the
+tree coalgebra $T_\Sigma X=T_{\Sigma+X}$ modulo the
+congruence~\simxs. Consequently, \simxs~is the kernel equivalence
+of $h_X\colon T_\Sigma X\to TX$.\qed
+\end{pf}
+
+\section{Description of Iterative Monads}
+\begin{pv}{4.1}
+Recall from~\cite{be} or~\cite{e} that iterative monads are those ideal
+monads $S$ which have a unique solution for every guarded equation
+morphism $e\colon X\to S(Y+\nolinebreak Y)$ with $X$ and~$Y$ finite.
+\end{pv}
+
+\begin{pv}{Example}
+(see ~\cite{ebt}). Recall from the Introduction that a tree in~$T_\Sigma X$ is called
+\textit{rational} provided that it has only finitely subtrees.
+The tree monad $\TT_\Sigma$ has a submonad~$\RR_\Sigma$
+formed by all rational $\Sigma$-trees. More precisely, put
+\[\RR_\Sigma=(R_\Sigma,\eta,\mu)\]
+where $R_\Sigma$~assigns to every set~$X$ the subalgebra~$R_\Sigma
+X$ of~$T_\Sigma X$ of all rational trees, $\eta_X$~sends~$x$ to the
+singleton tree labeled by~$x$, and $\mu_X$~is given by tree tupling.
+(It is easy to see that a tree-tupling of rational trees is always
+rational.)
+\end{pv}
+
+\begin{pv}{4.2 Theorem}
+(see ~\cite{ebt}).
+\itshape
+The rational-tree monad~$\RR_\Sigma$ is a free iterative monad on
+the signature~$\Sigma$.
+\end{pv}
+
+\begin{pv}{4.3 Remark}
+Given a finitary endofunctor~$H$ of\/~\Set, we define in~\cite{amv} a
+subfunctor~$R$ of the above free iterative monad~$\TT_H$ on~$H$ by
+\[RY=\bigcup e^\dag[Y]\]
+where the union ranges over all flat equation morphisms $e\colon
+X\to HX+\nolinebreak Y$ with $X$~finite and $e^dag$ denotes the unique
+solution of  e ).
+\end{pv}
+
+\begin{pv}{4.4 Theorem}
+(see AMV]).
+\itshape
+Every finitary endofunctor~$H$ of~\/~\Set\ generates a free
+iterative monad, viz, the submonad~$\RR_H$ of~$\TT_H$ carried by the
+above subfunctor~$R$.
+\end{pv}
+
+\begin{pv}{4.5 Notation}
+Let $H$~be a finitary endofunctor of~\Set\ represented as a quotient
+\[\varepsilon: H_\Sigma\to H.\]
+For every set~$X$ we denote by~\vxs\ the congruence on the
+rational-tree algebra~$R_\Sigma X$ which is the restriction of the
+congruence~\simxs\ of 3.2. That is, two rational
+$\Sigma$-trees $s$ and~$r$ over~$X$ are congruent iff $r$~can be
+obtained from~$s$ by (potentially) infinite applications of
+$\varepsilon$-equations---i.e., iff $\partial_ks\simx\partial_kr$
+for all $k\in\nolinebreak\omega$.
+\end{pv}
+
+\begin{pv}{4.6 Theorem}
+(Description of free iterative monads)
+\itshape
+For every finitary endofunctor~$H$ on\/~\Set\ a free iterative
+monad~$\RR_H$ on~$H$ can be described as the quotient of the
+rational-tree-monad~$\RR_\Sigma$ modulo the monad congruence~\vxs\
+($X$ a set).
+\end{pv}
+
+\begin{pv}{Remark}
+We thus exhibit, for every presentation of~$H$ as a quotient
+$\varepsilon\colon H_\Sigma\to H$, a monad homomorphism
+$h\colon\RR_\Sigma\to\RR$ whose components~$h_X$ are epimorphisms
+with the kernel equivalence~\vxs.
+\end{pv}
+
+\begin{pf}
+Denote by
+\[k\colon\TT_\Sigma\to\TT_H\]
+the quotient of Theorem~3.4. Observe that for every flat equation
+morphism $e\colon X\to H_\Sigma X+\nolinebreak Y$ w.r.t~$\Sigma$ we
+obtain a flat equation morphism
+\[\overline{e}\equiv X\xrightarrow{\rule{1mm}{0mm}e\rule{1mm}{0mm}}
+H_\Sigma X+Y
+\xrightarrow{\rule{1mm}{0mm}\varepsilon_X+\id_Y\rule{1mm}{0mm}}
+HX+Y\]
+w.r.t~$H$ such that the following triangle
+\begin{equation}
+\vcenter{
+\xy
+\xymatrix{
+&
+X
+\ar[1,-1]_{e^\dag}
+\ar[1,1]^{\overline{e}^\dag}
+&
+\\
+T_\Sigma Y
+\ar[0,2]_-{k_Y}
+&
+&
+TY
+}
+\endxy
+}
+\end{equation}
+commutes. In fact, since $e^\dag$~is a coalgebra homomorphism w.r.t
+$H_\Sigma({-})+Y$ (see ~\cite{aamv}, Solution Lemma 3.4 ) so
+is~$k_Ye^\dag$, and this clearly implies that $k_Ye^\dag$~is a
+coalgebra homomorphism w.r.t
+$H_\Sigma({-})+\nolinebreak Y$. Since $TY$~is
+terminal, we conclude $\overline{e}^\dag=k_Ye^\dag$.
+
+This implies that $k_Y$~has a domain-codomain restriction
+$h_Y\colon R_\Sigma Y\to RY$. In fact, every element~$r$ of~$R_\Sigma
+Y$ is a solution of some flat system $e\colon X\to H_\Sigma
+X+\nolinebreak Y$ with $X$~finite, more precisely, $r=e^\dag(x)$ for
+some $x\in X$. Then
+\[k_Y(r)=k_Ye^\dag(x)=\overline{e}(x)\in RY.\]
+Since $k\colon T_\Sigma\to T$ is a natural transformation, it
+follows that the maps~$h_Y$ form a natural transformation $h\colon
+R_\Sigma\to R$. Moreover, $h$~is a monad morphism,
+$h\colon\RR_\Sigma\to\RR$, because it is a restriction of the monad
+morphism $k\colon\TT_\Sigma\to\TT$ to submonads.
+
+It remains to prove that $h_Y$~is surjective. To this end, for every
+flat equation $\overline{e}\colon X\to HX+\nolinebreak Y$ choose a
+splitting of~$\varepsilon_X$:
+\[u\colon HX\to H_\Sigma X,\qquad \varepsilon_Xu=\id\]
+and consider the flat equation $e=(u+\id_Y)\overline{e}\colon X\to
+H_\Sigma X+\nolinebreak Y$ w.r.t.~$H_\Sigma$. Then the above
+triangle~(3) commutes. To verify this, we only need to prove
+that $e^\dag$~is a coalgebra homomorphism w.r.t.
+$H({-})+Y$ from~$\overline{e}$ to the coalgebra
+$T_\Sigma Y\cong H_\Sigma T_\Sigma
+Y+Y\xrightarrow{\rule{1mm}{0mm}\varepsilon_{T_\Sigma
+Y}+\id\rule{1mm}{0mm}}H(T_\Sigma Y)+\nolinebreak Y$. In fact, from
+the Solution Lemma of ~\cite{aamv} we know that $e^\dag$~is a coalgebra homomorphism
+from~$e$ to~$T_\Sigma Y$. That is, in the following diagram
+\vspace{1mm}
+
+\[
+\xy
+\xymatrix{
+X
+\ar[0,1]^-{\overline{e}}
+\ar[3,0]_{e^\dag}
+&
+HX+Y
+\ar[0,2]^-{u+\id_Y}
+\ar @{=} [1,1]
+&
+&
+H_\Sigma X+Y
+\ar[3,0]^{H_\Sigma e^\dag+\id_Y}
+\ar[1,-1]_{\varepsilon_X+\id_Y\phantom{MM}}
+\\
+&
+&
+HX+Y
+\ar[1,0]^{He^\dag+\id_Y}
+&
+\\
+&
+&
+H(T_\Sigma Y)+Y
+&
+\\
+T_\Sigma Y
+\ar[0,3]_-{\cong}
+&
+&
+&
+H_\Sigma(T_\Sigma Y)+Y
+\ar[-1,-1]^{\varepsilon_{T_\Sigma Y}+\id_Y\phantom{MM}}
+}
+\endxy
+\]
+\vspace{1mm}
+
+\noindent
+the outward square commutes. Since the right-hand square commutes by
+naturality of~$\varepsilon$, it follows that $e^\dag$~is a
+homomorphism from~$\overline{e}$ w.r.t $H({-})+Y$, as
+requested. This shows that $h_Y$~is surjective: every element
+$\overline{r}\in RY$ has the form
+$\overline{r}=\overline{e}^\dag(x)$ for some flat equation
+$\overline{e}\colon X\to HX+\nolinebreak Y$ with $X$~finite and some
+$x\in X$, and then we have
+\[\overline{r}=h_Y\bigl(e^\dag(x)\bigr)\qquad\text{with}\qquad
+e^\dag(x)\in R_\Sigma Y.\]
+\mbox{}\vspace{-34pt}\par\mbox{}\qed
+\end{pf}
+
+
+
+\begin{thebibliography}{\text{MMMM}}
+\bibitem[\text{AAMV}]{aamv}
+Aczel,~P., Ad\'amek,~J., Milius,~S. and Ve\-le\-bil,~J.: ``Infinite Trees and
+Completely Iterative Theories''; to appear in Theor. Comps. Science.
+
+%\bibitem[\text{A}]{a}
+%Ad\'amek,~J.: ``Free Algebras and Automata Realizations in the
+%Language of Categoies''; Comment. Math. Univ. Carolin\ae, 15(1974),
+%\mbox{589--602}.
+
+\bibitem[\text{AMV}]{amv}
+Ad\'amek,~J., Milius,~S. and Velebil,~J.: ``On Rational Monads and Free Iterative Theories''; Electr. Notes Theor. Comp. Science 69 (2002)
+
+\bibitem[\text{AT}]{at}
+Ad\'amek,~J. and Trnkov\'a,~V.: ``Automata and Algebras in
+Categories''; Academic Publishers, Dordrecht (1990)
+
+\bibitem[\text{B}]{b}
+Barr,~M.: ``Terminal Coalgebras in Well-founded Set Theory''; Theor.
+Comp. Science 124(1994), \mbox{182--192}.
+
+\bibitem[\text{BE}]{be}
+Bloom, S.~L. and \'Esik,~Z.: ``Iteration Theories: The Equational
+Logic of Iterative Processes''; EATCS Monograph Series on
+Theoretical Computer Science, Springer-Verlag (1993)
+
+\bibitem[\text{E}]{e}
+Elgot, C.~C.: ``Monadic Computation and Iterative Algebraic
+Theories''; in: Logic Colloquium~'73 (eds: H.~E. Rose and J.~C.
+Shepherdson), North-Holland Publishers, Amsterodam (1975),
+\mbox{175--230}.
+
+\bibitem[\text{EBT}]{ebt}
+Elgot, C.~C., Bloom, S.~L. and Tindell,~R.: ``On the Algebraic
+Structure of Rooted Trees''; J. Comp. Syst. Sciences, 16(1978),
+\mbox{361--399}.
+
+\bibitem[\text{L}]{l}
+Lambek,~J.: ``A Fixpoint Theorem for Complete Categories''; Math.
+Z., 103(1968), \mbox{151--161}.
+
+\bibitem[\text{M}]{m}
+Moss,~L.: ``Parametric Corecursion''; Theoretical Computer Science,
+260(2001), \mbox{139--163}.
+
+\end{thebibliography}
+
+
+\end{document}
+
+}

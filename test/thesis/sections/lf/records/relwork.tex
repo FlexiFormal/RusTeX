@@ -1,0 +1,100 @@
+Languages can differ substantially in the syntax and semantics of these constructs.
+Our interest here is in one difference in particular, which we call the difference between \defemph{stratified} and \defemph{integrated} grouping.
+
+\subsection{Analysis}
+
+With \textbf{stratified} grouping, the language is divided into a lower level for the base language and a higher level that introduces the grouping constructs.
+For example, the SML module system is stratified: it uses a simply typed $\lambda$-calculus at the lower level and \emph{signatures} for the type-like and \emph{structures} for the value-like grouping constructs at the higher level.
+Critically, the higher level constructs are not valid objects at the lower level: even though signatures behave similarly to types, they are not types of the base language.
+With \textbf{integrated} grouping, only one level exists: the grouping construct is one
+out of many type-forming operations of the base language with no distinguished ontological
+status.
+For example, SML also provides record types as a grouping construct that is integrated with the type system.
+
+Stratified languages have the advantage that they can be designed in a way that yields a conservativity property: all higher level features can be seen as abbreviations that can be compiled into the base language.
+This corresponds to a typical historical progression where a simple base language is designed first and studied theoretically (e.g., the simply-typed $\lambda$-calculus) and  grouping is added later when practical applications demand it.
+But they have the disadvantage that they tend towards a duplication of features: many operations of the lower level are also desirable at the higher level.
+For example, SML \emph{functors} are essentially functions whose domain and codomain are signatures, a duplication of the function types that already exist in the base language.
+In logics, this problem is even more severe because quantification and equality (and eventually tactics, decision procedures etc.) quickly become desirable at the higher level as well, at which point a duplication of features tends to become infeasible.
+A well-known example of this trap is the stratified Coq module system (inspired by SML), which practitioners often dismiss in favor of using record types, most importantly in the mathematical components project \cite{MathComponents:base}.
+
+This may lead us to believe that record types are the way to go --- but this is not ideal either.
+Record types usually do not support advanced declarations like imports, definitions, and notations, which are commonplace in stratified languages and indispensable in practice.
+Depending on the system, record types may also forbid some declarations such as type declarations (which would require a higher universe to hold the record type), dependencies between declarations (which would require dependent types), and axioms (which do not fit the record paradigm in systems that do not use a propositions-as-types design).
+And complex definition principles such as for inductive types and recursive functions are often placed into a stratified higher level just to handle their inherent difficulty.
+Moreover, stratified grouping has proved very appropriate for organizing extra-logical declarations such as prover instructions (e.g., tactics, rewrite rules, unification hints) examples, sectioning, comments, and metadata.
+While some systems use files as a simple, implicit higher level grouping construct, most systems use an explicit one.
+The exalted status of higher level grouping also often supports documentation and readability because it makes the large-scale structure of a development explicit and obvious.
+This is particularly helpful when formalizing software specifications or mathematical theories, whose structure naturally corresponds to those offered by higher-level grouping.
+In our work on integrating theorem prover libraries (see \autoref{ch:import}), my colleagues at KWARC and me have experienced that this correspondence makes it much easier to compare and integrate different stratified formalizations of the same concepts.
+
+For an in-depth discussion of stratified and integrated groupings in various languages, see \cite{MueRabKoh:tatreport18}.
+
+%\subsection{Related Work}% \ednote{TODO: Clean up}
+%The following section gives an overview of stratified and integrated groupings in various languages. For a more in-depth discussion, see \cite{MueRabKoh:tatreport18}.
+%\begin{labeling}{OO-languages}
+%	\item[\cite{luo:manifestfields}] presents an extension of the logical framework LF with record types with \emph{manifest fields}. The latter are implemented using unit types and implicit type coercions are used for prjecting the manifest fields. The main difference is that our implementation uses the same contexts for both stratified and integrated groupings, which allows for bridging the gap between the two easily. Furthermore, we allow \emph{merging} of records and record types (see Section \ref{sec:merging}) to make manifest fields accessible without having to restate them for each instance of a type.
+%	\item[OO-languages] use classes for stratified groupings, the corresponding types of which basically represent integrated groupings. Classes however can usually only ever linearly extend one superclass and need all of their fields (except for parameters) instantiated.
+%	
+%	\emph{Interfaces} (e.g. in Java) somewhat fix the latter problem by allowing almost arbitrary mixing, but have different restrictions in that fields may not be defined in interfaces at all.
+%	
+%	\emph{Traits} and \emph{Abstract Classes} in Scala finally allow almost arbitrary mixing and implementing or omitting of definitions. These probably come closest to our implementation.
+%	
+%	\item[PVS~\cite{pvs}] is an interactive theorem prover system with a highly expressive language. PVS uses \emph{theories} (which may be parametric) for stratified groupings and records for integrated groupings, but no mechanism to convert between the two exists.
+%	
+%	While theories may extends arbitrary other theories, record types an only be extended linearly and only by fields \emph{independent} of the base type they extend -- so basically only two record types that are independently well-typed can be merged.
+%	\item[Agda~\cite{agda}] uses Modules (which may be parametric) for stratified groupings and records for integrated groupings. While all ``fields'' in a Module need to be defined, the parameters can be thought of as undefined fields in a record type. Parameters are abstracted away when a module is closed.
+%	
+%	Additionally, Agda has records. While there is no primitive way to convert modules to record types, converting records to modules manually to open all fields in the current context seems to be a popular trick.
+%	\item[Coq~\cite{coq}] uses several variants of groupings:
+%		\begin{itemize} 
+%			\item Simple dependent records for integrated groupings.
+%			\item \emph{Modules} for stratified groupings, which can be extended by definitions almost arbitrarily using \emph{module functors}\ednote{\url{https://github.com/coq/coq/wiki/ModuleSystemTutorial}}, but \ednote{apparently?} only linearly in their signature. %  \url{https://github.com/coq/coq/wiki/ModulesForTheories}}: Modules can extend other modules, but apparently only linearly. Records for the signatures (e.g. of a group) are apparently constructed by hand, but not directly related to our Mod-operator\\
+%			\item \emph{Structures}  \ednote{\url{https://coq.inria.fr/distrib/current/refman/modules.html\#sec225}\\\url{https://coq.inria.fr/refman/canonical-structures.html}} %don't yet grasp the exact semantics but doesn't seem to allow for defined fields or reflection from them(?), except for certain specific constructions, maybe?\\
+%				%		Apparently no merging of either records or structures possible. I'm not even sure I understand the exact difference between the two, except that the latter are more technical and specialized.\\
+%				% Sections may be similar (abstraction could be interpreted as theory $<->$ type conversion).\\
+%			\item Type classes~\cite{spitters_classes}
+%				% (Spitters) type classe in coq, ``classes are ordinary
+%%record  types  (‘dictionaries’),  instances  are  ordinary  constants  of  these  record
+%%types (registered as
+%%hints
+%%with the proof search machinery), class constraints are
+%%ordinary implicit parameters, and instance resolution is achieved by augmenting
+%%the unification algorithm to invoke ordinary proof search for implicit arguments
+%%of class type''\\
+%%	Not sure I understand type classes well enough
+%%	\item Spitters: ``Manifest fields [Pollock: \url{https://link.springer.com/article/10.1007/s001650200018}, paywall, but seems to be only about dependently typed records with manifest fields similar to Zhaohui above] have been proposed to address exactly this problem. In
+%%fact,  a  semblance  has  been  implemented  in  the  \red{Matita  system}  [31].  We  hope
+%%to convince the reader that type system extensions of this nature, designed to
+%%mitigate particular symptoms of the bundled approach, are less elegant than a
+%%solution (described in the next section) that avoids the problem altogether by
+%%using predicate-like type classes in place of bundled records.''
+%		\end{itemize}
+%	\item[HOL Light~\cite{hollight}] simply uses OCaml files for stratified groupings. Record types are available, but simple and rarely used.\ednote{apparently}
+%	\item[Isabelle~\cite{isabellemanual}] has simple records for integrated groupings, and theories for stratified groupings. Both records and record types are exensible.
+%	
+%	\emph{Locales} are structural features which can be used to switch from stratified groupings to an integrated perspective, by generating predicates for the signature of a locale. While locales can be extended by definitions and provable theorems, their signature is fixed. Extending locales is \ednote{apparently} done by redeclaring the corresponding signature in a \emph{sublocale}, which generates the corresponding proof obligations.\ednote{\url{http://isabelle.in.tum.de/doc/locales.pdf}}
+%	% \item[Idris~\cite{idris}] % has record types, no merging/extending (updates though). \emph{interfaces} allow some kind of pseudo-inheritance.
+%	% \item[Nuprl~\cite{nuprl}] % has record types, extensible via intersections (not sure I understand them exactly), seems to allow arbitrary merging.
+%	% \item[Mizar~\cite{mizar}] % has structure types which are similar to records, but it's hard to find anything specific about them $>.<$ Their whole type system seems rather weird because of soft typing.
+%	
+%%	\item \red{MathScheme: generate type from theory (ask JC for citation)}\\
+%%		Merge: Combine
+%%	\item \red{SML/ higher-order ML / Dreyer's mixin module system} \url{https://people.mpi-sws.org/~rossberg/mixml/mixml-toplas.pdf}\\DM: Confusing to me
+%%	\item \red{discuss Beluga's contexts as types}\\
+%%		DM: Doesn't seem like they reflect contexts to actual types... can't find anything about ``contexts as types''
+%%	\item \red{Focalize}
+%%	\item \red{work by Buchberger?}
+%	\item[Maude~\cite{maude}] Uses \emph{views} from theories to modules to convert from stratified to internalized groupings; although theories are strictly limited to providing (undefined) \emph{signatures}, and hence only serve as interfaces to modules.
+%	\ednote{afaik, see \url{http://maude.cs.illinois.edu/w/images/e/e0/Maude-2.7.1-manual.pdf}}
+%	\item[OCaml] Uses modules and signatures for stratified and records for integrated groupings. Modules can be used like values using first-class modules, effectively allowing to treat them like objects in object-oriented languages.
+%\end{labeling}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "paper.tex"
+%%% End:
+
+%  LocalWords:  defemph defemph textbf emph emph conservativity organizing ednote oldpart
+%  LocalWords:  formalizing formalizations sout wrt mixin specialized Zhaohui nuprl mizar

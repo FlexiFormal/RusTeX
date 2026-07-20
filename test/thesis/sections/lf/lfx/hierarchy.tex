@@ -1,0 +1,129 @@
+Plain \LF offers two universes \type and \kind. With respect to their ontological status, they can be thought of as analogous to the distinction between \emph{sets} and \emph{proper classes}. However, often the two universes are somewhat restrictive -- \texttt{PLF} is already an extension of this two-tiered hierarchy, but even the shallow polymorphism enabled by it is often not enough, e.g. when wanting to quantify over all \emph{groups} (each of which has a base type), or sets (for some correspondance between sets and types), or when formalizing categories while trying to avoid a deep embedding.\footnote{These kinds of formalizations are enabled by using e.g. record types with $\type$-valued fields, see \autoref{sec:lf:records}}
+
+In those situations, it can be more convenient to have \hypertarget{univ}{infinitely many universes $\univ i$ for each $i\in\mathbb N$.}\footnote{According to folklore, all mathematics can be done with at most 7th-order universes, but this number is seemingly arbitrary and in practice it is just as easy to drop the restriction to a fixed finite number of universes entirely.} By declaring $\hastype{\univ i}{\univ j}$ and $\subtp{\univ i}{\univ j}$ whenever $i<j$, we get an infinite cumulative hierarchy of universes analogous (in a set-theoretic model) to higher levels of the Von-Neumann hierarchy indexed by large cardinals.
+
+This is the approach taken by homotopy type theory~\cite{hottbook}, Mizar~\cite{mizar} via Grothendieck universes, and most notably Coq~\cite{coqmanual}, where the precise universe in which a declaration lives is unspecified by the user and computed by the system by solving appropriate constraints on the full current context (\emph{floating universes}).
+
+\paragraph{} The basic rules are straight-forward and given in \autoref{fig:lf:lfx:univ:rules}, and as with enumeration types (\autoref{sec:lf:lfx:finite}), we use number literals $\nat$ and postulate some (potentially judgments-as-types based) judgment $i<j$. 
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+\begin{framed}
+% {\small For any $U$ with $\gjudg{\judguniv U}$:}
+\begin{flushleft}
+\textbf{Universe Rule:}
+\[
+\trule{\gjudg{\hastype i\nat}}{\gjudg{\judguniv{\univ i}}}
+\]
+\textbf{Formation:}
+\[
+\trule{\gjudg{\hastype i\nat}}{\gjudg{\infertype{\univ i}{\univ {i+1}}}}
+\]
+\textbf{Subtyping (Optional):}
+\[ \trule{\gjudg{i < j}}{\gjudg{\subtp{\univ i}{\univ j}}} \]
+%\textbf{Computation (Optional):}
+%\[
+%	\trule{}{\gjudg{\judgeqc\unit{\emptytype\to\emptytype}}}
+%\]
+\end{flushleft}\end{framed}%\vspace*{-.5em}
+\caption{Rules for Universes}\label{fig:lf:lfx:univ:rules}%\vspace*{-1em}
+\end{figure}
+
+To be ``backwards compatible'' with everything implemented in \LF alone, we can redefine $\type:=\univ0$ and $\kind:=\univ1$. Even though $\subtp\type\kind$ does not hold in \LF, this additional subtyping judgment does not impact plain \LF content.\footnote{To be precise: Any judgment that holds in \LF still holds in this new logical framework, but not the other way around.} However, in order for \lfpisym-types to be usable for types living in higher universes, we need to slightly modify the formation rule for \lfpisym:
+\[
+\irule{\gjudg{\hastype A U} \quad \judg{\Gamma,x : A}{\infertype B {U'}} }{\gjudg{\infertype {\lfpi{x:A}B}{\umax{U,U'}} }} 
+\]
+Note, that for $U=\type$, this subsumes the original rule. Since we can declare our new formation rule to shadow the old one, this does not break modularity. In addition, we augment \autoref{def:lf:max} by new cases:
+\begin{definition}
+\begin{itemize}
+	\item For $A=\univ i$ and $B:\univ j$ we let $\umax{A,B}=\univ{\max{(i,j)}}$	
+	\item For $A,B:\univ i$, we let 
+		\[\umax{A,B}:=\begin{cases}A & \text{if }\subtp BA, \\ B & \text{if }\subtp AB, \\ \text{undefined} & \text{otherwise.}\end{cases}\]
+\end{itemize}
+\end{definition}
+
+\begin{remark}[Polymorphism]\label{rem:lf:lfx:univ:poly}
+One interesting aspect to consider is which universe $\nat$ should live in. In \autoref{sec:lf:lfx:literals}, we determined $\nat$ to be a \type, hence $\hastype\nat{\univ0}$. Additionally, our formation rule for \lfpisym was:
+\[
+\irule{\gjudg{\hastype A U} \quad \judg{\Gamma,x : A}{\infertype B {U'}} }{\gjudg{\infertype {\lfpi{x:A}B}{\umax{U,U'}} }} 
+\]
+Consider a type $T=\lfpi{n:\nat}{\lfpi{U:\univ n}{B}}$. Is this type valid?
+
+The answer is no, since the universe that $T$ lives in would be $\umax{\univ0,\univ n}$, which can not be computed since $\univ n$ depends on a free variable. Hence our rules forbid quantification over all universes.
+
+However, similar as in PLF (see \autoref{remark:lf:lfx:plf}), we might want to allow \emph{shallow polymorphism} -- i.e. the ability to quantify over all universes on the \emph{outside} of a \lfpisym-type only. By declaring such a type to be inhabitable but untyped, we avoid paradoxes resulting from unrestricted quantification, but still allow for implementing polymorphic functions. The corresponding rule would hence be:
+\[
+	\irule{\judg{\Gamma,n:\nat,u:\univ n}{\judginh B}}{\gjudg{\judginh{\lfpi{n:\nat}{\lfpi{u:\univ n}B}}}}
+\]
+\end{remark}
+
+\subsection{Implementation and Universe Rules}\label{sec:lf:lfx:hierarchy:univrules}
+All the rules are again straight-forward, but here we encounter a \emph{universe rule} for the first time. As with the other rules, we need to implement an apply method for them, the signature of which is rather simple:
+\begin{scalacode}
+def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean
+\end{scalacode}
+and returns *true* if the term *tm* is declared to be a universe by this rule.
+
+\begin{example}
+	The universe rule for $\mathcal U$ is given in \autoref{fig:lf:lfx:hierarchy:univrule}.
+	\begin{labeling}{Line 5}
+	\item[Line 2] makes this rule applicable also to \type and \kind -- the helper object *TypeLevel*'s *unapply*-method takes care of the conversions $\type\to\mathcal U_0$ and $\kind\to\mathcal U_1$ for us.
+	\item[Line 5] merely checks that the argument passed on to $\mathcal U$ is in fact of type $\nat$. Since that check returns a boolean, it can serve as the return value.
+\end{labeling}
+	
+		\begin{nscalacode}[label=fig:lf:lfx:hierarchy:univrule,caption={The Universe Rule for $\mathcal U$\protect\footnotemark},emph={TypeLevel,ktype,kind}]
+object TypeLevelUniverse extends UniverseRule(TypeLevel.path) {
+  override def alternativeHeads: List[GlobalName] = List(TypeLevel.path,Typed.ktype,Typed.kind)
+  def apply(solver: Solver)(tm: Term)(implicit stack: Stack, history: History) : Boolean = tm match {
+    case TypeLevel(i) =>
+      solver.check(Typing(stack,i,NatRules.NatLit.synType))
+    case _ => false
+  }
+}
+	\end{nscalacode}
+\end{example}
+\footnotetext{\url{https://gl.mathhub.info/MMT/LFX/blob/master/scala/info/kwarc/mmt/LFX/TypedHierarchy/Rules.scala}}
+
+The corresponding theories for the symbols and rules are given in \autoref{lst:lf:lfx:hierarchy:implmmt}. Notably, the theory *TypedHierarchy* which is to serve as a ``standalone'' theory of a cumulative type hierarchy without any typing features, needs to import several fundamental \mmt theories that validate notions like \emph{typing}, notations, module expressions etc. in the first place, as well as the theories containing the symbols for \type and \kind for compatibility with plain \LF theories. \autoref{lst:lf:lfx:hierarchy:testmmt} shows a small example theory using a cumulative hierarchy. Additionally, universes are used all over the Math-in-the-Middle archive\footnote{\url{https://gl.mathhub.info/MitM/smglom/tree/master/source}}, notably in the algebraic theories and in categories.
+
+%\begin{multicols}{2}
+\begin{mmtcode}[caption={Symbols and Rules\protect\footnotemark},label=lst:lf:lfx:hierarchy:implmmt]
+theory Symbols =
+   TypeLevel # 𝒰 1 prec -1000 ❙
+❚
+
+theory Rules =
+  rule rules?TypeLevelUniverse ❙
+  rule rules?TypeLevelSubRule ❙
+  rule rules?LevelType ❙
+❚
+
+theory TypedHierarchy =
+   include meta:?Errors❙
+   include http://cds.omdoc.org/urtheories?ModExp❙
+   include meta:?mmt❙
+   include ur:?Typed ❙
+   include ur:?Kinded ❙
+   include ur:?NatLiteralsOnly ❙
+   include ?Symbols ❙
+   include ?Rules ❙
+❚
+
+theory LFHierarchy =
+   include ?TypedHierarchy ❙
+   include ur:?LF ❙
+   
+   rule rules?Polymorphism❙
+❚
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/MMT/LFX/blob/master/source/TypedHierarchy.mmt}}
+%\end{multicols}
+
+\begin{mmtcode}[caption={A Simple Theory for Universes\protect\footnotemark},label=lst:lf:lfx:hierarchy:testmmt]
+theory HierarchyTest : LFX/TypedHierarchy?LFHierarchy =
+	c : type ❙
+	d : 𝒰 1 ❘ = c ❙
+	f : 𝒰 2 ⟶ 𝒰 2 ❙
+	test : 𝒰 2 ❘ = f c ❙
+❚
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/MMT/LFX/blob/master/source/test.mmt}}

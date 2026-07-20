@@ -1,0 +1,62 @@
+\subsection{Motivation}
+
+\mmt as introduced in \cite{RK:mmt:10} allowed only two declarations in atomic theories: symbol declarations $c$ and structure declarations, which instantiate and import a theory.
+(We omitted the latter in Sect.~\ref{sec:mmt}.)
+We will now introduce include declarations to \mmt.
+
+We can see include and structure declarations as duals.
+Both import a previously declared theory, and both are transitive in the sense that if $T$ imports $S$, it also imports anything $S$ imports.
+They differ in the sharing semantics when the same theory is imported multiple times: Multiple includes of $S$ are redundant and introduce a single copy of $S$; multiple structures of $S$ introduce multiple fresh copies of $S$.
+
+Consequently, include declarations are \emph{unnamed} and the importing theory refers to the included symbols using the identifiers from $\dom{S}$.
+Structure declarations on the other hand introduce a name in order to form qualified names for the fresh copy of the imported symbols.
+
+\subsection{Definition}
+
+
+\subsection{Discussion}
+
+The original structure declarations of \mmt are significantly more expressive than include declarations: They allow fine-tuning the sharing by instantiating some symbols of the imported theory.
+In particular, they can emulate include declarations as a special case.
+
+But the inclusion relation $S\harr T$ induced by include declarations has a number of practically valuable properties.
+Therefore, the author chose to add include declarations even though they do not adding expressive strength.
+Indeed, the practical advantages are huge.
+For example, after implementing support for inclusions, the author refactored the LATIN atlas \cite{CHKMR:latinabs:11} -- a large case study on formalizing logics using an \mmt style module system.
+At this point it contains approximately $2000$ imports, of which $1600$ were changed to inclusions.
+\medskip
+
+There are several reasons for these advantages.
+Firstly, inclusion is an order relation between theories: Each theory can be included at most once into another one.
+That makes the inclusion relation very easy and efficient to maintain.
+
+Secondly, we can form canonical qualified identifiers $s?n$ for identifiers of $s$ included into a theory $t$.
+These are canonical identifiers that uniquely identify the included symbols and that are obvious to users.
+Users can easily see where a symbol was imported from, but the import chain along which it was imported remains transparent.
+%A qualified identifier $q.c$ where $q$ is provided by the import.
+%This quickly leads to long names like $p.q.r.c$. Moreover, because the import path is part of the name, refactoring becomes more costly and multiple qualified identifiers may actually be the same.
+
+Thirdly, $\Exp{s}\sq\Exp{t}$ so that the included declarations do not have to be translated from $s$ to $t$.
+Consequently, implementations do not have to duplicate the translations: They can store all local declarations with the declaring theory, and use the relation $s\harr t$ to determine which theory may access which declarations.
+Tools that duplicate imported declarations on the other hand quickly suffer from exponential blowups when handling large libraries.
+
+Another advantage is that inclusion allows a form of implicit conversion.
+As explained in \cite{RK:mmt:10}, we can consider morphisms $M\in\Mo{T}{F}$ as models of $T$ defined in terms of $F$.
+For example, consider $T=\cn{Group}$ and $F=\cn{ZFC}$; then concrete group corresponds to morphisms $G\in\Mo{T}{F}$.
+If we further assume $\cn{Monoid}\harr \cn{Group}$, then $G|_{\cn{Monoid}}$ is $G$ seen as a monoid.
+Moreover, we can easily make the conversion $G\mapsto G|_{\cn{Monoid}}$ implicit without confusing humans or tools.
+\medskip
+
+Of course the above advantages are not a new discovery.
+Many languages have long used a combination of unnamed and named imports (e.g., inheritance and aggregation in object-oriented programming correspond to includes and structures).
+However, the above appears to be the first time that the semantics of include declarations is defined formally in the context of OpenMath-style qualified identifiers.
+
+%\begin{compactitem}
+%\item The original identifier $c$. This quickly leads to name clashes.
+%\end{compactitem}
+%There is one special case, where choosing identifies is easy: If $S\harr T$, e.g., $S$ is included into $T$.
+%Then we can use $S.c$ as a qualified identifier.
+%
+%The reason why $S.c$ works as a qualified identifier is that $S$ can only be included into $T$ once and in a uniquely determined way.
+%Implicit morphisms generalize this property: $S$ can only be implicitly mapped into $T$ once and in a that is uniquely determined by the implicit-diagram.
+%Consequently, we can use any declaration $c$ of $S$ in $T$ using the identifier $S.c$.

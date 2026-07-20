@@ -1,0 +1,140 @@
+%\begin{disclaimer*}
+%	The text of the this chapter has been assembled and adapted from various previously published papers by (primarily) Florian Rabe, Michael Kohlhase and myself (all of which are referenced in this thesis), since they have emerged as the most suitable, concise introductions to the concepts described herein. The exposition has been thoroughly reworked for a uniform representation. Original publications are cited where adequate.
+%\end{disclaimer*}
+
+\section{The \mmt API}
+
+\lstMakeShortInline[language=scala]*
+
+The \mmt system works on content represented in a fragment of \omdoc, a fact that is reflected by the internal datastructures corresponding to the syntax stated in \autoref{fig:prelim:mmt:grammar}. All \emph{expression-level} syntactic constructs are implemented as Scala case classes extending the class *Term*, and are named after the corresponding XML nodes of the underlying \omdoc. 
+
+\mmt URIs (see \autoref{sec:prelim:notation}) are implemented as objects of the class *Path*, which are assembled from individual path components of type *LocalName*. The relevant subtypes are *DPath* for namespaces, *MPath* for module URIs of the form *(d : DPath) ? (ln : LocalName)*, and *GlobalName* for declaration URIs of the form *(m : MPath) ? (ln : GlobalName)*.
+
+\paragraph{} \autoref{fig:prelim:mmt:terms} gives a translation of the abstract syntax for expressions described above into the internal datastructures.
+\begin{figure}[ht]\begin{center}\smaller
+\begin{tabular}{c|c}
+\textbf{Abstract Syntax} & \textbf{Scala Syntax} \\\hline\hline
+Symbol References $S$ & *OMID(S : ContentPath)*  \\
+Module References $M$ & *OMMOD(M : MPath)* = *OMID(M)*  \\
+Constant References $C$ & *OMS(C : GlobalName)* = *OMID(C)*  \\
+Variable References $V$ & *OMV(V : LocalName)*  \\\hline
+Applications $\oma{f}{a_1,\ldots,a_n}$ & *OMA(f : Term, args : List[Term])* \\
+Binding Applications $\ombind f{\cn{con}}{\cn{arg}}$ & *OMBIND(f : Term, con : Context, arg: Term)* \\\hline
+Context $G=\{\cn{vars}\}$ & *Context(vars : List[VarDecl])* \\
+Variable Declaration $v[:t][:=d]$ & *VarDecl(v : LocalName, t : Option[Term], d : Option[Term])* \\ 
+\end{tabular}\end{center}
+\caption{Internal Scala Datastructures for \mmt Syntactical Constructors}\label{fig:prelim:mmt:terms}
+\end{figure}
+
+For a detailled and up-to-date description of the classes provided by the \mmt API, I refer to the \mmt documentation\footnote{\url{https://uniformal.github.io/doc/api/}}.
+
+
+\subsection{Judgments}\label{sec:prelim:notation:judg}
+
+\mmt has a component called \emph{solver}, parametrized by rules, that checks \textbf{judgments} and infers implicit arguments (solving placeholder variables). The solver uses a bidirectional type system, i.e., we have two separate judgments for type \emph{inference} and type \emph{checking}. To check a typing judgment $t:T$ we have two possibilities:
+\begin{enumerate}
+	\item find a type checking rule that is applicable to the judgment $t : T$. Type checking rules usually act on the head of the type $T$ and recurse into the expression $t$, hence this can be seen as a top-down approach.
+	\item infer the (principal) type $T'$ of $t$. Type inference rules usually act on the head of the expression $t$ and require knowing the types of the subterms of $t$, hence this can be seen as a bottom-up approach. Afterwards, check whether $T'$ is a subtype of $T$. If all subtyping rules are exhausted and failed (or none are applicable), check whether $T'=T$.
+\end{enumerate}
+The $\mmt$ solver starts with a top-down approach and defers to the bottom-up approach if necessary. Equality checks are used for solving variables and by using additional \emph{solution rules}. This approach is described in \cite{rabe:recon:17} in detail and is largely irrelevant for the purposes of this thesis, hence details are omitted. The details on \emph{implementing} typing rules in \mmt are treated by example in \autoref{sec:lf:lfx:sigma}.
+
+
+\paragraph{} Similarly to typing, we have two equality judgments: one for checking equality of two given terms and one for reducing a term to another one (\emph{simplification}).
+\hypertarget{judg}{Our judgments are given in \autoref{fig:intro:prelim:judgments}}.
+
+% Adding record types in Section~\ref{sec:lf:records:def} will introduce non-trivial \textbf{subtyping}, e.g., $\rectype{x:T,y:S}$ is a subtype of $\rectype{x:T}$.\footnote{This is sometimes called \emph{horizontal} subtyping. In that case, the straightforward covariance rule for record types is called \emph{vertical} subtyping.}
+% Therefore, we already introduce a subtyping judgment here even though it is not needed for dependent function types yet.
+
+
+\begin{figure}[ht]\centering%\vspace*{-1em}
+\begin{tabular}{|l|l|} 
+\hline
+ Judgment & Intuition \\ \hline
+ \hline $\wfctx \Gamma$ & $\Gamma$ is a well-formed context \\
+ \hline $\gjudg{\judginh T}$ & $T$ is \emph{inhabitable} (may occur on the right side of a typing judgment) \\
+ \hline $\gjudg{\judguniv U}$ & $U$ is a \emph{universe} (inhabitable, and every $T$ with $\gjudg{\hastype T U}$ is inhabitable)\\
+ \hline\hline $\gjudg{ \hastype t T}$ & $t$ checks against inhabitable term $T$. \\
+ \hline $\gjudg{ \infertype t T}$ & type/kind of term $t$ is inferred to be $T$ \\
+ \hline $\gjudg{ \judgeq {t_1} {t_2} T}$ & $t_1$ and $t_2$ are equal at type $T$ \\
+ \hline $\gjudg{ \judgeqc {t_1} {t_2}}$ & $t_1$ computes to $t_2$ \\
+ \hline $\gjudg{ \subtp {T_1}{T_2} }$ & $T_1$ is a subtype of $T_2$ \\
+\hline
+\end{tabular}
+%\vspace*{-.5em}
+\caption{Judgments}\label{fig:intro:prelim:judgments}
+%\vspace*{-.5em}
+\end{figure}
+
+For each of these rules, the solver assumes certain \textbf{pre/postconditions} to hold, which critically need to be preserved by the implemented rules. These are:
+\begin{itemize}
+	\item $\gjudg{\judginh U}$ and $\gjudg{\judguniv U}$ assume that $\Gamma$ is a well-typed context.
+	\item $\gjudg{ \hastype t T}$ assumes that $T$ is well-typed, and implies that $t$ is well-typed and $T$ is inhabitable.
+	\item $\gjudg{ \infertype t T}$ implies that both $t$ and $T$ are well-typed and that $T$ is inhabitable.
+	\item $\gjudg{ \judgeqc{t_1}{t_2}}$ implies that $t_2$ is well-typed iff $t_1$ is (which puts additional burden on computation rules that are called on not-yet-type-checked terms).
+	\item Equality and subtyping are only used for expressions that are assumed to be well-typed, i.e.,
+$\gjudg{ \judgeq {t_1} {t_2} T}$ implies $\gjudg{ \hastype{t_i} T}$, and $\gjudg{ \subtp {T_1}{T_2} }$ implies that $T_i$ is a type/kind.
+\end{itemize}
+
+\begin{remark}\label{remark:prelim:mmt:subtp}
+It is sufficient (and desirable) to consider subtyping to be an abbreviation:
+$\gjudg{\subtp {T_1}{T_2}}$ iff for all $t$ we have $\gjudg{\hastype t {T_1}}$ implies $\gjudg{\hastype t {T_2}}$. This allows for many subtyping rules to be derivable (usually) from typing rules.
+\end{remark}
+
+\begin{remark}[Horizontal Subtyping and Equality]\label{remark:prelim:mmt:horizontalsubtp}
+The equality judgment could alternatively be formulated as an untyped equality $\judgequt t{t'}$.
+That would require some technical changes to the rules presented in this thesis, but would usually not be a huge difference. 
+%Thus, the distinction is usually a matter of convenience and personal preference.
+In our case, however, the use of typed equality is critical for the records introduced in \autoref{sec:lf:records}; see \autoref{remark:lf:lfx:records:horizontal}.
+\end{remark}
+
+The rules given in \autoref{fig:prelim:mmt:rules} capture the intended semantics of the judgments above and can be assumed to hold for any type system implemented in \mmt.
+
+\begin{figure}[ht]\centering%\vspace*{-1em}
+\begin{framed}
+%{\small For $U\in\{\type,\kind\}$:}
+\[ 
+\trule\ {\wfctx\cdot} \qquad
+\trule{\gwfctx \quad \gjudg{\judginh T} }{\wfctx{\Gamma,x : T}} \qquad
+\trule{\gwfctx \quad \gjudg{\hastype t T}}{\wfctx{\Gamma, x : T := t}} \qquad
+\trule{\gwfctx \quad \gjudg{\hastype t T}}{\wfctx{\Gamma, x := t}}
+\]
+\[
+\trule{\gwfctx \quad x:T[:=t]\in\Gamma}{\gjudg{\infertype x T}} \qquad
+\trule{\gwfctx \quad x[:T']:=t\in\Gamma \quad \gjudg{\infertype x T}}{\gjudg{\judgeq x t T}}
+\]
+\[
+\trule{ \gjudg{\infertype t {T'} \quad \gjudg{ \subtp {T'}T } } }{\gjudg{\hastype tT}}\qquad
+\trule{ \gjudg{\judgeqc {t_1}{t_1'}}\quad \gjudg{\judgeqc {t_2}{t_2'}}\quad \gjudg{\judgeq {t_1'}{t_2'}T}}{\gjudg{\judgeq{t_1}{t_2}T}}\qquad
+%\trule{\gwfctx}{\gjudg{\infertype \type \kind}}
+\]
+\[
+\trule{\gjudg{\judguniv U}}{\gjudg{\judginh U}}\qquad
+\trule{\gjudg{\infertype TU} \quad \gjudg{\judguniv U}}{\gjudg{\judginh T}}
+\]
+\end{framed}%\vspace*{-.5em}
+\caption{General Rules for \mmt Judgments}\label{fig:prelim:mmt:rules}%\vspace*{-1em}
+\end{figure}
+
+The upper row contains the rules for contexts.
+Note that even though we allow the type $T$ of a variable to be omitted (which will be helpful for records later), that is only allowed if a definiens $t$ is present.
+($T$ must be inferable from $t$ or otherwise known from the environment.)
+
+The second row contains the rules for looking up the type and definition of variable.
+
+The third row contains the bidirectionality rules, which algorithmically are the default rules that are applied when no type (resp. equality) checking rules are available: switch to type inference (resp. computation) and compare inferred and expected type (resp. the results).
+
+The last row deals with universes and inhabitability.
+
+\begin{remark}\label{remark:prelim:mmt:rules}
+	The inference rules as presented in this thesis always carry an algorithmic reading. To be precise, a rule of the form $\trule{P_1 \ldots P_n}{C}$ can be implemented thusly:
+	
+	To prove that the judgment $C$ holds, check each of the premises $P_1\ldots P_n$ \emph{in order}. Consequently, a premise should only contain variables or non-primitive symbols that 
+	\begin{inparaenum}[1)]
+		\item occur in the conclusion or
+		\item are introduced (either by type inference or simplification) in a previous premise.
+	\end{inparaenum}
+	For example, the last rule in \autoref{fig:prelim:mmt:rules} would still be adequate if we were to replace the premise $\gjudg{\infertype TU}$ by the more general (and hence weaker) premise $\gjudg{\hastype TU}$, making the inference rule itself stronger; however, it would be unclear how to implement such a rule efficiently, since there are potentially infinitely many candidates for $U$. The inference judgment $\gjudg{\infertype TU}$ on the other hand unambiguously determines $U$ as the principal type of $T$ for the subsequent premise $\gjudg{\judguniv U}$. Both judgments are needed to solve unknown variables variables, however. 
+	
+	An equality premise (such as $\judgequt{T}{\lfpi{x:A}B}$) with as-of-yet unknown symbols ($x,A,B$) can algorithmically be interpreted as a pattern match; i.e. the premise that $T$ can be simplified to have the specific syntactic form on the right hand side of the equation. This is often necessary for the inferred type of a term, as e.g. in the elimination rule for $\lfpisym$ (\autoref{fig:prelim:lf:prodrules}). \hypertarget{judgmatching}{Consequently, we introduce the notation $\judgmatchinf t{E(\cdot)}$ as abbreviation for the two consecutive premises $\infertype t T\;;\;\judgequt T{E(\cdot)}$}.
+\end{remark}
+\lstDeleteShortInline*

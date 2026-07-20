@@ -1,0 +1,124 @@
+To fortify our intuitions, we examine a concrete mathematical example in detail.
+
+We start out with a theory \expr{PosPlus} of positive natural numbers with addition
+and intersect it with \expr{StrConc} of strings with concatenation (as in \autoref{fig:posstr}). Note that we do
+not start with modular developments; rather the modular structure is (going to be) the
+result of intersecting with various examples. Also, note that the views \lstinline|k| and \lstinline|l| are both partial.
+
+\begin{figure}[ht]\centering
+\begin{tabular}{|p{6cm}|p{6cm}|}\hline
+  Positive  & Strings \\\hline
+\begin{mmtcode}[aboveskip=-2pt,belowskip=-2pt]
+theory PosPlus =
+    ℕ : type ❙
+    + : ℕ ⟶ ℕ ⟶ ℕ
+    assoc : ...
+    comm : ...
+\end{mmtcode}
+& 
+\begin{mmtcode}[aboveskip=-2pt,belowskip=-2pt]
+theory StrConc =
+    A* : type ❙
+    :: : A* ⟶ A* ⟶ A* ❙
+    assoc : ...
+    ε : A* ❙
+    unit : ... ❙
+\end{mmtcode}
+\\[-2pt]\hline
+\begin{mmtcode}[aboveskip=-2pt,belowskip=-2pt]
+view k : ?PosPlus -> ?StrConc =
+    ℕ = A* ❙
+    + = :: ❙
+    assoc = assoc ❙
+\end{mmtcode}
+&
+\begin{mmtcode}[aboveskip=-2pt,belowskip=-2pt]
+view l : ?StrConc -> ?PosPlus =
+    A* = ℕ ❙
+    :: = + ❙
+    assoc = assoc ❙
+\end{mmtcode}
+\\[-2pt]\hline
+\end{tabular}
+\caption{Positive Integers and Strings}\label{fig:posstr}\vspace*{-1.5em}
+\end{figure}
+
+Now the intersection as proposed above yields
+\autoref{fig:posstr-intersection}, which directly corresponds to the schema in
+\autoref{fig:theory-intersection}. 
+Note, that the new pair of (equivalent) theories is completely
+determined by the partial morphism \cn{k}; the only thing we have to invent are the names
+-- and we have not been very inventive here.
+
+\begin{figure}[ht]\centering
+\begin{tabular}{|p{6cm}|p{6cm}|}\hline
+  Positive& Strings \\[-2pt]\hline
+\begin{mmtcode}[aboveskip=-2pt,belowskip=-2pt]
+theory A =
+    ℕ : type ❙
+    + : ℕ ⟶ ℕ ⟶ ℕ ❙
+    assoc : ... 
+❚
+theory PosPlus =
+    include ?A ❙
+    comm : ...
+❚
+\end{mmtcode}
+& 
+\begin{mmtcode}[aboveskip=-2pt,belowskip=-2pt]
+theory B =
+    A* : type ❙
+    :: : A* ⟶ A* ⟶ A* ❙
+    assoc : ... ❙
+❚
+theory StrConc =
+    include ?B ❙
+    ε : A* ❙
+    unit : ... ❙
+❚
+\end{mmtcode}
+\\[-2pt]\hline
+\end{tabular}
+\caption{Positive Integers and Strings, Refactored}\label{fig:posstr-intersection}\vspace*{-1.5em}
+\end{figure}
+
+Intuitively, the intersection theory is the theory of semigroups which is traditionally
+written down in \mmt as in \autoref{fig:sg}. And indeed, \expr{sg} is a
+renaming of both \expr{A} and \expr{B}. 
+
+\begin{figure}[ht]%{r}{5.3cm}\vspace*{-2.8em}\hspace*{-1em}
+\centering
+\begin{lstlisting}
+theory sg =
+    G : type ❙
+    ∘ : G ⟶ G ⟶ G ❙
+\end{lstlisting}%\vspace*{-1em}
+\caption{Semigroups}\label{fig:sg}%\vspace*{-2.5em}
+\end{figure}
+
+For this situation, we should have a variant theory
+intersection operator that takes a partial morphism and returns \emph{one} intersection theory.
+   
+
+In this situation, we want a theory intersection operator that follows the schema in \autoref{fig:unary-thi}. 
+
+\begin{figure}[ht]%l{4.2cm}\vspace*{-2em}\hspace*{-1em}
+\centering
+\tikzinput{img/int-unary-thi}%\vspace*{-.5em}
+\caption{Unary TI}\label{fig:unary-thi}%\vspace*{-.5em}
+\end{figure}
+
+Let us call this operation \emph{unary TI} and the previous one \emph{binary TI}. To compute it, we need to specify a name $N$ for the new theory and two renamings
+$\rho_1:\viewto N{\Domain\sigma}$ and
+$\rho_2:\viewto N{\textsf{Img}(\sigma)}$. Note that in
+this TI operator, the intersection is connected to the ``rest theories'' via \mmt
+structures -- rather than mere inclusions -- which carry the assignments induced by the
+partial morphisms suitably composed with the renamings (see next section).
+
+In our example we can obtain the theory \cn{sg} from \autoref{fig:sg} via the renamings
+$\rho_1:=\{\cn{G}\mmtass\mathbb{N},\circ\mmtass+,\cn{assoc}\mmtass\cn{assoc}\}$ and
+$\rho_2:=\{\cn{G}\mmtass A^*,\circ\mmtass\conc,\cn{assoc}\mmtass\cn{assoc}\}$.
+
+Unary TI is often the more useful operation on theory graphs, but needs direct user
+supervision, whereas binary TI is fully automatic if we accept generated names for the
+intersection theories.

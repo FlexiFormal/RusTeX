@@ -1,0 +1,23 @@
+% setting the appearance of MMT listings
+\lstdefinelanguage{MMT}[]{XML}%
+  {morekeywords={omdoc,catalogue,loc,ignore,with,ref,omgroup,adt,sortdef,insort,constructor,
+                 recognizer,argument,destructor,omlet,private,code,input,output,effect,data,
+                 metadata,extradata,proof,proofobject,metacomment,derive,conclude,hypothesis,
+                 method,premise,presentation,use,omstyle,xslt,style,element,attribute,text,
+                 value-of,recurse,exercise,hint,solution,mc,choice,answer,CMP,omtext,object,
+                 commonname,type,FMP,assumption,conclusion,axiom,definition,requation,pattern,
+                 value,measure,ordering,assertion,alternative,example,theory,
+                 narrative,tableofcontents,authorindex,content,pcontext,pc,
+                 map,separator,operator,lbrack,rbrack,
+                 OMS,OMV,OMI,OMB,OMSTR,OMF,OMA,OMBIND,OMBVAR,OME,OMATTR,OMATP,OMOBJ,
+                 om:OMS,om:OMV,om:OMI,om:OMB,om:OMSTR,om:OMF,om:OMA,om:OMBIND,om:OMBVAR,
+                 om:OME,om:OMATTR,om:OMATP,
+                 dc:contributor,dc:creator,dc:title,dc:subject,dc:description,dc:publisher,dc:type,
+                 dc:format,dc:source,dc:language,dc:relation,dc:rights,dc:date,dc:identifier,
+                 % now the new stuff
+                 xref,include,view,constant,structure,alias,conass,strass},
+   sensitive=true}
+
+\lstset{float=htb,columns=flexible,frame=none,language=MMT,basicstyle=\scriptsize,
+  mathescape,breaklines,showstringspaces=false,
+  indexstyle=\indextt,indexstyle=[1]\indexelement,indexstyle=[2]\indexattribute}

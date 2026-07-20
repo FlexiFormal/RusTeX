@@ -1,0 +1,99 @@
+%%
+%% This is file `problem.sty',
+%% generated with the docstrip utility.
+%%
+%% The original source files were:
+%%
+%% problem.dtx  (with options: `package')
+%% 
+\NeedsTeXFormat{LaTeX2e}[1999/12/01]
+\ProvidesPackage{problem}[2007/01/07 v0.9a Markup for Problem]
+\newif\ifexnotes\exnotesfalse\DeclareOption{notes}{\exnotestrue}
+\newif\ifhints\hintsfalse\DeclareOption{hints}{\hintstrue}
+\newif\ifsolutions\solutionsfalse\DeclareOption{solutions}{\solutionstrue}
+\newif\ifpts\ptsfalse\DeclareOption{pts}{\ptstrue}
+\newif\ifmin\minfalse\DeclareOption{min}{\mintrue}
+\newif\ifdraft\draftfalse\DeclareOption{draft}{\drafttrue}
+\newif\ifboxed\boxedfalse\DeclareOption{boxed}{\boxedtrue}
+\ProcessOptions
+%\RequirePackage{keyval}[1997/11/10]
+%\RequirePackage{xcomment}
+\define@key{problem}{id}{\def\problem@id{#1}}
+\define@key{problem}{pts}{\def\problem@pts{#1}}
+\define@key{problem}{min}{\def\problem@min{#1}}
+\define@key{problem}{title}{\def\problem@title{#1}}
+\newsavebox{\probbox}
+\newcounter{problem}[section]
+\newcommand{\prob@showsection}[1]{}
+%redefined to \newcommand{\prob@showsection}[1]{#1} by assignments packages if problem numbers shall include section number
+\def\prob@heading{{\bf{Problem} \prob@showsection{\arabic{section}.}\arabic{problem}%
+\@ifundefined{problem@id}{}{\label{\problem@id}\ifdraft~[\problem@id]\fi}%
+\@ifundefined{incl@prob@title}% if there is no outside title
+{\@ifundefined{problem@title}% and no local title
+{:\quad}% do nothing,
+{\quad(\problem@title)\hfill\\}}% else show it
+{\quad(\incl@prob@title)\hfill\\}}}% else show the outside title
+\ifboxed
+\newenvironment{problem}[1][]{% keyval attributes
+\setkeys{problem}{#1}\refstepcounter{problem}\show@pts\show@min
+\begin{lrbox}{\probbox}\begin{minipage}{.9\textwidth}}
+{\end{minipage}\end{lrbox}
+\setbox0=\hbox{\begin{minipage}{.9\textwidth}%
+\noindent\prob@heading\rm%
+\end{minipage}}
+\smallskip\noindent\fbox{\vbox{\box0\vspace*{.2em}\usebox\probbox}}\smallskip}
+\else
+\newenvironment{problem}[1][]{% keyval attributes id, pts, min, title
+\setkeys{problem}{#1}\refstepcounter{problem}\show@pts\show@min%
+\par\noindent\prob@heading\rm}
+{\smallskip}
+\fi%boxed
+\define@key{soln}{id}{\def\soln@id{#1}}
+\define@key{soln}{for}{\def\soln@for{#1}}
+\define@key{soln}{height}{\def\soln@height{#1}}
+\newsavebox{\solution@box}
+\newlength{\solution@width}
+\setlength{\solution@width}{12cm}
+\newenvironment{solution}[1][]%
+{\begin{lrbox}{\solution@box}\begin{minipage}{\solution@width}
+\hrule\smallskip{\bf Solution: }\small}
+{\smallskip\hrule\end{minipage}\end{lrbox}
+\ifsolutions\begin{center}\usebox{\solution@box}\end{center}\fi}
+\ifexnotes
+\newenvironment{exnote}[1][]%
+{\par\noindent\hrule\smallskip{\bf Note: }\small}
+{\smallskip\hrule}
+\else%ifexnotes
+\newxcomment[]{exnote}
+\fi%ifexnotes
+\ifhints
+\newenvironment{hint}[1][]%
+{\par\noindent\hrule\smallskip{\bf Hint: }\small}
+{\smallskip\hrule}
+\else%ifhints
+\newxcomment[]{hint}
+\fi%ifhints
+\define@key{inclprob}{pts}{\def\incl@prob@pts{#1}}
+\define@key{inclprob}{min}{\def\incl@prob@min{#1}}
+\define@key{inclprob}{title}{\def\incl@prob@title{#1}}
+\newcommand{\includeproblem}[2][]{\bgroup\setkeys{inclprob}{#1}\input{#2}\egroup}
+\def\pts#1{\ifpts\marginpar{#1 pt}\fi}
+\def\minutes#1{\ifpts\marginpar{#1 pt}\fi} %redefined from \min because MK overwrote standard Latex commands agains
+\def\ptsmsg{\ifpts\message{Total: \arabic{pts} points}\fi}
+\def\minmsg{\ifmin\message{Total: \arabic{min} minutes}\fi}
+\newcounter{pts}\newcounter{min}
+\def\show@pts{% show the points, if desired
+\@ifundefined{incl@prob@pts}% if no points are given from the outside
+{\@ifundefined{problem@pts}% if also no points are given locally
+{}% do nothing, else show and add
+{\ifpts\marginpar{\problem@pts pt}\addtocounter{pts}{\problem@pts}\fi}}
+{\ifpts\marginpar{\incl@prob@pts pt}\addtocounter{pts}{\incl@prob@pts}\fi}}
+\def\show@min{% show the minutes, if desired
+\@ifundefined{incl@prob@min}% if no minute sare given from the outside
+{\@ifundefined{problem@min}% if also no minutes are given locally
+{}% do nothing, else show and add
+{\ifmin\marginpar{\problem@min min}\addtocounter{min}{\problem@min}\fi}}
+{\ifmin\marginpar{\incl@prob@min min}\addtocounter{min}{\incl@prob@min}\fi}}
+\endinput
+%%
+%% End of file `problem.sty'.

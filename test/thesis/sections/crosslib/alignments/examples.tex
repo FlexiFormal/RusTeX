@@ -1,0 +1,153 @@
+An essential requirement for relating logical corpora is standardizing the identifiers so that each identifier in the corpus can be uniquely referenced.
+It is desirable to use a uniform naming schema so that the syntax and semantics of identifiers can be understood and implemented as generically as possible.
+\mmt URIs have been specifically designed for that purpose, and \autoref{ch:import} shows by example how to systematically generate URIs during importing a library. Additionally, in \cite{MueGauKal:alignmentsreport17} we present URI schemas for a list of selected theorem provers. 
+
+Using these URIs with abbreviated proof assistant
+names, the following presents alignments across proof assistants for two representative
+concepts.  Also included are some alignments to programming languages, which are relevant
+for code generation. Thousands of other alignments, both perfect and imperfect, can be
+explored on mathhub~\cite{Alignments:on}.
+%In all cases, we will see how big the differences between the details are across the logical corpora even though most of the alignments are in fact perfect.
+
+\paragraph{Cartesian Product}
+
+In constructive type theory, there are two common ways of expressing the non-dependent Cartesian product.
+First, if the foundation has inductive types such as the Calculus of Inductive Constructions, it can be an inductive type with one binary constructor. This is the case for:
+\begin{compactitem}
+\item \texttt{Coq ? Init/Datatypes ? prod.ind}
+\item \texttt{Matita ? datatypes/constructors ? Prod.ind}
+\end{compactitem}
+Second, if the foundation defines a dependent sum type, it is possible to express the Cartesian product as its non-dependent special case:
+\begin{compactitem}
+\item \texttt{Isabelle ? CTT/CTT ? times}
+\end{compactitem}
+
+In higher-order logic, the only way to introduce types is by using the \texttt{typedef} construction, which constructs a new type that is isomorphic to a certain subtype of an existing type.
+In particular, most HOL-based systems introduce the Cartesian product $A\times B$ by using a unary predicate on $A\to B\to\cn{bool}$:
+\begin{compactitem}
+\item \texttt{HOLLight ? pair/type ? prod}
+\item \texttt{HOL4 ? pair/type ? prod}
+\item \texttt{Isabelle ? HOL/Product ? prod}
+\end{compactitem}
+
+In set theory, it is also possible to restrict dependent sum types to obtain the Cartesian product. This approach is used in Isabelle/ZF:
+
+\begin{compactitem}
+\item \texttt{Isabelle ? ZF/ZF ? cart\_prod}
+\end{compactitem}
+
+In Mizar the Cartesian product is defined as functor in first-order logic. The definition invloves discharging the well-definedness condition. We defined functor is:
+\begin{compactitem}
+\item \texttt{Mizar ? ZFMISC\_1 ? K2}
+\end{compactitem}
+
+In PVS, the product type constructor is part of the system foundation:
+\begin{compactitem}
+\item \texttt{PVS ? foundation.PVS ? tuple\_tp}
+\end{compactitem}
+
+Cartesian products appear also in most programming languages and the code generators
+of various proof assistants do use a number of these:
+\begin{compactitem}
+\item \texttt{OCaml ? core ? * }
+\item \texttt{Haskell ? core ? , }
+\item \texttt{Scala ? core ? , }
+\item \texttt{CPP ? std ? pair }
+\end{compactitem}
+
+Informal sources that can be aligned are e.g.:
+\begin{compactitem}
+\item \small \url{https://en.wikipedia.org/wiki/Cartesian_product}
+\item \small \url{https://en.wikipedia.org/wiki/Product_type}
+\item \footnotesize \url{http://mathworld.wolfram.com/CartesianProduct.html}
+\end{compactitem}
+
+% \paragraph{Addition}
+
+% In constructive type theory, addition of natural numbers is typically defined as a fixed points of certain equations.
+% %This is the case for:
+% \begin{compactitem}
+%  \item \url{Coq ? Init/Nat ? add}
+%  \item \url{Matita ? nat/plus ? plus}
+% \end{compactitem}
+
+% Higher-order logic proof assistants usually use high-level constructions for primitive
+% recursion.  Interestingly, here the alignment is very obvious at this high-level even
+% though the elaboration into core language features may result in very different-looking,
+% but logically equivalent definitions.  This is how addition is implemented in HOL Light
+% and HOL4.  Isabelle/HOL uses a similar construction but inside a type class for
+% commutative monoids with difference.
+% \begin{compactitem}
+%   \item \url{HOLLight ? arith/const ? +}
+%   \item \url{HOL4 ? arithmetic/const ? +}
+%   \item \url{Isabelle ? HOL/Nat ? plus_nat_inst.plus_nat}
+% \end{compactitem}
+
+% In set theory, defining addition is surprisingly the least straightforward: In Isabelle/ZF, addition uses the \texttt{primrec} construction together with a coercion from non naturals to naturals.
+% PVS defines a general addition on number fields, which all the concrete number spaces (reals, integers, etc.) inherit.
+% In Mizar, it is the restriction of complex addition to natural numbers.
+% Mizar's complex addition itself is built from the real number addition, which in turn is built from positive real addition, rational addition, and ordinal addition.
+% So in principle it would be possible to align with Mizar's ordinal addition.
+% %, however as the ordinal addition is rarely used, we stick to
+% %the former:
+% \begin{compactitem}
+%   \item \url{PVS?Prelude.number_fields?+}
+%   \item \url{Isabelle ? ZF/Arith ? add}
+%   \item \url{Mizar ? NAT_1 ? K2}%\\
+% %    (redefined from \url{Mizar ? XCOMPLEX_0 ? K2})
+%  \end{compactitem}
+
+% Most programming languages do not implement arbitrary precision natural
+% numbers. However, it is possible to find partial mappings, which are
+% in fact already used by efficient code generation~\cite{HaftmannN10} for
+% Isabelle/HOL natural numbers and the representation of Coq natural numbers
+% by its extended bytecode machine~\cite{ArmandGST10}.
+% \begin{compactitem}
+% \item \url{OCaml ? Big_Int ? add_big_int }
+% \item \url{Haskell ? core ? + }
+% \item \url{http://www.smlnj.org/ ? IntInf ? + }
+% \end{compactitem}
+
+\paragraph{Concatenation of Lists}
+
+In constructive type theory (e.g. for Matita, Coq), the append operation on lists can
+be defined as a fixed point.  In higher-order logic, append for polymorphic lists
+can be defined by primitive recursion, as done by HOL Light and HOL4.  Isabelle/HOL
+slightly differs from these two because it uses lists that were built with the co-datatype
+package~\cite{BlanchetteHLP-ITP14}.
+PVS and Isabelle/ZF also use primitive recursion for monomorphic lists.
+In Mizar, lists are represented by finite sequences, which are functions from a finite subset of natural numbers (one-based \texttt{FINSEQ} and zero-based \texttt{XFINSEQ}) with append provided.
+Concatenation of lists is also common in programming languages.
+
+\begin{compactitem}
+%\item Matita: \texttt{cic:/matita/list/list/append}
+\item \texttt{Coq ? Init/Datatypes ? app}
+\item \texttt{HOLLight ? lists/const ? APPEND}
+\item \texttt{HOL4 ? list/const ? APPEND}
+\item \texttt{Isabelle ? HOL/List ? append}
+%being one of the definitions (special case of
+%append for T-sequences).
+%\ednote{@CK: this is unclear CK: clarified, is it ok now?}
+%\footnote{URIs are omitted for space reasons, they are available online (see Section \ref{sec:system})}
+\item \texttt{PVS?Prelude.list\_props?append}
+\item \texttt{Isabelle ? ZF/List\_ZF ? app}
+\item \texttt{Mizar ? ORDINAL4 / K1} %\\
+%  (redefined by \texttt{Mizar ? AFINSQ\_1 / def\_4})
+\item \texttt{OCaml ? core ? @ }
+\item \texttt{Haskell ? core ? ++ }
+\item \texttt{Scala ? core ? ++ }
+\end{compactitem}
+
+
+
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "paper-cpp"
+%%% End:
+
+
+%  LocalWords:  ednote compactitem texttt cn tuple_tp Mizar well-definedness monoids
+%  LocalWords:  arith plus_nat_inst.plus_nat primrec hspace

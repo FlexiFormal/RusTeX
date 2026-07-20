@@ -1,0 +1,49 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%%   Calculates and sets the correct page
+%%%%   numbers for a particular article.
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%
+%%%%   usage: Insert the following lines before
+%%%%          the \begin{document} into the article
+%%%%
+%%%%            \input procnum
+%%%%            \numbering{<database>}{<articleId>}
+%%%%
+%%%%   Replace <articleId> with the id for the current article
+%%%%   and <database> by the name of the textfile containing
+%%%%   an entry for each article:
+%%%%
+%%%%     \article[<optRemark>]{<paperId>}{noPages}{author}{title}
+%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\newcounter{startPage}
+\setcounter{startPage}{1}
+
+%% Define a command for the entries in the database
+%% of articles :
+%%     A counter is created from the <articleId>
+%%     and initialized to the current startPage
+%%     The startPage counter is incremented by the
+%%     size of the current article :
+%%
+\newcommand{\article}[5][]{
+  \newcounter{#2}
+  \setcounter{#2}{\value{startPage}}
+  \addtocounter{startPage}{#3}
+}
+
+
+%% The argument to the following command will be
+%% the <articleId>. The corresponding counter's
+%% value tells where to start the numbering
+%% of this article.
+
+\newcommand{\numbering}[2]{
+    \input{#1}
+    \setcounter{page}{\value{#2}}
+}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

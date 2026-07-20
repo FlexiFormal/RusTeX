@@ -1,0 +1,14 @@
+\documentclass{article}
+\begin{document}
+\newcount\rustexbenchcount
+\def\rustexbenchmacro{\relax}
+\rustexbenchcount=0
+\def\rustexbenchloop{%
+  \ifnum\rustexbenchcount<50000
+    \rustexbenchmacro
+    \advance\rustexbenchcount by1
+    \expandafter\rustexbenchloop
+  \fi
+}
+\rustexbenchloop
+\end{document}

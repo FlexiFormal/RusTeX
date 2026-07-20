@@ -1,0 +1,27 @@
+\section{The OAF Project}\label{sec:intro:oaf}
+
+The OAF project \cite{OAF:on} is a DFG funded project running from 2015 to 2019 under the principal investigators Michael Kohlhase and Florian Rabe. The goal was to provide an \textbf Open \textbf Archive of \textbf Formalizations: a universal archiving solution for formal libraries, corresponding library management services (such as distributing, browsing and searching library contents) and methods for integrating libraries in different formalisms in a unifying framework -- namely \ommt (see \autoref{sec:intro:prelim:mmt}), as in \autoref{fig:intro:oaf} -- to allow for sharing and translating content across them. We further want it to be scalable with respect to both the size of the knowledge base and the diversity of logical foundations.
+
+Theoretically, the main prerequisite has been established in the \latin project (see \autoref{sec:intro:prelim:latin}).
+However, whereas \latin provides formalizations of basic logics, type theories and related systems, there still remains the problem of integrating the existing formal libraries of theorem prover systems. Consequently, there are two major objectives of the OAF project this thesis touches on:
+
+\paragraph{Making existing libraries accessible to a unifying framework} We want to be able to make available theorem prover libraries accessible to the \mmt system.
+
+% To do so, we will have to provide an \mmt meta theory for the foundational logic underlying the formal system under consideration and write a plugin for the \mmt system, which handles the importing of the library and translating of its content into the \ommt format. As mentioned in Section \ref{sec:intro:sota:lf}, to handle peculiar concepts provided by the theorem prover and allow for type checking those, this sometimes entails extending the underlying logical framework (in the context of the project, and this thesis, we use \LF), the \ommt language and the \mmt system accordingly. As a result, implementing the necessary plugins and theories for new formal systems should be as convenient as possible, to quickly build up the set of libraries available in \mmt.
+
+Libraries that have been imported into \mmt in the course of this project include HOL Light~\cite{KR:hollight:14}, Mizar~\cite{IKRU:mizar:11}, TPTP~\cite{tptp}, IMPS~\cite{jbetzendahl:msc18}, Coq~\cite{coqmmt}, Isabelle (as-of-yet unpublished) and (as presented in detail in \autoref{ch:import:pvs}) \pvs.
+%The HOLLight, Mizar and TPTP libraries have already been integrated this way; I will attempt to do the same with PVS (see Section \ref{sec:intro:prelim:pvs}), which is more challenging, since its foundation contains primitives which are not currently conveniently specifiable in the \ommt language.
+
+\paragraph{Refactoring and integrating libraries} Once we have several libraries integrated into \mmt, we can implement generic knowledge management services for the integrated libraries, such as:
+\begin{itemize}
+	\item \textbf{refactoring} the available libraries in such a way, that the heterogeneous part of some theory can be recognized as such and separated from the foundational aspects of its library, and
+	\item \textbf{integrating} the libraries \textbf{with each other}, such that equivalent theories can be identified and contents can be reused and transferred between libraries.
+\end{itemize}
+Naturally, both aspects are heavily interrelated, since integrating libraries is easier after some suitable refactoring, and already aligned libraries can potentially be analyzed more easily and further refactored.
+
+\begin{figure}
+\begin{center}
+\tikzinput{img/intro-oaf}
+ \end{center}
+\caption{Representing Libraries in \mmt}\label{fig:intro:oaf}
+\end{figure}

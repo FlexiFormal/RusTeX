@@ -48,18 +48,13 @@ pub fn accent<ET: EngineTypes>(
             ET::Stomach::add_node_h(engine,HNode::Accent {accent,char,font:engine.state.get_current_font().clone()});
             return Ok(())
         }
-        ResolvedToken::Cmd(Some(TeXCommand::Char {char,code:CommandCode::Other|CommandCode::Letter})) => {
-            ET::Stomach::add_node_h(engine,HNode::Accent {accent,char:*char,font:engine.state.get_current_font().clone()});
-            return Ok(())
-        }
-        ResolvedToken::Cmd(Some(TeXCommand::CharDef(char))) => {
+        ResolvedToken::Cmd(Some(TeXCommand::Char {char,code:CommandCode::Other|CommandCode::Letter} | TeXCommand::CharDef(char))) => {
             ET::Stomach::add_node_h(engine,HNode::Accent {accent,char:*char,font:engine.state.get_current_font().clone()});
             return Ok(())
         }
         _ => {
             engine.requeue(token)?;
-            let tk = <ET::Token as Token>::from_char_cat(accent,CommandCode::Other);
-            ET::Stomach::do_char(engine,tk,accent,CommandCode::Other)?;
+            ET::Stomach::add_node_h(engine,HNode::AccentChar {accent,font:engine.state.get_current_font().clone()});
             return Ok(())
         }
     );
@@ -1809,7 +1804,7 @@ pub fn lowercase<ET: EngineTypes>(
     tk: ET::Token,
 ) -> TeXResult<(), ET> {
     engine.expand_until_bgroup(false, &tk)?;
-    let mut exp = Vec::new(); // ET::Gullet::get_expansion_container(engine);
+    let mut exp = engine.mouth.get_vec(); // ET::Gullet::get_expansion_container(engine);
     engine.read_until_endgroup(&tk, |_, state, t| match t.to_enum() {
         StandardToken::Character(c, cc) => {
             let lccode = state.get_lccode(c);
@@ -1834,7 +1829,7 @@ pub fn uppercase<ET: EngineTypes>(
     tk: ET::Token,
 ) -> TeXResult<(), ET> {
     engine.expand_until_bgroup(false, &tk)?;
-    let mut exp = Vec::new(); //ET::Gullet::get_expansion_container(engine);
+    let mut exp = engine.mouth.get_vec(); //ET::Gullet::get_expansion_container(engine);
     engine.read_until_endgroup(&tk, |_, state, t| match t.to_enum() {
         StandardToken::Character(c, cc) => {
             let uccode = state.get_uccode(c);
@@ -2480,7 +2475,7 @@ pub fn write<ET: EngineTypes>(
     tk: ET::Token,
 ) -> TeXResult<Option<Box<WhatsitFunction<ET>>>, ET> {
     let idx = engine.read_int(false, &tk)?.into();
-    let mut tks = Vec::new();
+    let mut tks = engine.mouth.get_vec();
     tks.push(ET::Token::from_char_cat(
         b'{'.into(),
         CommandCode::BeginGroup,

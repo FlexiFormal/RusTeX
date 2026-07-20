@@ -1,0 +1,217 @@
+Let $C$ be a corpus of theories with (for now) the same fixed meta-theory $M$.
+We call the problem of finding views between theories of $C$ the \defemph{view finding problem} and an algorithm that solves it a \defemph{view finder}. 
+Note that a view finder is sufficient to solve the theory classification use case above: 
+Mary provides a $M$-theory $Q$ of beautiful sets, the view finder computes all (total) views from $Q$ into $C$.
+
+\paragraph{Efficiency Considerations}
+The cost of this problem quickly explodes.
+First of all, it is advisable to restrict attention to simple views (see \autoref{sec:prelim:notation}).
+Eventually we want to search for arbitrary views as well.
+But that problem is massively harder because it subsumes theorem proving: a view from $\Sigma$ to $\Sigma'$ maps $\Sigma$-axioms to $\Sigma'$-proofs, i.e., searching for a view requires searching for proofs.
+
+Secondly, if $C$ has $n$ theories, we have $n^2$ pairs of theories between which to search.
+(It is exactly $n^2$ because the direction matters, and even views from a theory to itself are interesting.)
+Moreover, for two theories with $m$ and $n$ constants, there are $n^m$ possible \emph{simple} views
+(It is exactly $n^m$ because views may map different constants to the same one.)
+Thus, we can in principle enumerate and check all possible simple views in $C$.
+But for large $C$, it quickly becomes important to do so in an efficient way that eliminates ill-typed or uninteresting views early on.
+
+Thirdly, it is desirable to search for \emph{partial} views as well.
+In fact, identifying refactoring potential in libraries is only possible if we find partial views: then we can refactor the involved theories in a way that yields a total view (see \autoref{sec:crosslib:intersect}).
+Moreover, many proof assistant libraries do not follow the little theories paradigm or do not employ any theory-like structuring mechanism at all.
+These can only be represented as a single huge theory, in which case we have to search for partial views from this theory to itself -- facilitating the aforementioned refactoring technique.
+While partial views can be reduced to and then checked like total ones, searching for partial views makes the number of possible views that must be checked much larger.
+
+Finally, even for a simple view, checking reduces to a set of equality constraints, namely the constraints $\vdash_{\Sigma'}\ov{\sigma}(E)=E'$ for the type-preservation condition (see \autoref{sec:prelim:notation}).
+Depending on $M$, this equality judgment may be undecidable and require theorem proving.
+
+\paragraph{}%Algorithm Overview}
+A central motivation for my algorithm is that equality in $M$ can be soundly approximated very efficiently by using a normalization function on $M$-expressions.
+This has the additional benefit that relatively little meta-theory-specific knowledge is needed, and all such knowledge is encapsulated in a single well-understood function.
+This way we can implement view--search generically for arbitrary $M$.
+
+The algorithm consists of two steps.
+First, we preprocess all constant declarations in $C$ with the goal of moving as much intelligence as possible into a step whose cost is linear in the size of $C$.
+Then, we perform the view search on the optimized data structures produced by the first step.
+
+\subsection{Preprocessing}
+
+The preprocessing phase computes for every constant declaration $c\mmttp E$ a normal form $E'$ and then efficiently stores the abstract syntax tree (defined below) of $E'$.
+Both steps are described below.
+
+\paragraph{Normalization}\label{sec:normalizeintra}
+involves two steps: \textbf{\mmt-level normalization} performs generic transformations that do not depend on the meta-theory $M$.
+These include flattening and definition expansion.
+Importantly, we do not fully eliminate defined constant declarations $c\mmttp E\mmtdf e$ from a theory $\Sigma$: instead, we replace them with primitive constants $c\mmttp E$ and replace every occurrence of $c$ in other declarations with $e$.
+If $\Sigma$ is the domain theory, we can simply ignore $c\mmttp E$ (because views do not have to provide an assignment to defined constants).
+But if the $\Sigma$ is the codomain theory, retaining $c\mmttp E$ increases the number of views we can find; in particular in situations where $E$ is a type of proofs, and hence $c$ a theorem.
+
+\textbf{Meta-theory-level normalization} applies an $M$-specific normalization function.
+In general, we assume this normalization to be given as a black box.
+However, because many practically important normalization steps are widely reusable, we provide a few building blocks, from which specific normalization functions can be composed. Skipping the details, these include:
+\begin{compactenum}
+  \item Top-level universal quantifiers and implications are rewritten into the function space of the logical framework using the Curry-Howard correspondence.
+  \item The order of curried domains of function types is normalized as follows: first all dependent argument types are ordered by the first occurrence of the bound variables; then all non-dependent argument types $A$ are ordered by the abstract syntax tree of $A$. 
+  \item Implicit arguments, whose value is determined by the values of the others are dropped, e.g. the type argument of an equality.
+  This has the additional benefit of shrinking the abstract syntax trees and speeding up the search.
+  \item Equalities are normalized such that the left hand side has a smaller abstract syntax tree.
+\end{compactenum}
+Above multiple normalization steps make use of a total order on abstract syntax trees.
+We omit the details and only remark that we try to avoid using the names of constants in the definition of the order --- otherwise, declarations that could be matched by a view would be normalized differently.
+Even when breaking ties between requires comparing two constants, we can first try to recursively compare the syntax trees of their types.
+
+\paragraph{Abstract Syntax Trees} We define \textbf{abstract syntax trees} as pairs $(t,s)$ where $t$ is subject to the grammar
+ \[t ::= C_{Nat} \mid V_{Nat} \mid \ombind{t}{t^+}{t^+}\]
+(where $Nat$ is a non-terminal for natural numbers) and $s$ is a list of constant names.
+
+We obtain an abstract syntax tree from an MMT expression $E$ by (i) switching to de-Bruijn representation of bound variables and (ii) replacing all occurrences of constants with $C_i$ in such a way that every $C_i$ refers to the $i$-th element of $s$.
+
+Abstract syntax trees have the nice property that they commute with the application of simple views $\sigma$:
+If $(t,s)$ represents $E$, then $\sigma(E)$ is represented by $(t,s')$ where $s'$ arises from $s$ by replacing every constant with its $\sigma$-assignment.
+
+The above does not completely specify $i$ and $s$ yet, and there are several possible canonical choices among the abstract syntax trees representing the same expression.
+The trade-off is subtle because we want to make it easy to both identify and check views later on.
+We call $(t,s)$ the \textbf{long} abstract syntax tree for $E$ if $C_i$ replaces the $i$-th occurrence of a constant in $E$ when $E$ is read in left-to-right order.
+In particular, the long tree does not merge duplicate occurrences of the same constant into the same number.
+The \textbf{short} abstract syntax tree for $E$ arises from the long one by removing all duplicates from $s$ and replacing the $C_i$ accordingly.
+
+\begin{example}
+Consider the axiom $\forall x:\cn{set},y:\cn{set}.\; \cn{beautiful}(x) \wedge y \subseteq x \Rightarrow \cn{beautiful}(y)$ with internal representation \[\expr{\ombind{\forall}{x:\cn{set},y:\cn{set}}{\oma{\Rightarrow}{\oma{\wedge}{\oma{\cn{beautiful}}{x},\oma{\subseteq}{y,x}},\oma{\cn{beautiful}}{y}}}}.\]
+
+The \emph{short} syntax tree and list of constants associated with this term would be:
+\[t=\ombind{C_1}{C_2,C_2}{\oma{C_3}{\oma{C_4}{\oma{C_5}{V_2},\oma{C_6}{V_1,V_2}},\oma{C_5}{V_1}}}\] 
+\[s=(\forall,\cn{set},\Rightarrow,\wedge,\cn{beautiful},\subseteq)\]
+The corresponding long syntax tree is :
+\[t=\ombind{C_1}{C_2,C_3}{\oma{C_4}{\oma{C_5}{\oma{C_6}{V_2},\oma{C_7}{V_1,V_2}},\oma{C_8}{V_1}}}\]
+\[ s=(\forall,\cn{set},\cn{set},\Rightarrow,\wedge,\cn{beautiful},\subseteq,\cn{beautiful})\]
+\end{example}
+
+For our algorithm, we pick the \emph{long} abstract syntax tree, which may appear surprising.
+The reason is that shortness is not preserved when applying a simple view: whenever a view maps two different constants to the same constant, the resulting tree is not short anymore.
+Length, on the other hand, is preserved.
+The disadvantage that long trees take more time to traverse is outweighed by the advantage that we never have to renormalize the trees.
+
+\subsection{Search}
+
+Consider two constants $c:E$ and $c':E'$, where $E$ and $E'$ are preprocessed into long abstract syntax trees $(t,s)$ and $(t',s')$.
+It is now straightforward to show the following Lemma:
+\begin{lemma}\label{lemma:viewfinder1}
+The assignment $c\mmtass c'$ is well-typed in a view $\sigma$ if $t=t'$ (in which case $s$ and $s'$ must have the same length $l$) and $\sigma$ also contains $s_i\mmtass s'_i$ for $i=1,\ldots,l$.
+\end{lemma}
+\begin{proof}
+ The claim is simply the typing-preservation condition of theory morphisms for the special case of simple views; expressed using abstract syntax trees.
+\end{proof}
+Of course, the condition about $s_i\mmtass s'_i$ may be redundant if $s$ contains duplicates; but because $s$ has to be traversed anyway, it is cheap to skip all duplicates. We call the set of assignments $s_i\mmtass s'_i$ the \textbf{prerequisites} of $c\mmtass c'$.
+
+This lemma describes our search algorithm: 
+\begin{lemma}[Core Algorithm]
+Consider two constant declarations $c$ and $c'$ with $t=t'$ in theories $\Sigma$ and $\Sigma'$.
+We define a view by starting with $\sigma=\{c\mmtass c'\}$ and recursively adding all prerequisites to $\sigma$ until
+\begin{compactitem}
+ \item either the recursion terminates
+ \item or $\sigma$ contains two different assignments for the same constant, in which case we fail,
+ \item or the recursion requires $d\mmtass d'$, where $d$ and $d'$ have incompatible abstract syntax trees, in which case we fail.
+\end{compactitem}
+
+If the above algorithm succeeds, then $\sigma$ is a well-typed partial simple view from $\Sigma$ to $\Sigma'$.
+\end{lemma}
+\begin{proof}
+	Note that the algorithm constructs a partial view by recursively ensuring that the premises of \autoref{lemma:viewfinder1} holds.
+\end{proof}
+
+\begin{example}\label{ex:beautifinite} Consider two constants $c$ and $c'$ with types $\forall x:\cn{set},y:\cn{set}.\; \cn{beautiful}(x) \wedge y \subseteq x \Rightarrow \cn{beautiful}(y)$ and $\forall x:\cn{powerset},y:\cn{powerset}.\; \cn{finite}(x) \wedge y \subseteq x \Rightarrow \cn{finite}(y)$. Their syntax trees are
+\[t=t'=\ombind{C_1}{C_2,C_3}{\oma{C_4}{\oma{C_5}{\oma{C_6}{V_2},\oma{C_7}{V_1,V_2}},\oma{C_8}{V_1}}}\]
+\[ s=(\forall,\cn{set},\cn{set},\Rightarrow,\wedge,\cn{beautiful},\subseteq,\cn{beautiful})\]
+\[ s'=(\forall,\cn{powerset},\cn{powerset},\Rightarrow,\wedge,\cn{finite},\subseteq,\cn{finite})\]
+Since $t=t'$, we set $c\mmtass c'$ and compare $s$ with $s'$, meaning we check (ignoring duplicates) that $\forall\mmtass\forall$, $\cn{set}\mmtass{\cn{powerset}}$, $\Rightarrow\mmtass\Rightarrow$, $\wedge\mmtass\wedge$, $\cn{beautiful}\mmtass{\cn{finite}}$ and $\subseteq\mmtass\subseteq$ are all valid.
+\end{example}
+
+To find all views from $\Sigma$ to $\Sigma'$, we first run the core algorithm on every pair of $\Sigma$-constants and $\Sigma'$-constants.
+This usually does not yield big views yet.
+For example, consider the typical case where theories contain some symbol declarations and some axioms, in which the symbols occur.
+Then the core algorithm will only find views that map at most one axiom.
+
+Depending on what we intend to do with the results, we might prefer to consider them individually (e.g. to yield \emph{alignments}). But we can also use these small views as building blocks to construct larger, possibly total ones:
+\begin{lemma}[Amalgamating Views]
+We call two partial views \textbf{compatible} if they agree on all constants for which both provide an assignment.
+
+The union of compatible well-typed views is again well-typed.
+\end{lemma}
+\begin{proof}
+	Note that it is sufficient to show that for any constant $c\mmttp T$ in its domain, the amalgamated view $\sigma$ satisfies $\hastype{\sigma(c)}{\sigma(T)}$. Since the partial views amalgamated to $\sigma$ are assumed to be compatible and well-typed, this immediately follows from the assignment $c\mmtass\sigma(c)$ being in (at least) one of the constituent partial views.
+\end{proof}
+\begin{example}
+	Consider the partial view from \autoref{ex:beautifinite} and imagine a second partial view for the axioms
+	$\cn{beautiful}(\emptyset)$ and $\cn{finite}(\emptyset)$. The former has the requirements
+	\[ \forall\mmtass\forall,\quad \cn{set}\mmtass{\cn{powerset}}\quad \Rightarrow\mmtass\Rightarrow \quad \wedge\mmtass\wedge \quad \cn{beautiful}\mmtass{\cn{finite}} \quad \subseteq\mmtass\subseteq\]
+	The latter requires only $\cn{set}\mmtass{\cn{powerset}}$ and $\emptyset\mmtass\emptyset$. Since both views agree on all assignments, we can merge all of them into a single view, mapping both axioms and all requirements of both.
+\end{example}
+
+\subsection{Optimizations}\label{sec:algparams}
+
+The above presentation is intentionally simple to convey the general idea.
+We now consider a few advanced features of the implementation to enhance scalability.
+
+\paragraph{Caching Preprocessing Results}
+Because the preprocessing performs normalization, it can be time-consuming.
+Therefore, we allow for storing the preprocessing results to disk and reloading them in a later run.
+
+\paragraph{Fixing the Meta-Theory}
+We improve the preprocessing in a way that exploits the common meta-theory, which is meant to be fixed by every view.
+All we have to do is, when building the abstract syntax trees $(t,s)$, to retain all references to constants of the meta-theory in $t$ instead of replacing them with numbers.
+With this change, $s$ will never contain meta-theory constants, and the core algorithm will only find views that fix all meta-theory constants.
+Because $s$ is much shorter now, the view search is much faster.
+
+It is worth pointing out that the meta-theory is not always as fixed as one might think.
+Often we want to consider certain constants, that are defined early on in the library and then used widely, to be part of the meta-theory.
+In PVS (see \autoref{ch:import:pvs}), this makes sense, e.g., for all operations defined in the Prelude library. For across-library view finding, we might also apply a partial translation (in the sense of \autoref{sec:crosslib:translate}) to the target library first and consider all succesfully translated symbols as part of the meta-theory, ensuring that all morphisms found are compatible with and predicated on already known alignments and morphisms.
+
+Note that we still only have to cache one set of preprocessing results for each library: changes to the meta-theory only require minor adjustments to the abstract syntax trees without redoing the entire normalization.
+
+\paragraph{Biasing the Core Algorithm}
+The core algorithm starts with an assignment $c\mmtass c'$ and then recurses into constant that occur in the declarations of $c$ and $c'$.
+This occurs-in relation typically splits the constants into layers.
+A typical theory declares types, which then occur in the declarations of function symbols, which then occur in axioms.
+Because views that only map type and function symbols are rarely interesting (because they do not allow transporting non-trivial theorems), we always start with assignments where $c$ is an axiom, but other conditions for starting declarations are possible.
+
+%\emph{The length of $s$ in the short abstract syntax tree:} By choosing a minimal length for $s$, we can guarantee that only morphisms will be produced that relate a minimal number of distinct constants. 
+
+\paragraph{Exploiting Theory Structure}
+Libraries are usually highly structured using imports between theories.
+If $\Sigma$ is imported into $\Sigma'$, then the set of partial views out of $\Sigma'$ is a superset of the set of partial views out of $\Sigma$.
+If implemented naively, that would yield a quadratic blow-up in the number of views to consider.
+
+Instead, when running our algorithm on an entire library, we only consider views between theories that are not imported into other theories.
+In an additional postprocessing phase, the domain and codomain of each found partial view $\sigma$ are adjusted to the minimal theories that make $\sigma$ well-typed.
+
+%In addition to the above optimizations in the algorithm, we can normalize the theories themselves in various ways to improve the number and quality of the morphisms found. To accommodate these, we add two additional features to the algorithm:
+%\begin{enumerate}
+%	\item Some normalizations -- such as elaborating definitions -- may also reduce the number of results, for example if both theories use similar abbreviations for complex terms, or the same concept is declared axiomatically in one theory, but definitionally in the other. For that reason, we can allow \textbf{several abstract syntax trees for the same constant}, such as one with definitions expanded and one ``as is''.
+%	\item Similarly, certain idiosyncrasies (such as PVS's common usage of theory parameters, see Section \ref{sec:normalizeinter}) call for not just matching symbol references, but also variables or possibly even complex expressions. To handle these situations, we additionally allow for \textbf{holes} in the constant lists of an abstract syntax tree. These can be unified with any other symbol or hole by the core algorithm, but are not recursed into and do not count as a requirement. The subterms that are to be considered holes can be marked as such during preprocessing or normalizing.
+%\end{enumerate}
+%
+%The (for our purposes assumed) common logical framework LF makes it easy to systematically normalize theories built on various logical foundations. On the basis of the above features, we currently use the following approaches to normalizing theories:
+%\begin{itemize}
+%	\item Free variables in a term are replaced by holes.
+%	\item Since judgments -- in our imports -- correspond to constants of type $\vdash P$ for some proposition $P$, we can use the Curry/Howard correspondence to equate the type $\vdash (P \Rightarrow Q)$ with the function type $(\vdash P) \to (\vdash Q)$, as well as the judgment $\vdash \forall x : A.\;P$ with the function type $(x:A) \to \vdash P$. We arbitrarily normalize to the former.
+%	\item For classical logics, we rewrite all remaining logical connectives using their usual definitions on the basis of negation and conjunction only. Double negations are eliminated.
+%	\item Typed equalities are transformed to untyped ones; again getting rid of the redundant type argument of the equality. For example, $\oma{\cn{equals}}{\mathbb N,2,1+1}$ becomes $\oma{\cn{equals}}{2,1+1}$, allowing to match the same equation on e.g. $\mathbb{R}$.
+%	\item The arguments of conjunctions and equalities are ordered (currently only by their number of subterms).
+%\end{itemize}
+
+%\subsection{Implementation}%\label{sec:usecase}
+
+
+%%% Local Variables:
+%%% Mode: latex
+%%% eval:  (set-fill-column 5000)
+%%% eval:  (visual-line-mode)
+%%% TeX-master: "paper"
+%%% End:
+
+%  LocalWords:  defemph defemph emph vdash_ normalization optimized compactenum textbf th
+%  LocalWords:  t,s ednote renormalize oldpart syms mapsto mapsto ldots,l compactitem y,x
+%  LocalWords:  normalizing subtyping subterms preprocessings ldots ldots formalization
+%  LocalWords:  vdash Rightarrow vdash vdash vdash forall vdash sec:preproc subseteq c,c
+%  LocalWords:  subseteq ex:beautifinite powerset powerset emptyset emptyset normalized
+%  LocalWords:  Optimizations sec:algparams axiomatizations

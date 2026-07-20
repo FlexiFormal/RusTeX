@@ -1,0 +1,325 @@
+\hypertarget{wtype}{\wtypesym-Types} were introduced in \cite{Martin-Loef84} to represent wellorderings, but were shown to be able to represent many other inductively defined sets in Martin-Löf style type theories as well (see \cite{Dybjer97}). % Usually, the constructors for \wtypesym-Types and their introduction and elimination forms are formally introduced as taking functions as parameters. This style of presentation is slightly simpler, but breaks modularity in that \wtypesym-Types then strictly require function types. Hence we will instead consider them as an isolated feature, making them syntactically slightly more awkward than they already are anyway.
+ The central idea is to define an inductive type from the number of constructors $n$ of the type and their arities $a_n$ with respect to the type that is being defined; the introduction and elimination forms then assure that the resulting type represents an initial algebra. 
+ 
+Ignoring the category theory involved, how to represent inductive types as \wtypesym-types is best explained by example:
+
+\begin{example}
+	\begin{itemize}
+		\item Natural numbers have a constant constructor $0: \mathbb N$ (of arity 0) and a unary constructor $S:\mathbb N\to\mathbb N$ (of arity 1). We can encode the number of constructors as the type \numtp2 and the arities as the types \numtp0 and \numtp1.
+		
+			Their \wtypesym-type would thus be $\mathbb N:=\wtype{x:\numtp2}{\cmatch xy{\numtp 0}{\numtp 1}\type}$.
+			
+		\item Lists over a type $A$ have a constant constructor $\cn{Nil}_A:\cn{List}_A$, and \emph{for each }$a:A$ a unary constructor $\cn{append}_a:\cn{List}_A\to\cn{List_A}$. We encode the number of constructors as the type $\coprod \unit A$ (i.e. each case $\cn{append}_a$ is considered a single unary constructor).
+		
+			Their \wtypesym-type would thus be $\cn{List}_A:=\wtype{x:\coprod\unit A}{\cmatch xy{\numtp0}{\numtp1}\type}$.
+			
+		\item A binary tree over a type $A$ is either a leaf $a:A$ (constant constructor), or a node consisting of an element $a:A$ and two subtrees (one constructor of arity 2 for every $a:A$).
+		
+			Their \wtypesym-type would thus be $\cn{Tree}_A:=\wtype{x:\coprod AA}{\cmatch xy{\numtp0}{\numtp2}\type}$.
+	\end{itemize}
+	As the examples show, constructors that depend on an element of another type $A$ are considered separate constructors for each $a:A$.
+\end{example}
+\begin{remark}
+Since the number and arities of constructors in a \wtypesym-type are almost always finite but need encoding as types, \wtypesym-types (at least as described here) are almost useless without finite types. Moreover, dependent inductive types such as lists over a type $A$ additionally require coproducts.
+
+However, note that our \wtypesym-types do not strictly require coproducts or finite types a priori -- they are merely a lot less useful without these features.
+\end{remark}
+\paragraph{} \hypertarget{wsup}{As introduction form for a \wtypesym-type $W:=\wtype{x:A}B(x)$}, we have a supremum-operator $\wsup cx{a(x)}$, where $c:A$ tells us the constructor case, $x:B(c)$ is a variable that represents the inductive parameters needed, and $a(x):W$ represents the arguments for the constructor. How this works is again best understood by example:
+
+\begin{example}
+	\begin{itemize}
+		\item For natural numbers $\mathbb N:=\wtype{x:\numtp2}{\cmatch xy{\numtp 0}{\numtp 1}\type}$ we get:
+			\[0:=\wsup {\numel0}x{\finel x{\mathbb N}}\qquad \cn{succ}(n):=\wsup {\numel1}xn\]
+		\item For lists $\cn{List}_A:=\wtype{x:\coprod\unit A}{\cmatch xy{\numtp0}{\numtp1}\type}$ we get:
+			\[\cn{Nil}_A := \wsup{\injl\unite A}x{\finel x{\cn{List}_A}} \qquad \cn{append}_a(\ell) := \wsup{\injr a\unit}x{\ell}
+			\]
+		\item For trees  $\cn{Tree}_A:=\wtype{x:\coprod AA}{\cmatch xy{\numtp0}{\numtp2}\type}$ we get:
+			\[\cn{Leaf}(a) := \wsup{\injl a A}x{\finel x{\cn{Tree}_A}} \]
+			\[ \cn{Node}(a,s,t) := \wsup{\injr aA}x{\cmatch xyst{\cn{Tree}_A}}
+			\]
+	\end{itemize}
+	We can think of the argument $a(x)$ in $\wsup cx{a(x)}$ for a type $W:=\wtype{x:A}B(x)$ as a function that assigns each parameter position of type $W$ of a constructor (such as the two subtrees in the last example) to the corresponding argument. In the constant cases, $x$ has type $\emptytype$ and we need to construct an element of $W$ from it, hence in these cases the argument is always $\finel xW$.
+\end{example}
+\begin{remark}
+	Note that the body of a \wsupsym-expression is basically a $\lambda$-expression. Indeed, given function types we can instead write \wsupsym simply as $\sup_c(f)$ for a function $f:\lfarrow{B(c)}{\wtype{x:A}B(x)}$.
+\end{remark}
+
+
+Elimination of \wtypesym-Types is cumbersome and technical, so it is worth going into some detail. To eliminate an element of a type $W:=\wtype{c:A}B$, we want to define a function $f$ out of $W$ with target type $C(w)$ (for $w\in W$) via well-founded recursion. For every constructor case $c:A$, we have an arity of $B(c)$, so we would have to define $f$ on $c$ and the $B(c)$ many (recursive) arguments of type $W$. The latter can be encoded (or thought of) as a function $g_c:\lfarrow{B(c)}W$. Additionally, we need to be able to use the recursive values of the very function $f$ we are defining \emph{on} the recursive arguments encoded in $g_c$. These we can similarly think of encoded as a function $h_{c,g_c}:\lfpi{b:B(c)}{C(g_c(b))}$
+
+Hence, to be able to define $f$ we need an element $c:A,$ a way to obtain $g_c(y):W$ for any $y: B(c)$ for the recursive arguments, and a way to obtain $h(b):C(g_c(b))$ for any $b:B(c)$. The easiest way to do so is to have the elimination constructor bind variables for these, some of them representing (dependent) functions. This requires function types, of course. In the absence of function types, the rules governing them can be added without making the symbols associated (lambda-abstraction, function type constructors etc.) available to the user. Alternatively, one could implement dedicated syntactic constructs that basically mirror the application of functions in the particular context of recursive definitions on \wtypesym-types, which is even more cumbersome, but theoretically straight-forward. I will hence for simplicities sake assume function types to be present in the remainder of this Section.
+
+\paragraph{} \hypertarget{wrec}{Consequently, we introduce an elimination operator $\wrec Ww{C(w)}cgh{e(c,g,h)}$, with the defining equation:}
+
+\lstDeleteShortInline*
+\begin{align*}
+&\wrec W{\wsup dx{a(x)}}{C(\wsup dx{a(x)})}cgh{e(c,g,h)}\\
+&=e\left(d,\lflambda{x:B(d)}{a(x)},\lflambda{y:B(d)}{\wrec W{a(y)}{C(\wsup dx{a(x)})}cgh{e(c,g,h)}}\right),
+\end{align*}
+where $e$ corresponds to the inductive definition of our function, $c$ to the constructor case of the input, $g$ to the parameters of the constructor, and $h$ to the recursive calls on these parameters.
+\begin{example}
+	\begin{itemize}
+		\item For natural numbers $\mathbb N:=\wtype{x:\numtp2}{\cmatch xy{\numtp 0}{\numtp 1}\type}$, let us consider the factorial function defined via induction, i.e. we need to encode the two cases $0!:=1$ and $\cn{succ}(n)!:=\cn{succ}(n)\cdot n!$, where we obtain $n$ from the bound variable $g$ and $n!$ from the variable $h$ (assuming we have a multiplication already). In the case where $n=\cn{succ}(m)$, we have $c=\numel1$ and $B(c)=\numtp1$, hence we can only apply $g$ and $h$ to $\unite$ and obtain $g(\unite)=m$ and $h(\unite)=m!$. So:
+		\[n!:=\wrec {\mathbb N} n {\mathbb N} c g h {\cmatch cx1{\cn{succ}(g(\unite))\cdot h(\unite)}{\mathbb N} } \]
+		By the above definition, we have
+		
+		\scaled{\[ 2=\wsup{\numel1}x1=\wsup{\numel1}x{\wsup{\numel1}x0}=\wsup{\numel1}x{\wsup{\numel1}x{\wsup{\numel0}x{\finel x{\mathbb N}}}}\] }
+		hence using the defining equation for \wrecsym, we get
+\scaled{
+		\begin{align*}
+			2!&=\left(\wsup{\numel1}x1\right)!\\
+			&=\wrec {\mathbb N} {\wsup{\numel1}x1} {\mathbb N} c g h {\cmatch cx1{\cn{succ}(g(\unite))\cdot h(\unite)}{\mathbb N} }\\
+			&=\cmatch {\numel 1}x1{\cn{succ}((\lflambda{y:\numtp1}1)(\unite))\cdot (\lflambda{y:\numtp 1}{1!})(\unite)}{\mathbb N}\\
+			&=\cn{succ}(1)\cdot 1! \\
+			&=\cn{succ}(1)\cdot \wrec {\mathbb N} 1 {\mathbb N} c g h {\cmatch cx1{\cn{succ}(g(\unite))\cdot h(\unite)}{\mathbb N} }\\
+			&=\cn{succ}(1)\cdot \wrec {\mathbb N} {\wsup{\numel1}x0} {\mathbb N} c g h {\cmatch cx1{\cn{succ}(g(\unite))\cdot h(\unite)}{\mathbb N} }\\
+			&=\cn{succ}(1)\cdot \cmatch {\numel 1}x1{\cn{succ}((\lflambda{y:\numtp1}0)(\unite))\cdot (\lflambda{y:\numtp 1}{0!})(\unite)}{\mathbb N}\\
+			&=\cn{succ}(1)\cdot \cn{succ}(0)\cdot 0!
+		\end{align*}}
+		
+		\item For lists $\cn{List}_A:=\wtype{x:\coprod\unit A}{\cmatch xy{\numtp0}{\numtp1}\type}$, let us consider concatenation of lists $\ell_1:::\ell$ for a fixed list $\ell$. In the case where $\ell_1=\cn{Nil}_A$, we return $\ell$, in the case $\ell_1=\cn{append}_a(r)$, the $a$ is encoded in $c=\injr a\unit$ and we return $\cn{append}_a(r::: \ell)$. Hence:
+		\[\ell_1:::\ell := \wrec {\cn{List}_A} {\ell_1} {\cn{List}_A} cgh {\cmatch cx\ell{\cn{append}_x(h(\unite))}{\cn{List}_A}} \]
+		
+		\item For trees  $\cn{Tree}_A:=\wtype{x:\coprod AA}{\cmatch xy{\numtp0}{\numtp2}\type}$, we can define the topological order:
+			$\mathcal O(\cn{Leaf}(a)):=\cn{append}_a(\cn{Nil}_A)$ and $\mathcal O(\cn{Node}(a,s,t)):=\cn{append}_a(\mathcal O(s):::\mathcal O(t))$. Hence:
+\scaled[0.95\linewidth]{
+		\[\mathcal O(t):=\wrec {\cn{Tree}_A} t {\cn{List}_A} cgh {\cmatch cx{\cn{append}_x(\cn{Nil}_A)}{\cn{append}_x( h(\numel0) ::: h(\numel1))}{\cn{List}_A} } \] }
+	\end{itemize}
+\end{example}
+\lstMakeShortInline[language=scala]*
+
+The resulting grammar is given in \autoref{fig:lf:lfx:wtypesgrammar}, the rules are given in \autoref{fig:lf:lfx:wtypes:rules}. Again there are several things to note:
+\begin{itemize}
+	\item \wtypesym-types do not correspond to a logical connective or quantifier under the Curry-Howard correspondence; however, the \wrecsym-elimination (using either Curry-Howard or judgments-as-types) enables proofs by well-founded induction on \wtypesym-types.
+	\item In an implementation, \wsupsym needs to carry the governing \wtypesym-type in order for the introduction rule to be able to infer the type of a \wtypesym-expression. Since it is usually clear which the intended type is, we will continue to omit it outside of the rules.
+	\item The computation rule's premises can again be omitted if the expression is already known to be well-typed.
+\end{itemize}
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+  \begin{framed}
+	      \begin{tabular}{rcl@{\quad}l}
+        $\gray{\Gamma}$ & $\gray{::=}$ & $\gray{\cdot \mid \Gamma, x[:T][:=T]}$ & \gray{contexts}\\
+	  	   $\gray T$ & $\gray{::=}$ & $\gray{x \mid \type \mid \kind }$ & \gray{variables and universes}\\
+	  	   	& $\mid$ & $\wtype{x:T}T \mid \wsupu TxTT \mid \wrec TTTxxxT$ & \wtypesym-types
+%       		    & $\mid$ & $\lfpi{x:T'}T \mid \lflambda{x:T'}T \mid T_1 T_2$ & dependent function types
+%	  & $\mid$ &  $\rectype{(x : T)^\ast} \mid \recexp{(x := T)^\ast} \mid T.x$ & record types
+      \end{tabular}
+  \end{framed}
+  \caption{Grammar for Coproduct-Types}\label{fig:lf:lfx:wtypesgrammar}%\vspace*{-1em}
+\end{figure}
+
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+\begin{framed}
+{\small For any $U$ with $\gjudg{\judguniv U}$:}
+\begin{flushleft}
+\textbf{Formation:}
+\[
+\trule{\gjudg{\infertype AU} \quad \judg{\Gamma,x:A}{\infertype BU'}}{\gjudg{\infertype{\wtype{x:A}B}{\umax{U,U'}}}}
+\]
+\textbf{Introduction:}
+\[
+\trule{\gjudg{\hastype cA} \quad \judg{\Gamma,x:B\sub xc}{\hastype a{\wtype{x:A}B}} }{\gjudg{\infertype{\wsupu cxa{\wtype{x:A}B} }{\wtype{x:A}B}}}
+\]
+\textbf{Elimination:}
+
+{\small For $C':={C\sub c{\wsupu cx{g(x)}{\wtype{x:A}B}}}$:}
+\[
+\trule{\gjudg{\judgmatchinf w{\wtype{x:A}B}} \quad \judg{\Gamma,c:\wtype{x:A}B}{\infertype{C}U} \quad \judg{\Gamma,c:A,g:\lfarrow{B\sub xc}{\wtype{x:A}B},h:\lfpi{y:B\sub xc}{C\sub c{g(y)}}}{\hastype e{C'}} }{\gjudg{\infertype{\wrec {\wtype{x:A}B}wCcghe}{C\sub cw}}}
+\]
+%\textbf{Type Checking:}
+%\[
+%	\_
+%\]
+%\textbf{Equality:}
+%\[
+%\_
+%\]
+\textbf{Computation:}
+
+{\small For $d:={\wsupu {c'}xaW}$, $g':=\lflambda{x:B\sub x{c'}}a$, and $h':=\lflambda{y:B\sub x{c'}}{\wrec W{a\sub xy}{C\sub cd}cghe}$:}
+\[ 
+\trule{\gjudg{\infertype d{W'}} \quad \judg{\Gamma,w:W'}{\infertype{\wrec WwCcghe}{C\sub cw}}}
+{\gjudg{\judgeqc{\wrec WdCcghe}{e\sub c{c'}\sub g{g'}\sub h{h'}}}}
+\]
+%\textbf{Computation (Optional):}
+%\[
+%	\trule{}{\gjudg{\judgeqc\unit{\emptytype\to\emptytype}}}
+%\]
+\end{flushleft}\end{framed}%\vspace*{-.5em}
+\caption{Rules for \wtypesym-Types}\label{fig:lf:lfx:wtypes:rules}%\vspace*{-1em}
+\end{figure}
+
+\begin{remark}[Equality and Subtyping]
+	There are several subtyping behaviors imaginable for \wtypesym-types:
+		\begin{itemize}
+			\item For inductive types with \emph{named} constructors, one would usually want the names to matter, such that e.g. the type of natural numbers and the type of lists over the \unit-type are distinct. Since both are represented as the type $\wtype{x:\numtp2}{\cmatch xy{\numtp 0}{\numtp 1}\type}$, this is impossible by virtue of \wtypesym-types being anonymous.
+			
+			The intended behavior could be recovered by having \wtypesym-types carry an additional label for each constructor.
+			\item One might want any distinct \wtypesym-types to be unrelated. This is the behavior in the absence of any additional rules.
+			\item One might want an inductive type $A$ to be equal to a type $B$ iff they have the same number of constructors with the same arities \emph{irrespective of the order} -- e.g. $\wtype{x:\coprod AB}{\cmatch xy{C_1}{C_2}\type}$ is the same as $\wtype{x:\coprod BA}{\cmatch xy{C_2}{C_1}\type}$. This makes sense intuitively and would be easily representable as an equality rule, but every call of the rule would be computationally expensive, since it would have to check equality on any possible permutation of the constructors and their arities as a premise.
+			\item Finally, one might want an inductive type $W_1$ to be a subtype of $W_2$ iff all constructor cases of $W_1$ are also constructors of $W_2$ -- i.e. if there is an embedding from $W_1$ to $W_2$. This can be ill-defined, if $W_2$ has more than one constructor case with the same base type and arity (i.e. there is no \emph{unique} embedding). Consider e.g. $W_2=\wtype{x:\coprod AA}{\numtp0}$ and $W_1=\wtype{x:A}{\numtp0}$ -- in this situation it is unclear which of the two (constant) constructors of $W_2$ the element of $W_1$ should correspond to.
+			
+			This behavior can again be achieved by having \wtypesym-types carry labels for the constructors, in which case the ambiguity can be resolved by demanding that the labels match for intended subtypes.
+		\end{itemize}
+\end{remark}
+
+\subsection{Implementation}\label{sec:lf:lfx:wtypes:impl}
+From an implementation perspective, \wtypesym-types are conveniently simple and fall neatly into our pattern of rules. Consequently, implementing them in \mmt is straight-forward; the corresponding \mmt-theory is presented in \autoref{lst:lf:lfx:wtypes:theory}.
+
+\begin{mmtcode}[caption={Theories for \wtypesym-types\protect\footnotemark},label=lst:lf:lfx:wtypes:theory]
+theory Symbols =
+  wtype # W V1T . 2 prec -10000 ❙
+  sup # sup 2 , V1 ⟹ 3 to 4 prec -8000 ❙
+  rec # rec 4 , V1 , V2 , V3 ⟹ 5 to 6  prec -8000 ❙
+❚
+	
+theory Rules =   
+   rule rules?WTypeFormation ❙
+   rule rules?SupIntroduction ❙
+   rule rules?WEquality ❙
+   rule rules?RecElimination ❙
+   rule rules?RecComputation ❙
+❚
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/MMT/LFX/blob/master/source/WTypes.mmt}}
+	
+From a user perspective however, \wtypesym-types are incredibly inconvenient and unintuitive, counter to our goal of being as close to mathematical practice as possible. \autoref{lst:lf:lfx:wtypes:test} shows as an example the natural numbers with inductively defined addition on them.
+
+\begin{mmtcode}[caption={Natural Numbers on \wtypesym-types\protect\footnotemark},label=lst:lf:lfx:wtypes:test]
+theory Wtest : LFX/WTypes?LFW =
+	
+  beta : ENUM 2 ⟶ type ❘ 
+    = [x] x match y. ∅ | UNIT | ∅  to type ❙
+  ℕ : type ❘ = W x:ENUM 2 . (beta x) ❙
+	
+  zeroN : ℕ 	❘ = sup (CASE 0) , x ⟹ (x ∅f ℕ) to ℕ 	❙
+  S : ℕ ⟶ ℕ 	❘ = [x : ℕ] sup (CASE 1) , y ⟹ x to ℕ 	❙
+	
+  plusN : {n:ℕ,m:ℕ} ℕ ❘ # 1 + 2 prec 5 ❘ 
+    = [n][m] (rec m,c,g,h ⟹ (c match  (ENUM 2), x. n | S (h x) | x to ℕ) to ℕ) ❙
+		
+  // test: 0+0=0 ❙
+  Eq : ℕ ⟶ type ❙
+  eq : Eq (zeroN) ❙
+
+  claim : Eq (plusN zeroN zeroN) ❘ = eq❙
+❚
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/MMT/LFX/blob/master/source/test.mmt}}
+
+\subsection{Structural Features}\label{sec:lf:lfx:wtypes:sf}
+
+We can remedy this inconvenience by providing a \textbf{structural feature} that offers a more convenient and intuitive syntax and \emph{elaborates} into \wtypesym-types, giving users a way to specify inductive types without having to use the cumbersome syntax offered by \wtypesym-types -- or having to know about them at all. The goal is to formalize natural numbers more akin to this:
+\begin{mmtcode}
+induct Nats =
+  Nat  : type 	❘ # ℕ 	❙
+  Zero : ℕ	❘ # O 	❙
+  Succ : ℕ ⟶ ℕ 	❘ # S 1 ❙
+❚
+\end{mmtcode}
+
+\paragraph{} A structural feature is an extension of the class *StructuralFeature*. Firstly, it instructs the parser how to parse the \emph{header} of an instance of this feature (e.g. \expr{induct\ [name]\ =}). For this, the structural feature has to provide a notation. The header is followed by an optional body of a theory (e.g. containing the declarations \expr{Nat}, \expr{Zero} and \expr{Succ}). The parser wraps any application of the header notation into an object of class *DerivedDeclaration*, holding the components provided in the header and the optional body. 
+
+Secondly, after parsing, this *DerivedDeclaration* is passed on to the *StructuralFeature*, which returns an *Elaboration*, holding a list of \mmt declarations computed from the *DerivedDeclaration*. The details on implementing derived declarations and structural features are sketched in \cite{Iancu:phd} and thus omitted here.
+
+%The (slightly simplified) signature of *StructuralFeature*s is given in \autoref{lst:lf:lfx:wtypes:structural}.
+%
+%\begin{scalacode}[label=lst:lf:lfx:wtypes:structural,caption=The (Slightly Simplified) Interface for Structural Features]
+%abstract class StructuralFeature(val feature: String) extends FormatBasedExtension {
+%
+%   /** the notation for the header **/
+%   def getHeaderNotation: List[Marker]
+%
+%   /** called after checking components and inner declarations for additional feature-specific checks **/
+%   def check(dd: DerivedDeclaration)(implicit env: ExtendedCheckingEnvironment): Unit
+%
+%   /**
+%    * defines the outer perspective of a derived declaration
+%    *
+%    * @param parent the containing module
+%    * @param dd the derived declaration
+%    **/
+%   def elaborate(parent: Module, dd: DerivedDeclaration): Elaboration
+%}
+%
+%abstract class Elaboration extends ElementContainer[Declaration] {
+%   def domain: List[LocalName]
+%   def getO(name: LocalName): Option[S]
+%}
+%\end{scalacode}
+%
+%The *check* method is called \emph{after} the body of a derived declaration *dd* has been checked, so the structural feature can perform additional checks. Afterwards, the *elaborate* method is called to provide the context in which the subsequent declarations are checked.
+
+\paragraph{} For inductive types, we want two structural features: One that elaborates into a \wtypesym-Type and its constructors, and one for the elimination form.\footnote{The full implementation of these is omitted here and can be found at \url{https://gl.mathhub.info/MMT/LFX/blob/master/scala/info/kwarc/mmt/LFX/WTypes/Features.scala}} The keywords for these features are set as *induct* and \lstinline|def| respectively, which allows us to implement natural numbers and addition in surface syntax as in \autoref{lst:lf:lfx:wtypes:featuretest}.
+
+%\begin{multicols}{2}
+\begin{mmtcode}[caption={\wtypesym-Types with Structural Features\protect\footnotemark},label=lst:lf:lfx:wtypes:featuretest]
+induct Nats ()❘ =
+  Nat : type ❘ # ℕ ❙
+  Zero : ℕ ❘ # O ❙
+  Succ : ℕ ⟶ ℕ ❘ # S 1 ❙
+❚
+	
+Ntest : ℕ ❘ = O ❙
+Ntest2 : ℕ ❘ = S (S Ntest) ❙ 
+	
+def addition (n : ℕ) ❘ =
+  add : ℕ ⟶ ℕ ❘ # 1 + 2 ❙
+  Zero = n ❙
+  Succ = [m] S (add m) ❙
+❚
+P : ℕ ⟶ type ❙
+pzero : P O ❙
+Ptwo : P (S (S O)) ❙
+Ntest3 : ℕ ❘ = Ntest + Ntest2 ❙
+claim : P (O + O) ❘ = pzero ❙
+claim2 : P((S O) + (S O)) ❘ = Ptwo ❙
+\end{mmtcode}
+%\end{multicols}
+\footnotetext{Ibid.}
+
+All declarations in an \expr{induct} or \expr{def}-environment are bundled into the body of a theory, which is itself wrapped into a *DerivedDeclaration* $d$. This declaration is then passed on to the *StructuralFeature*'s elaborate-method, which in the case of \expr{induct} computes from them the appropriate \wtypesym-type (e.g. for $\mathbb N$) and the constructors (e.g. \expr{Zero} and \expr{Succ}), and in the case of \expr{def} the corresponding function defined by a \wrecsym-expression. We can pass additional parameters to the structural feature in the header of an \expr{induct} or \expr{def} environment, to allow for e.g. polymorphic \wtypesym-Types or inductive functions with arity $>1$ (as in \expr{addition}), as shown with lists and binary trees in \autoref{lst:lf:lfx:wtypes:featuretest2}.
+
+%\begin{multicols}{2}
+\begin{mmtcode}[caption={Lists and Trees \protect\footnotemark},label=lst:lf:lfx:wtypes:featuretest2]
+induct Lists (B:type) ❘ =
+  List : type ❘ # List 1 ❙
+  Nil : List ❘ # Nil 1 ❙
+  Cons : B ⟶ List ⟶ List ❘ # 2 ~> 3❙
+❚
+	
+def Concatenation (B : type, ls : List B) ❘ =
+  conc : List B ⟶ List B ❘ # 2 ++ 3❙
+  Nil = ls ❙
+  Cons = [b:B,l:List B] b ~> (conc l) ❙
+❚
+	
+induct Trees (B : type) ❘ =
+  Tree : type ❘ # Tr 1 ❙
+  Leaf : B ⟶ Tree ❘ # Lf 2❙
+  Node : B ⟶ Tree ⟶ Tree ⟶ Tree ❘ # Nd 2 3 4 ❙
+❚
+	
+def topoSort (B : type) ❘ =
+  sort : Tree B ⟶ List B ❘ # topsort 2❙
+  Leaf = [b] b ~> (Nil B) ❙
+  Node = [b,s,t] b ~> ((sort s) ++ (sort t)) ❙
+❚
+	
+A : type ❙
+a1 : A ❙
+a2 : A ❙
+a3 : A ❙
+test1 : Tr A ❘ = Lf a1 ❙
+test2 : Tr A ❘ = Nd a2 test1 test1 ❙
+test3 : List A ❘ = topsort test2 ❙
+\end{mmtcode}
+%\end{multicols}
+\footnotetext{Ibid.}
+
+\begin{remark}[Structural Features for Induction]\label{rem:lf:lfx:induct}
+	While we use \wtypesym-types here as a target for elaborating our structural features, we are in no way required to do so. Colin Rothgang recently developed a similar feature (as well as many other structural features, e.g. for equivalence relations and quotients)\footnote{\url{https://github.com/UniFormal/MMT/tree/master/src/mmt-lf/src/info/kwarc/mmt/lf/structuralfeatures}}, which elaborates into undefined constants for the inductive principles instead. While this has the disadvantage that the solver can not natively exploit the generated induction principles automatically, it has the advantage that the resulting elaboration works with plain \LF and can represent more advanced induction principles such as mutually recursive types, which can not be represented using \wtypesym-types alone.
+	
+	Again, we are able to marry the two approaches quite easily while reusing the same structural feature and hence syntactic representation. For example, the feature rule can check for the presence of the \wtypesym-type rules in the current context and decide accordingly whether to elaborate into \wtypesym-types or primitive \LF constants.
+\end{remark}

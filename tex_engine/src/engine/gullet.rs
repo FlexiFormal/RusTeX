@@ -4,7 +4,7 @@
 pub mod hvalign;
 pub mod methods;
 
-use crate::commands::primitives::{PrimitiveIdentifier, PRIMITIVES};
+use crate::commands::primitives::{PRIMITIVES, PrimitiveIdentifier};
 use crate::commands::{ActiveConditional, CharOrPrimitive, Macro, ResolvedToken, TeXCommand};
 use crate::engine::gullet::hvalign::AlignData;
 use crate::engine::mouth::Mouth;
@@ -355,7 +355,7 @@ pub trait Gullet<ET: EngineTypes> {
         f: fn(&mut EngineReferences<ET>, &mut Vec<ET::Token>, ET::Token) -> TeXResult<(), ET>,
     ) -> TeXResult<(), ET> {
         engine.trace_command(|engine| format!("{}", name.display(engine.state.get_escape_char())));
-        let mut exp = Vec::new(); // ExpansionContainer::new(engine.aux.memory.get_token_vec());
+        let mut exp = engine.mouth.get_vec(); // ExpansionContainer::new(engine.aux.memory.get_token_vec());
         f(engine, &mut exp, token)?;
         engine.mouth.push_vec(exp);
         Ok(())

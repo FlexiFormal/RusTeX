@@ -1,0 +1,9 @@
+\usepackage{tocloft}
+\newlistof{myed}{myedn}{List of Ednotes}
+\let\oldednote\ednote
+\renewcommand{\ednote}[1]{
+\oldednote{ #1 }
+\refstepcounter{myed}\addcontentsline{myedn}{subsection}{\protect\numberline{\themyed:  #1  }}
+}
+
+\newcommand\tableofednotes{\ifshowednotes{\newpage\listofmyed\newpage}\fi}

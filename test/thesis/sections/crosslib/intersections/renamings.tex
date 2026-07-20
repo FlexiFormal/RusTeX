@@ -1,0 +1,16 @@
+In the previous example it is noteworthy, that the morphisms \textsf{k} and \textsf{l} are fully inverse to each other. In fact, they are \emph{renamings}.
+By a renaming, we mean a partial morphism $\sigma:\viewto ST$ such, that for every constant $c$ declared in $S$, $\sigma(c)$ is again a constant (as opposed to a complex term). 
+
+Naturally, theory intersections are a lot simpler for renamings. In fact, we only need a single renaming $\sigma:\viewto ST$ to intersect along (since the inverse of a renaming is again a renaming and uniquely determined).
+It turns out, that we can always reduce the situation in \autoref{fig:theory-intersection} to the much easier case, where we have a single renaming $\sigma:\viewto{S'}{T'}$, where $S'$ and $T'$ are conservative extensions of our original theories:
+
+\begin{figure}[ht]%l{4.6cm}\vspace*{-2em}\hspace*{-1em}
+\centering
+\tikzinput{img/int-renaming}%\vspace*{-.5em}
+\caption{Obtaining a Renaming From a Morphism}\label{fig:renaming}%\vspace*{-2em}
+\end{figure}
+
+Let $\delta:\viewto ST$ be a partial theory morphism and $\delta(c)=t$ for a complex term $t$. We can then conservatively extend $T$ to a theory $T_1$ that contains a new defined constant $c_\delta\mmtdf t$ and adapt $\delta$ to a new morphism $\delta_1$ with $\delta_1(c)=c_\delta$ (and $\delta_1\upharpoonright S\setminus\{c\}=\delta\upharpoonright S\setminus\{c\}$), as in \autoref{fig:renaming}.
+If we repeat this process for every mapping $\delta(c)=t$ that is not already a simple renaming, we yield a new conservative extension $T'$ such, that the corresponding morphism $\delta'$ (accordingly adapted) is a renaming.
+
+Doing the same with a partial inverse $\rho:\viewto TS$, we ultimately get a single renaming $\sigma:\viewto{S'}{T'}$ that is equivalent to the original pair of partial morphisms. We can therefore w.l.o.g. reduce ourselves in every instance to this case.

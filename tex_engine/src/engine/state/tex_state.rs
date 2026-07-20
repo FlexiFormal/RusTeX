@@ -1,5 +1,5 @@
 /*! Implementation of a plain TeX [`State`]. */
-use crate::commands::primitives::{PrimitiveCommands, PrimitiveIdentifier, PRIMITIVES};
+use crate::commands::primitives::{PRIMITIVES, PrimitiveCommands, PrimitiveIdentifier};
 use crate::commands::{PrimitiveCommand, TeXCommand};
 use crate::engine::fontsystem::Font;
 use crate::engine::mouth::Mouth;
@@ -540,9 +540,7 @@ impl<ET: EngineTypes> State<ET> for DefaultState<ET> {
                   }*/
             }
         });
-        if !ag.is_empty() {
-            mouth.push_vec(ag)
-        }
+        mouth.push_vec(ag);
     }
 
     fn get_parshape(&self) -> &Vec<(ET::Dim, ET::Dim)> {

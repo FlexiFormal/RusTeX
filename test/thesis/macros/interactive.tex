@@ -1,0 +1,79 @@
+\documentclass[12pt]{article}
+
+%% notes in the margin
+\usepackage{marginnote}
+%% verbatim JavaScript
+\usepackage[pdftex]{insdljs}
+%% hyperref as usual
+\usepackage{hyperref}
+
+%% patching a definition in hpdftex.def, which ignores the backgroundcolor attribute on PushButtons even though pdf supports it
+\makeatletter
+  \def\PDFForm@Push{%
+    /Subtype/Widget%
+    \Fld@annotflags
+    \Fld@annotnames
+    /FT/Btn%
+    \Fld@flags
+    /H/P%
+    /BS<</W \Fld@borderwidth/S/\Fld@borderstyle>>%
+    \ifcase0\ifnum\Fld@rotation=\z@   \else 1\fi
+            \ifx\Fld@bordercolor\relax\else 1\fi
+            \ifx\Fld@bcolor\relax\else 1\fi %% FR added this line
+            \space
+    \else
+      /MK<<%
+        \ifnum\Fld@rotation=\z@
+        \else
+          /R \Fld@rotation
+        \fi
+        \ifx\Fld@bordercolor\relax
+        \else
+          /BC[\Fld@bordercolor]%
+        \fi
+        \ifx\Fld@bcolor\relax %% FR added this line
+        \else                 %% FR added this line
+          /BG[\Fld@bcolor]%   %% FR added this line
+        \fi                   %% FR added this line
+      >>%
+    \fi
+    /A<</S/JavaScript/JS(\Hy@escapestring{\Fld@onclick@code})>>%
+    \Fld@additionalactions
+  }%
+
+%% library JavaScript functions
+\begin{insDLJS}{mysetup}{My JavaScript Setup}
+function toggle(name) {
+  var f = this.getField(name);
+  if (color.equal(f.fillColor,color.transparent))
+    f.fillColor=color.white;
+  else
+    f.fillColor=color.transparent;
+}
+\end{insDLJS}
+
+\begin{document}
+
+% all form fields must be in a single global Form environment
+\begin{Form}
+
+% no bordercolor amounts to making the border transparent so that it is invisible
+% print is the default default
+\def\DefaultOptionsofPushButton{print,bordercolor=}
+
+%\PushButton[name={test2},onclick={app.alert(this.getField('test').display)}]{dsfasfs}
+%\PushButton[onclick={this.getField('test').lineWidth=0; this.getField('test').strokeColor=color.transparent}]{dsfasfs}
+%$a\sqrt{\PushButton[name={test},onclick={this.getField('test').userName='testtest'}]{\ensuremath{\frac{\bullet}{\sqrt{2}}}}}\sin x$
+
+%% create a button '#1Control' with showing #2 and a button '#1' in the margin showing #3
+%% clicking on the former toggles the latter
+\newcommand{\button}[3]{\PushButton[name=#1Control,backgroundcolor=,onclick={toggle('#1')}]{\ensuremath{#2}}\marginnote{\PushButton[name=#1,backgroundcolor=1 1 1]{\ensuremath{#3}}}}
+
+Clicking on the bound variable $x$ toggles the visibility of its type $\mathit{nat}$, which is displayed in the margin.
+
+%% a formula with a button
+\[\lambda \button{test}{x}{\mathit{nat}}.x+1\]
+
+\end{Form}
+
+\end{document}

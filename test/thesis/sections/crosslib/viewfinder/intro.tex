@@ -1,0 +1,121 @@
+\begin{disclaimer*}
+	A significant part of the contents of this chapter  has been previously published as 
+\cite{MueKohRab:aftmkm18} with coauthors Michael Kohlhase and Florian Rabe. The writing was developed in close collaboration between the authors, hence it is impossible to precisely assign authorship to individual authors.
+	
+	My contribution in this chapter consists of developing the algorithm presented in this chapter, its implementation and running and evaluating the case study in \autoref{sec:crosslib:vf:cross}.
+\end{disclaimer*}
+
+% We present a method for finding morphisms between formal theories, both within as well as across libraries based on different logical foundations. 
+  % These morphisms can yield both (more or less formal) \emph{alignments} between individual symbols as well as truth-preserving morphisms between whole theories. 
+  Theory morphisms underly the notion of theory graphs. They are one of the primary structuring tools employed in \mmt and enable the kind of modularity we aimed for in this thesis, most notably \autoref{ch:lf}. As they induce new theorems in the target theory for any of the source theory, \emph{views} (as opposed to includes and other trivial morphisms, see \autoref{sec:prelim:notation}) in particular are high-value elements of
+  a modular formal library. Usually, these are manually encoded, but this
+  practice requires authors who are familiar with source and target theories at the same
+  time, which limits the scalability of the manual approach. 
+
+  To remedy this problem, I have developed a view finder algorithm that automates theory
+  morphism discovery, and implemented it in \mmt. While this algorithm conceptually makes use of the definitional property of theory morphisms that they are to preserve typing judgements, it ultimately operates on the level of individual declarations after preprocessing which may include translations as in \autoref{sec:crosslib:translate} using alignments -- as such, it can also be thought of as an alignment finder across libraries, simultaneously utilizing and extending the set of possible translations between them.
+  
+ \paragraph{}  Here, we focus on one specific application of 
+  \emph{theory classification}, where a user can
+  check whether a (part of a) formal theory already exists in some library, potentially
+  avoiding duplication of work or suggesting an opportunity for refactoring.
+
+%\paragraph{Motivation}
+%``Semantic Search'' -- a very suggestive term, which is alas seriously under-defined --
+%has often been touted as the ``killer application'' of semantic technologies. With a view finder,
+%we can add another possible interpretation: searching mathematical ontologies
+%(here modular theorem prover libraries) at the level of theories -- we call this \defemph{theory
+%classification}.
+
+The basic use case is the following: Mary, a mathematician, becomes interested in a class
+of mathematical objects, say -- as a didactic example -- something she initially calls
+``beautiful subsets'' of a base set $\cB$ (or just ``beautiful over $\cB$''). These have
+the following properties $Q$:
+\begin{compactenum}
+\item the empty set is beautiful over $\cB$
+\item every subset of a beautiful set is beautiful over $\cB$
+\item If $A$ and $B$ are beautiful over $\cB$ and $A$ has more elements than $B$, then
+  there is an $x\in A\backslash B$, such that $B\cup\{x\}$ is beautiful over $\cB$.
+\end{compactenum}
+To see what is known about beautiful subsets, she types these three conditions into a theory
+classifier, which computes any theories in a library $\cL$ that match these (after a
+suitable renaming).  In our case, Mary learns that her ``beautiful sets'' correspond to
+the well-known structure of matroids~\cite{wikipedia:matroid}, so she can directly apply
+matroid theory to her problems.
+
+In extended use cases, a theory classifier may find theories that share significant structure
+with $Q$, so that Mary can formalize $Q$ modularly with minimal effort. Say Mary was
+interested in ``dazzling subsets'', i.e. beautiful subsets that obey a fourth condition,
+then she could just contribute a theory that extends the theory \expr{matroid} by a formalization
+of the fourth condition -- and maybe rethink the name.
+% \item use existing views in $\cL$ (compositions of views are views) to give Jane more
+%   information about her beautiful subsets, e.g. that matroids (and thus beautiful sets)
+%   form a generalization of the notion of linear independence from linear algebra.
+% \end{compactitem}
+%
+% \begin{figure}[ht]\centering\lstset{aboveskip=0pt,belowskip=0pt}
+% \begin{tabular}{|p{5cm}|p{5cm}|}\hline
+%   $Q$ & Result \\\hline
+% \begin{lstlisting}[mathescape]
+% theory query :  F?MitM
+%    include ?set
+%    Base : {A} set A
+%    beautiful {A} set A $\rightarrow$ prop
+%    empty : $\vdash$ beautiful $\emptyset$ 
+%    subset-closed: $\vdash$ {}
+% \end{lstlisting}
+% & 
+% \begin{lstlisting}[mathescape]
+% theory matroid :  F?MitM
+%    include ?baseset
+%    independent {A} set A $\rightarrow$ 
+%    empty: $\vdash$
+%    hereditary : $\vdash$
+%    augmentation: $\vdash$
+% \end{lstlisting}
+% \\\hline
+% \end{tabular}
+% \caption{Theory Classification for beautiful sets}\label{fig:theory-classification-ex}
+% \end{figure}
+
+% In this paper we reduce the theory classification problem to the problem of finding theory morphisms (views) between theories in a library $\cL$: given a query theory $Q$, the algorithm computes all (total) views from $Q$ into $\cL$ and returns presentations of target theories and the assignments made by the views.
+
+\paragraph{}%Related Work}
+Existing systems have so far only worked with explicitly given views, e.g., in IMPS \cite{imps} or Isabelle \cite{isabelle}.
+Automatically and systematically searching for new views was first undertaken in \cite{NorKoh:efnrsmk07} in 2006.
+However, at that time no large corpora of formalized mathematics were available in standardized formats that would have allowed easily testing the ideas in practice.
+
+This situation has changed since then as multiple such exports have become available.
+In particular, we now have \ommt % developed the MMT language \cite{RK:mmt:10} and the concrete syntax of the OMDoc XML format \cite{omdoc} 
+as a uniform representation language for such corpora.
+%And we have translated multiple proof assistant libraries into this format, among others those of PVS in \cite{KohMueOwr:mpagsiuf17}.
+Building on these developments, we are now able, for the first time, to apply generic methods --- i.e., methods that work at the \mmt level --- to search for views in formal libraries.
+
+While inspired by the ideas of \cite{NorKoh:efnrsmk07}, the design and implementation presented here are completely novel.
+In particular, the theory makes use of the rigorous language-independent definitions of \emph{theory} and \emph{view} provided by \mmt.
+
+\cite{hol_isahol_matching} applies techniques related to ours to a related problem.
+Instead of views inside a single corpus, they use machine learning to find similar constants in two different corpora.
+Their results can roughly be seen as a single partial view from one corpus to the other.
+
+%\paragraph{Approach and Contribution}
+%Our contribution is twofold. Firstly, we present the design and implementation of a
+%generic view finder that works with arbitrary corpora represented in MMT.  The
+%algorithm tries to match two symbols by unifying their types.  This is made efficient by
+%separating the term into a hashed representation of its abstract syntax tree (which serves
+%as a fast plausibility check for pre-selecting matching candidates) and the list of symbol
+%occurrences in the term, into which the algorithm recurses.
+%
+%Secondly, we apply this view finder in two case studies: In the first, we start with an abstract theory and try to figure out if it already exists \emph{in the same library} -- the use case mention above. In the second example, we write down a simple theory of commutative operators in one language to find all commutative operators in \emph{another library based on a different foundation}.
+
+%%% Local Variables:
+%%% mode: latex
+%%% eval:  (set-fill-column 5000)
+%%% eval:  (visual-line-mode)
+%%% TeX-master: "paper"
+%%% End:
+
+%  LocalWords:  defemph compactenum textsf formalization vivews generalization centering hol_isahol_matching sec:appl sec:concl
+%  LocalWords:  compactitem lstset aboveskip 0pt,belowskip hline lstlisting mathescape
+%  LocalWords:  rightarrow vdash emptyset baseset NorKoh:efnrsmk07 formalized omdoc emph
+%  LocalWords:  standardized emph thibault-paper ednote 0pt,belowskip

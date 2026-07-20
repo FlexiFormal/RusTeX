@@ -1,0 +1,52 @@
+%Theorems
+\newif\ifllncs
+
+\DeclareOption{book}{\theoremstyle{plain}\newtheorem{theorem}{Theorem}[chapter]}
+\DeclareOption{nobook}{\theoremstyle{plain}\newtheorem{theorem}{Theorem}[section]}
+\DeclareOption{llncs}{\llncstrue}
+
+\newcommand{\theorems@mark}{}
+\DeclareOption{mark}{
+\renewcommand{\theorems@mark}{
+\markEnv{definition}
+\markEnv{theorem}
+\markEnv{example}
+\markEnv{remark}
+\markEnv{notation}
+}
+}
+
+\ProcessOptions
+
+\ifllncs
+%\newenvironment{notation}[1][]{}{}
+%\newenvironment{terminology}[1][]{}{}
+\spnewtheorem{notation}{Notation}{\itshape}{\rmfamily}
+\spnewtheorem{terminology}{Terminology}{\itshape}{\rmfamily}
+\newcommand{\myqed}{\qed}
+\else
+\newtheorem{lemma}[theorem]{Lemma}
+\theoremstyle{definition}
+\newtheorem{definition}[theorem]{Definition}
+\theoremstyle{remark}
+\newtheorem{example}[theorem]{Example}
+\newtheorem{notation}[theorem]{Notation}
+\newtheorem{terminology}[theorem]{Terminology}
+\newtheorem{remark}[theorem]{Remark}
+\newcommand{\myqed}{}
+\fi
+
+\RequirePackage{framed}
+\newenvironment{marked}{%
+  \def\FrameCommand{\vrule width 1pt \hspace{5pt}}%
+  \MakeFramed {\advance\hsize-\width \FrameRestore}}%
+ {\endMakeFramed}
+
+\newcommand{\markEnv}[1]{%
+\expandafter\let\csname theorems@#1\expandafter\endcsname\csname#1\endcsname% \begin{theorems@#1} = \begin{#1}
+\expandafter\let\csname theorems@end#1\expandafter\endcsname\csname end#1\endcsname% \begin{theorems@end#1} = \end{#1}
+\renewenvironment{#1}{\begin{marked}\begin{theorems@#1}}{\end{theorems@#1}\end{marked}}%
+}
+
+%% handle the mark option
+\theorems@mark

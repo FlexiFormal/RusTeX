@@ -1,0 +1,76 @@
+\ednote{this section is outdated}
+
+We now add some complex theories and morphisms to \mmt.
+\begin{grammar}
+T      & \{\} \alt \bigcup\{\rep{T}\} \alt M(T)   & \text{complex theories}\\
+M      & \{\} \alt \bigcup\{\rep{M}\} \alt M^T \alt M^T(M)   & \text{complex morphisms}
+\end{grammar}
+
+Their meanings are explained in the sequel.
+
+\paragraph{Empty Theory}
+The empty theory $\{\}\in\Thy$ and the empty morphism $\{\}\in\Mo{\{\}}{T}$ for $T\in\Thy$ are always well-formed.
+Their semantics is given by $\flt{\{\}}=\es$ (in both cases).
+$\{\}$ is an initial object in the category of theories.
+
+The empty morphism is implicit.
+
+\paragraph{Union of Theories}
+For any finite set $\Theta\sq\Thy$ of theories, the union theory $\bigcup \Theta\in\Thy$ is always well-formed.
+Its semantics is given by $\flt{(\bigcup\Theta)}=\bigcup_{T\in\Theta}\flt{T}$.
+As special cases, we can recover $T\equiv\bigcup\{T\}$ and $\{\}\equiv\bigcup\es$.
+
+We write $S\cup T$ for the binary union $\bigcup\{S,T\}$.
+Binary union is a semi-lattice (with respect to $\harr$ and $\equiv$) with least element $\{\}$.
+
+Clearly, we have $T\harr \bigcup\Theta$ if $T\in\Theta$.
+Moreover, we define the include closure of a set of theories by $\cls{\Theta}=\{C|C\harr T, T\in\Theta\}$ (which is a topological closure operator).
+Then we have $\bigcup Z\harr \bigcup \Theta$ iff $\cls{Z}\sq\cls{\Theta}$ and thus also $\bigcup Z\equiv \bigcup \Theta$ iff $\cls{Z}=\cls{\Theta}$.
+
+
+Now consider morphisms $M_i\in\Mo{S_i}{T_i}$ for $i=1,\ldots,n$.
+Let $\mu=\{M_1,\ldots,M_n\}$, $Z=\{S_1,\ldots,S_n\}$ and $\Theta=\{T_1,\ldots,T_n\}$.
+The union morphism $\bigcup \mu: \bigcup Z \to \bigcup \Theta$ is well-formed if $M_i|_C\equiv M_j|_C$ whenever $C\harr S_i$ and $C\harr S_j$.
+Its semantics is given by $\flt{(\bigcup \mu)}=\bigcup_{M\in\mu} \flt{M}$.
+
+$\bigcup \mu$ is implicit if all $M_i$ are.
+
+\paragraph{Pushout along Inclusion}
+For morphisms $M\in\Mo{S}{T}$ and $S\harr X$, the pushout $T\harr M(X)$ with the morphism $M^X\in\Mo{X}{M(X)}$ are well-formed if for all $C\harr X$ and $C\harr T$ also $C\harr S$.
+
+In that case, for $u\in\Mo{T}{U}$ and $x\in\Mo{X}{U}$, the universal morphism $M^u(x)\in\Mo{M(X)}{U}$ of the pushout is well-formed if $x|_S\equiv M;u$.
+
+Their semantics is defined by
+\[\flt{M(X)}=\flt{T}\cup \{c[:M(t)][=M(d)]\;|\;c[:t][=d]\in\flt{X}\sm\flt{S}\}\]
+\[\flt{(M^X)}=\flt{M}\cup\{c:=c\;|\;c\in\dom{X}\sm\dom{S}\}\]
+\[\flt{M^u(x)}=\flt{u}\cup\{c:=x(c)\;|\;c\in\dom{X}\sm\dom{S}\}\]
+
+Note that our definition of $\flt{m(X)}$ crucially exploits the condition that $\dom{X}\sm\dom{S}$ and $\dom{T}$ must be disjoint.
+Thus, we obtain $\dom{X}\sm\dom{S}\sq\dom{m(X)}$ and $m^X$ maps these identifiers to themselves.
+
+%(Note that if $M$ is implicit, then necessarily $m|_C\equiv\id{C}$.)
+
+$m^X$ is implicit if $m$ is.\ednote{Can this always be implicit? Even if it can, it is probably not desirable. Compare left-/right-neutral element.}
+\ednote{Should there be implicit extensions of morphism? E.g., $m^X$ could be implicit relative to $m$, i.e., we write $m$ and it is inferred as $m^X$. Does that yield canonical structures?}
+$m^u(x)$ is implicit if $m$ and $u$ are.
+
+
+%Pushouts are coherent:
+%  $(m;n)(X)\equiv n(m(X))$ if the right hand side is defined.
+%  If $X\harr Y$, then $m(X)\harr m(Y)$ if $m(Y)$ is defined.
+%  $\id{S}(X)\equiv X$ (always defined).
+%  $m(S)\equiv S$ (always defined).
+%  
+%Pushout over the empty morphism is defined iff $X$ and $T$ are disjoint.
+%In that case, it is the union. (But not all unions arise in this way.)
+%
+%Pushout distributes over union:
+%  $m(X\cup Y)\equiv m(X)\cup m(Y)$ (equi-defined)
+%  $m^{X\cup Y}\equiv m^X\cup m^Y$ (?)
+%  
+%  does not make sense:
+%  $(\bigcup m_i)(X)\equiv \bigcup \{m_i(X)\}$ 
+%  $(\bigcup m_i)^X\equiv \bigcup\{m_i^X\}$
+%
+
+% Theorem: For every theory $T$, we have $\dom{T}=\dom{t_1}\cup\ldots\cup\dom{t_n}$ for atomic theories $t_i$.

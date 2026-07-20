@@ -1,0 +1,159 @@
+\documentclass{article}
+\usepackage{url}
+
+%%%%%%%%%%%% \linie %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newcommand{\linie}{\noindent {\rule{14cm}{1mm}}}
+\pagenumbering{roman} \sloppy
+
+\begin{document}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%%      The titlepage for ENTCS
+%%%      (selfmade)
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\thispagestyle{empty} \vskip-2cm
+\begin{sffamily} \noindent{\LARGE
+ Electronic Notes in Theoretical Computer Science}\\
+ \linie
+ \vskip-.2cm
+ \linie
+ \vskip1cm
+ \noindent \large Volume 82.1\\
+ \vskip 1cm
+ \noindent {\Large \sc  Coalgebraic Methods in Computer Science }\\
+
+ \noindent {\Large \sc \bf CMCS'03} \ \ \vskip 1.2cm
+ \noindent\large Warsaw, Poland\\
+
+ \noindent April 5-6, 2003\\
+
+ \vskip.3cm
+ \linie
+ \vskip7cm \noindent
+ Guest Editor:\\
+
+ \noindent {\sc H.~Peter Gumm} \vskip.5cm
+ \linie
+\end{sffamily}
+\newpage
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%%      An empty page
+%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\ \
+\newpage
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%%      Table of content for proceedings
+%%%      using the proc-package
+%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%  An entry for the preface
+\addtocontents{toc}{\contentsline {section}{ Preface}{\rm v}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%%      Process all entries from cmcs03db.tex
+%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ \input proctoc         %% macros for generating each entry
+ \input cmcs03db        %% database for the proceedings
+
+%%%       Generate the table of contents :
+
+ \tableofcontents
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%
+%%%%%   The Preface
+%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+\newpage
+\section*{Preface}
+This volume contains the proceedings of the Sixth Workshop on
+Coalgebraic Methods in Computer Science (CMCS'03). The workshop
+was held in Warsaw, Poland on April 5 and 6, 2003, as a satellite
+event to the European Joint Conference on Theory and Practice of
+Software (ETAPS'03). The aim of the CMCS workshop series is to
+bring together researchers with a common interest in the theory of
+coalgebras and its applications. Previous workshops have been
+organized in Lisbon (1998), Amsterdam (1999), Berlin (2000), Genoa
+(2001), and Grenoble (2002).
+
+Coalgebras have been found extremely useful for capturing
+state-based dynamical systems, such as transition systems,
+automata, process calculi, and class-based systems. The theory of
+coalgebras has developed into a field of its own interest,
+presenting a deep mathematical foundation, a growing domain of
+applications and interactions with various other fields, such as
+reactive and interactive systems theory, object oriented and
+concurrent programming, formal system specification, modal logic,
+dynamical systems, control systems, category theory, algebra,
+analysis, etc..
+%Much of this is witnessed by the papers in this volume.
+
+ \vskip.5cm
+
+\noindent The program committee of CMCS'03 consisted of
+\begin{itemize}
+ \item Ji\v r\'\i\ Ad\'amek, Technical University of
+ Braunschweig, Germany;
+ \item Corina C\^{\i}rstea, Oxford University, UK;
+ \item H.~Peter Gumm, University of Marburg, Germany, (chair);
+ \item Bart Jacobs, University of Nijmwegen, The Netherlands;
+ \item Alexander Kurz, University of Leicester, UK;
+  \item Marina Lenisa, University of Udine, Italy;
+  \item Ugo Montanari, University of Pisa, Italy;
+ \item Larry Moss, Indiana University, Bloomington, USA;
+ \item Ataru T. Nakagawa, Software Research Associates, Tokyo
+ Japan;
+ \item Horst Reichel, Technical University Dresden, Germany;
+ \item Grigore Ro\c{s}u, University of Illinois, Urbana, USA;
+ \item Jan Rutten, CWI, Amsterdam, The Netherlands;
+ \item James Worrell, Tulane University, New Orleans, USA.
+\end{itemize}
+
+\noindent The papers were refereed by the program committee and by
+several outside referees, whose help is gratefully acknowledged.
+The invited speakers at the conference were
+\begin{itemize}
+ \item Zolt\'{a}n \'{E}sik, University of Szeged, Hungary;
+ \item Vaughan Pratt, Stanford University, USA.
+\end{itemize}
+Vaughan Pratt's lecture is included in the printed version of
+these proceedings, Zolt\'{a}n \'{E}sik's lecture is expected to be
+part of the final ENTCS volume.
+
+
+These proceedings will be published as volume 82.1 in the series
+Electronic Notes in Theoretical Computer Science (ENTCS). The
+proceedings of the previous CMCS workshops appeared as ENTCS
+Volumes 11, 19, 33, 44.1, and 65.1.
+
+ENTCS is published electronically through the facilities of
+Elsevier Science B.V. and under its auspices. The volumes in the
+ENTCS series are available online at
+ \url{http://www.elsevier.nl/locate/entcs}.
+We are grateful to ENTCS for their continuing support, in
+particular to Mike Mislove, Managing Editor of the ENTCS series.
+
+For the sixth time, CMCS has been organized as satellite event to
+ETAPS. We are very grateful to the ETAPS organizers, especially to
+Damian Niwinski, for taking care of all the local organization and
+for accommodating all our special requests. Thanks also to Mikolaj
+Bojanczyk for managing the printing of these proceedings.\\
+
+\noindent \emph{Marburg, February 28, 2003} \hfill \emph{H.~Peter
+Gumm}
+
+\end{document}

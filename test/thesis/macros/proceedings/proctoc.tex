@@ -1,0 +1,54 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%%  Creates the correct "Table of Contents" for your proceedings
+%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%% Usage:
+%%%    Paste the following commands into your LaTeX file :
+%%%
+%%%        \input proctoc    %%% this file
+%%%        \input <database>    %%% the list of articles
+%%%        \tableofcontents      %%% generate the table of contents
+%%%
+%%%    and replace <database> by the name of a texfile,
+%%%    containing for each article an entry of the format
+%%%
+%%%     \article[<optRemark>]{<paperId>}{noPages}{author}{title}
+%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%%  Macro for formatting each entry in the table of contents (toc)
+%%%
+%%%  usage:
+%%%     \formatEntry[optionalRemark]{author(s)}{title}{pageNumber}
+%%%
+%%%  redefine this to suit your taste
+%%%
+%%%  Example:
+%%%
+%%%    \newcommand{\formatEntry}[4]{
+%%%         \contentsline{section}{{\sc #2} {\rm #1} \\ {\rm #3 \dotfill}}{\rm #4}}
+
+\newcommand{\formatEntry}[4]{
+    \contentsline{section}{{\sc #2} {\rm #1} \\ {\rm #3 \dotfill}}{\rm #4}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%
+%%%      Macros for calculating the number
+%%%      of the starting page for each article
+%%%      and for generating its entry in the
+%%%      table of contents
+%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+ \newcounter{startPage}
+ \setcounter{startPage}{1}
+
+ \newcommand{\article}[5][]{
+     \newcounter{#2}
+     \setcounter{#2}{\value{startPage}}
+     \addtocontents{toc}
+        {\formatEntry {#1}{#4}{ #5}{\thestartPage}}
+     \addtocounter{startPage}{#3}
+ }

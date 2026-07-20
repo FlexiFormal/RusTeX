@@ -1,0 +1,15 @@
+I have implemented a method for unary TI in an earlier version of the \mmt API.
+
+The intersection method takes as parameters two theories, a name for the intersection and a list of pairs of declarations, which can be obtained from a pair of morphisms, a single morphism or use the view finder presented in \autoref{sec:crosslib:vf}. It returns the intersection theory and the refactored versions of (conservative extensions of) the original theories, depending on the original morphisms provided.
+
+Both methods are integrated into a refactoring panel, which is part of the \mmt plugin for jEdit. To intersect two theories, the user can either provide one or two morphisms between the theories or allow the Viewfinder to pick for them. The declarations in the intersection theory can optionally be named.
+
+An annotated video demonstration of the refactoring panel and its components can be found on Youtube \cite{YTInters}.
+
+% The Viewfinder looks specifically for renamings between theories, using a (in principle flexible) judgment-based approach; i.e. two declarations are (usually) only matched, if they occur in some judgments (i.e. axioms or theorems) that can be matched. This reduces the search space, increasing efficiency and avoiding ``meaningless'' morphisms that do not preserve some of the properties of a declaration.
+
+If we accept automatically generated names for the theory intersections, we can eliminate user interaction and use the view finder to automate the intersection operation on a set of theories without having to provide the morphisms to intersect along beforehand. This could be used to refactor whole libraries in a more modular way (in concordance with the \emph{little theories} approach \cite{FaGu:lt92}). Additionally, by supplying the view finder with alignments and other translators between libraries, our approach could be used to refactor a whole library along the theory graph of an already modular library.
+
+% The Viewfinder has been tested on the LATIN library \cite{CHKMR:latinabs:11} with experimental success.
+
+We do not yet have a heuristic to evaluate (the resulting) theories automatically with respect to their interest; however, given a morphism between two interesting theories, we have observed that the corresponding intersection tends to be interesting as well, as long as the morphism is not meaningless itself.

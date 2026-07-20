@@ -1,0 +1,275 @@
+\lstMakeShortInline[language=scala]*
+
+\LF~\cite{lf} is a logical framework based on the dependently-typed lambda calculus $\lambda\Pi$. \hypertarget{lfpi}{The \textbf{grammar} is given in \autoref{fig:prelim:lf:grammar}}.
+The only deviation here is that we allow optional definitions in contexts, to make them syntactically equivalent to \mmt contexts (see \autoref{remark:prelim:mmt:syntax}). \LF specifically as implemented in \mmt is covered in more detail in \cite{rabe:recon:17}; the specific rules presented here are adapted from there.
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+  \begin{framed}
+      \begin{tabular}{rcl@{\quad}l}
+        $\Gamma$ & $::=$ & $\cdot \mid \Gamma, x[:T][:=T]$ & contexts\\
+	  	   $T$ & $::=$ & $x \mid \type \mid \kind $ & variables and universes\\
+       		    & $\mid$ & $\lfpi{x:T'}T \mid \lfarrow{T}{T'} \mid \lflambda{x:T'}T \mid T_1 T_2$ & dependent function types
+%	  & $\mid$ &  $\rectype{(x : T)^\ast} \mid \recexp{(x := T)^\ast} \mid T.x$ & record types
+      \end{tabular}
+\end{framed}
+  \caption{Grammar for Contexts and Expressions}\label{fig:prelim:lf:grammar}%\vspace*{-1em}
+\end{figure}
+
+The grammar in \autoref{fig:prelim:lf:grammar} as well as the various grammars presented in \autoref{ch:lf} represent \emph{object-level} languages \emph{independent of} the \mmt language. If implemented within \mmt, it should not be seen as extending the \mmt grammar from \autoref{sec:prelim:notation} rather than being embedded within it; for example, the well-formed expression $\lflambda{x:A}t$ according to the \LF grammar would be represented in \ommt as the well-formed expression $\ombind{\lflambdasym}{x:a}t$ according to the \mmt grammar. 
+
+Note that the grammar for contexts aligns perfectly with the grammar for \mmt contexts; hence we do not need to distinguish between the two apart from the well-formedness of the term components of the variables therein.
+
+%\begin{definition}\rm\label{def:notations1}
+%  \begin{enumerate}
+%    \item Given a context $\Gamma$, we let $\max\Gamma$ be equal to $\type$ if all types in context $\Gamma$ live in $\type$, and $\kind$ if the only exceptions are variables whose types are $\kind$. If $\Gamma$ contains a field of type $\kind$, we consider $\max\Gamma$ ill-formed.
+%    \end{enumerate}
+%\end{definition}
+
+\paragraph{} The universe rules of the framework are given in \autoref{fig:prelim:lf:genrules} and are to be read in conjunction with the general rules in \autoref{fig:prelim:mmt:rules}.
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+\begin{framed}
+%{\small For $U\in\{\type,\kind\}$:}
+\[ 
+\trule{\gwfctx}{\gjudg{\judguniv\type}}\qquad
+\trule{\gwfctx}{\gjudg{\judguniv\kind}}\qquad
+%\trule\ {\wfctx\cdot} \qquad
+%\trule{\gwfctx \quad \gjudg{\hastype T U} }{\wfctx{\Gamma,x : T}} \qquad
+%\trule{\gwfctx \quad \gjudg{\hastype t T}}{\wfctx{\Gamma, x : T := t}} \qquad
+%\trule{\gwfctx \quad \gjudg{\hastype t T}}{\wfctx{\Gamma, x := t}}
+%\]
+%\[
+%\trule{\gwfctx \quad x:T[:=t]\in\Gamma}{\gjudg{\infertype x T}} \qquad
+%\trule{\gwfctx \quad x[:T']:=t\in\Gamma \quad \gjudg{\infertype x T}}{\gjudg{\judgeq x t T}}
+%\]
+%\[
+%\trule{ \gjudg{\infertype t {T'} \quad \gjudg{ \judgeq T{T'}U } } }{\gjudg{\hastype tT}}\qquad
+%\trule{ \gjudg{\judgeqc {t_1}{t_1'}}\quad \gjudg{\judgeqc {t_2}{t_2'}}\quad \gjudg{\judgeq {t_1'}{t_2'}T}}{\gjudg{\judgeq{t_1}{t_2}T}}\qquad
+\trule{\gwfctx}{\gjudg{\infertype \type \kind}}
+\]
+\end{framed}%\vspace*{-.5em}
+\caption{General Rules}\label{fig:prelim:lf:genrules}%\vspace*{-1em}
+\end{figure}
+
+% I refer to \cite{rabe:recon:17} for the general rules about equality, which we omit here. They consist of $\alpha$-renaming and the rules that make equality a congruence relation.
+
+\begin{remark}\label{remark:prelim:lf:pattern}
+Usually, a new typing feature entails a type constructor $C$ (in this case $\lfpisym$), one or several term constructors $\cn t$ (in this case $\lflambdasym$) and one or several elimination constructors $\cn e$ (in this case function application), and the rules governing these operators usually follow a specific pattern consisting of:
+\begin{itemize}
+	\item A \textbf{formation rule} that specifies when $C(\cdot)$ is well-formed and what universe it belongs to.
+	\item An \textbf{introduction rule} that allows to infer the $C$-type of an introductory form $\cn t(\cdot)$.
+	\item An \textbf{elimination rule} that allows to infer the type of an elimination form $\cn e(\cdot)$.
+	\item A \textbf{type checking rule} that tells us when a term checks against $C(\cdot)$. If every term is uniquely typed this rule
+		is redundant (by virtue of the introduction rule), but it enables bidirectional type checking in an implementation.
+	\item An \textbf{equality rule} that specifies when two introductory forms are equal.
+	\item \textbf{computation rules} that (often) allow us to simplify nested elimination and introductory forms -- i.e. terms of the
+		form $\cn e(\cn t(\cdot))$ or $\cn t(\cn e(\cdot))$.
+	\item A \textbf{subtyping rule}, usual either \emph{covariance} (i.e. $\subtp{C(A')}{C(A)}$ iff $\subtp{A'}A$) or \emph{contravariance} (i.e. $\subtp{C(A')}{C(A)}$ iff $\subtp A{A'}$). Since we consider subtyping an abbreviation (see \autoref{remark:prelim:mmt:subtp}), this rule is usually derivable from the typing rule.
+\end{itemize}
+An additional rule -- usually called the $\eta$-rule -- that declares the introductory form to be \emph{surjective} is often used in formal presentations. It could reasonably be called \textbf{representation rule}, since it tells us that e.g. every function can be represented as a $\lflambdasym$-term. However, it often is a corollary of the equality and computation rules and hence does not need to be implemented as a separate rule.
+
+In an implementation, it makes sense to add additional derivable inference, type checking, equality or computation rules, simply to speed up the type checking process or help with solving implicit arguments. For the latter, the \mmt API offers an abstract class for \lstinline[language=scala]|SolutionRule|s, but we will largely ignore them in this thesis.
+
+Unless otherwise specified, we assume the type constructor itself to be injective modulo $\alpha$-renaming, i.e. two types $C(a),C(b)$ are equal iff $a=b$ and variables bound by $C$ in $C(a)$ and $C(b)$ can be suitably renamed.
+\end{remark}
+% The upper row contains one inference rule for each constructor.
+% The bottom row contains a type checking rule and an equality checking rule (i.e., extensionality) at $\prod$-types as well as the usual $\beta$-computation rule.
+% 
+
+
+\paragraph{} The specific rules for the dependent function types in \LF are given in \autoref{fig:prelim:lf:prodrules}. Note, that even though \LF has precisely two universes \type and \kind, we still formulate the rules parametric in a generic universe $U$, to allow for flexible extending the number of universes later (see \autoref{sec:lf:lfx}, particularly \autoref{sec:lf:lfx:hierarchy}). \medskip
+
+\begin{definition}\label{def:lf:max}
+\hypertarget{max}{For convenience, we introduce a notation for the larger of two inhabitable terms}, which we will extend as needed. We start with the cases relevant to \LF:
+\begin{itemize}
+	\item For $A,B:\type$ or $A,B:\kind$, we let 
+		\[\umax{A,B}:=\begin{cases}A & \text{if }\subtp BA, \\ B & \text{if }\subtp AB, \\ \text{undefined} & \text{otherwise.}\end{cases}\]
+	\item For $A:\type$, we let $\umax{A,\type}:=\type$.
+	\item $\umax{\type,\kind}:=\kind$.
+	\item In all other cases, we consider $\umax\cdot$ to be undefined.
+\end{itemize}
+\end{definition}
+
+We consider $\lfarrow T{T'}$ an abbreviation for $\lfpi{\_:T}{T'}$.
+\hypertarget{subst}{We also write $T\sub x{T'}$ for the usual capture-avoiding \textbf{substitution} of $T'$ for $x$ in $T$.}
+
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+\begin{framed}
+{\small For any $U$ with $\gjudg{\judguniv U}$:}
+\begin{flushleft}
+\textbf{Formation:}
+\[
+% \trule{\gjudg{\hastype A U} \quad \judg{\Gamma,x : A}{\infertype B {U'}} }{\gjudg{\infertype {\lfpi{x:A}B}{\umax{U,U'}} }} 
+\trule{\gjudg{\hastype A \type} \quad \judg{\Gamma,x : A}{\infertype B {U}} }{\gjudg{\infertype {\lfpi{x:A}B}{\umax{\type,U}} }} \qquad
+\]
+\textbf{Introduction:}
+\[
+\trule{ \judg{\Gamma, x:A}{\infertype NB}}{ \gjudg{\infertype{\lflambda{x :A}N}{\lfpi{x:A}B}} }
+\]
+\textbf{Elimination:}
+\[
+\trule{ \gjudg{\judgmatchinf F{\lfpi{x:A}B}} \quad \gjudg{\hastype t A} }{\gjudg{\infertype {F t} {B\sub xt} }}
+\]
+\textbf{Type Checking:}
+\[
+\trule{ \judg{\Gamma,x:A}{\hastype {fx}B} }{ \gjudg{ \hastype f{\lfpi{x:A}B} } }
+\]
+\textbf{Equality:}
+\[
+\trule{ \judg{\Gamma,x:A}{\judgeq {fx}{gx}B} }{ \gjudg{ \judgeq fg{\lfpi{x:A}B} } }
+\]
+\textbf{Computation:}
+\[
+\trule{ \gjudg{\hastype a A}}{ \gjudg{\judgeqc {(\lflambda{x:A}t) a}{t\sub xa} } }
+\]
+\end{flushleft}\end{framed}%\vspace*{-.5em}
+\caption{Rules for Dependent Function Types}\label{fig:prelim:lf:prodrules}%\vspace*{-1em}
+\end{figure}
+
+\paragraph{} We can now show that the usual variance rule for function types and the $\eta$-rule are derivable. Even though plain \LF has no notion of subtyping (in fact, every term has a unique type), extensions of \LF may introduce subtyping principles, in which case this rule becomes important:
+\begin{theorem}\label{thm:prelim:lf:variance}
+\thmitem{The following subtyping rule is derivable:
+\[
+	\irule{\gjudg{\subtp A{A'}}\quad\judg{\Gamma,x:A}{\subtp{B'}B}}
+	{\gjudg{\subtp{\lfpi{x:A'}{B'}}{\lfpi{x:A}B}}}
+\]
+}
+\thmitem{The $\eta$-rule holds: For any $f,A$ we have $\lflambda{x:A}{f(x)}=f$.}
+\end{theorem}
+\begin{proof}\begin{enumerate}
+	\item Assume $\gjudg{\subtp A{A'}}$, $\gjudg{\subtp{B'}B}$. It suffices to show $\judg{\Gamma,f:\lfpi{x:A'}{B'}}{\hastype f{\lfpi{x:A}B}}$.
+	
+	By \autoref{fig:prelim:lf:prodrules} we can conclude this from $\judg{\Gamma,f:\lfpi{x:A'}{B'},x:A}{\hastype{f x}B}$. Since $\gjudg{\subtp A{A'}}$ we have 
+	$\judg{\Gamma,x:A}{\hastype x{A'}}$ and consequently
+		$\judg{\Gamma,f:\lfpi{x:A'}{B'},x:A}{\hastype{f x}B'}$, so the claim follows by $\gjudg{\subtp{B'}B}$.
+		
+	\item By the equality rule, we can show that given $f:\lfpi{x:A}B$ we have $\judg{\Gamma,x:A}{\judgeq{(\lflambda{x:A}{f(x)})(x)}{f(x)}{\lfpi{x:A}B}}$, which is precisely the conclusion of the computation rule.
+\end{enumerate}\end{proof}
+
+
+Moreover, we can show that every well-typed term $t$ has a \textbf{principal type} $T$ in the sense that (i) $\gjudg{\hastype tT}$ and (ii) whenever $\gjudg{\hastype t{T'}}$, then also $\gjudg{\subtp T{T'}}$.
+The principal type is exactly the one inferred by our rules (see \autoref{thm:lf:records:principal}). This is easily proven by induction on the grammar; however, as a result this property does not necessarily hold in the presence of other rules.
+
+\begin{remark}[\textsf{PLF}]\label{remark:lf:lfx:plf}
+We can conveniently extend \LF by \emph{shallow polymorphism}, the resulting logical framework we call \textsf{PLF} (see \cite{rabe:recon:17}).  It can be specified  by a single additional rule:
+\[\irule{\gjudg{\infertype A U} \quad \gjudg{\judguniv U} \quad \judg{\Gamma,x:A}{\judginh B} }{\gjudg{\judginh{\lfpi{x:A}B}}}\]
+
+This rule elegantly allows for declaring shallow polymorphic functions (with type parameters only on the outside of the term), but since the polymorphic function types are merely inhabitable and not typed, they can only occur in well-typed expressions if the type arguments are instantiated via function application (the only $\lfpisym$-rule that requires a function type to be typed by a universe is the formation rule, see \autoref{fig:prelim:lf:prodrules}, hence type inference of polymorphic function types will fail, but of their applications will not).
+
+For example, consider a type of groups over a fixed given type $G$. Using the above rule, we can specify this as a polymorphic operator
+$\mathtt{group}\mmttp{\lfpi{G:\type}\type}$
+In this case, expressions such as $G\mmttp{\mathtt{group}(S)}$ are perfectly valid, since $\mathtt{group}$ is well-typed. The \emph{type} of \texttt{group} however is not well-typed; hence we can not e.g. quantify over all operators of type $\lfpi{G:\type}\type$.
+\end{remark}
+
+\subsection{Judgments-as-Types}\label{sec:prelim:lf:jat}
+
+The lambda calculus described above makes \LF a functioning logical framework, i.e. a language to specify the syntax and proof theory of various logics, type theories and related systems. This is achieved by using the \hypertarget{jat}{\textbf{Judgments-as-Types}} methodology, in which (as the name suggests) we assign types to the judgments of a given logic. We can interpret these types as the types of \emph{proofs that the judgment holds}.
+
+\begin{example} 
+Consider classical propositional logic. We can formalize the syntax by introducing a new type $\cn{prop}\mmttp\type$ in \LF, and declaring the logical connectives as constants with function types; e.g. $\cn{and}\mmttp{\lfarrow{\cn{prop}}{\lfarrow{\cn{prop}}{\cn{prop}}}}$. Given $A,B$ of type \cn{prop}, $\cn{and}(A,B)$ is now a sytactically well-formed expression of type \cn{prop}.
+
+The only judgment in propositional logic is that some proposition is \emph{true}, hence we introduce an operator $\ded \mmttp{\lfarrow{\cn{prop}}\type}$ assigning a type to each proposition. As mentioned, given some formula $\varphi$ we can think of the type $\ded\  \varphi$ as the type of proofs of $\varphi$. By declaring a new constant of type $\ded\ \varphi$ we can axiomatically declare $\varphi$ to be true, whereas to prove $\varphi$ we need to construct a term of that type.
+
+We can allow for the latter by formalizing the rules of any proof calculus as functions on $\ded$-types. Consider as an example the conjunction introduction rule:
+\[\irule{\varphi\quad\psi}{\varphi\wedge\psi}\]
+Using $\ded$, we can now declare this rule by introducing a function:
+\[\cn{andI}\mmttp{ \lfpi{A:\cn{prop}}{\lfpi{B:\cn{prop}}{\lfarrow{\ded\ A}{\lfarrow{\ded\ B}{\ded\ \cn{and}(A,B)}}}}} \] 
+It takes two propositions $A, B$ as arguments, as well as (what we can think of as) proofs for both, and returns (what we can think of as) a proof for $A\wedge B$.
+\end{example}
+
+\begin{remark}
+The \cn{andI}-rule in the last example suggests reading dependent function types in a different way: while we can think of the type as a function type, we can also read the expression as \emph{``For all $A:\cn{prop}$ and for all $B:\cn{prop}$...''}. This reading is formally justified by the Curry-Howard correspondence between a type $\lfpi{x:A}B$ and the universal quantifier $\forall x:A.\;B$.
+
+Analogously, a simple function type $\lfarrow AB$ corresponds to the implication $A\Rightarrow B$.
+
+Under the Curry-Howard correspondence, the introduction and elimination rules of a typing feature often mirror the respective inference rules in a natural deduction calculus.
+\end{remark}
+
+\subsection{Higher-Order Abstract Syntax}\label{sec:lf:prelim:hoas}
+
+In this thesis we use the same notation for \emph{application of \LF functions f to arguments $\overline a$} as for the \mmt primitive application of a term $f$ to a list of terms $\overline a$. This is to avoid cumbersome notations for \LF-applications like $f@\overline a$.
+However, it should be noted that technically (and internally) an application $f(a)$ of a function $f$ on the level of \LF-expressions is internally represented as $\oma{\cn{apply}}{f,a}$ - the symbol $\cn{apply}$ provided by the \LF-theory is applied (in the sense of an \ommt-application) to the arguments $f$ and $a$. In a naive implementation, this means that the head of the term $f(a)$ is not in fact the symbol $f$, but instead the symbol \cn{apply}.
+
+Furthermore, if we use \LF to formalize another $\lambda$-calculus $\mathcal C$, we will need to provide constants for the $\lambda$- and apply-operators of $\mathcal C$. This naively means, that we need to reimplement many mechanisms which are already present in \LF. Fortunately, we can use \emph{higher-order abstract syntax} to have our new symbols inherit their core behaviors from the corresponding symbols in $\LF$.
+\begin{example}[$\lambda$-Calculus]
+We can formalize $\mathcal C$ by introducing constants
+\[\mathcal C\cn{\_type}\mmttp\type\qquad \mathcal C\cn{\_expr} \mmttp{ \lfarrow{\mathcal C\cn{\_type}}}\type \qquad \cn{funtype}\mmttp{\lfarrow{C\cn{\_type}}}{\lfarrow{C\cn{\_type}}{C\cn{\_type}}}\]
+representing the types of $\mathcal C$, the expressions of type $A$ in $\mathcal C$ and (simple) function types.
+
+We can then formalize a $\lambda$-operator as an \LF-function that ``abuses'' the \LF-lambda as a binder for the variable of a $\lambda$-term; hence taking a function as argument. The $\mathcal C$-expression $\lambda x:A.t(x)$ can then be represented as $\mathcal C\cn{\_lambda}(\lflambda{x:\mathcal C\cn{\_expr}(A)}{t(x)})$, and the application $f(a)$ as $\mathcal C\cn{\_apply}(f,a)$, which internally gets added a second layer, i.e.
+\[\cn{apply}(\cn{apply}(\mathcal C\cn{\_apply},f),a)\]
+\end{example}
+
+All of this makes it quite convenient to formalize type systems in \LF. Internally, however, it is rather inconvenient to handle even simple function applications in $\mathcal C$, because of the nesting of \cn{apply}-symbols on the various meta-levels involved.
+
+For that reason, \mmt offers functionality that allows to signify symbols belonging to a higher-order abstract syntax, and abstract them away in settings where we would rather have the term look like $f(a)$ than $\cn{apply}(\cn{apply}(\mathcal C\cn{\_apply},f),a)$ -- for example when implementing rules.
+
+
+%\lstMakeShortInline[language=scala]*
+\begin{example}
+	Let us focus on the higher-order abstract syntax rules for \LF. The relevant symbols that the system needs to know about are \LF's \cn{lambda} and \cn{apply} operations. Applications of \cn{apply} to terms $f$ and $a$ are then internally simplied to applications of $f$ to $a$ directly, and terms of the form $f(\lflambda{x:A}t)$ are simplified to binding applications $\ombind f{x:A}t$. The symbols are bundled in a simple case class *HOAS*, which is passed on to a class extending *HOASNotation* that takes care of the computational aspects. The case for \LF hence looks like this:
+\begin{scalacode}
+object LFHOAS extends HOASNotation(HOAS(Apply.path, Lambda.path, OfType.path))
+\end{scalacode}
+\end{example}
+
+\lstDeleteShortInline*
+%\begin{figure}[ht]\centering
+%\fbox{\begin{minipage}{\textwidth}%\scriptstyle
+%{\small For $U\in\{\type,\kind\}$:}
+%\[ 
+%\trule\ {\wfctx\cdot} \qquad
+%\trule{\gwfctx \quad \gjudg{\hastype T U} }{\wfctx{\Gamma,x : T}} \qquad
+%\trule{\gwfctx \quad \gjudg{\hastype t T}}{\wfctx{\Gamma, x : T := t}} \qquad
+%\trule{\gwfctx \quad \gjudg{\infertype t T}}{\wfctx{\Gamma, x := t}} \qquad
+%\]
+%\[
+%\trule{\gwfctx \quad x:A[:=t]\in\Gamma}{\gjudg{\infertype x A}} \qquad
+%\trule{\gwfctx \quad x[:A']:=t\in\Gamma \quad \gjudg{\infertype x A}}{\gjudg{\judgeq x t A}} \qquad
+%\trule{ \gjudg{\infertype N {A'} \quad \gjudg{ \judgeq A{A'}U } } }{\gjudg{\hastype NA}} \qquad
+%\trule{\gwfctx}{\gjudg{\infertype \type \kind}}
+%\]
+%\[
+%\trule{\gjudg{\hastype A \type} \quad \judg{\Gamma,x : A}{\hastype B U} }{\gjudg{\infertype {\prod_{x:A}B} U }} \qquad
+%\trule{ \judg{\Gamma, x:A}{\infertype NB}}{ \gjudg{\infertype{\lambda x :A. N}{\prod_{x:A}B}} } \qquad
+%\trule{ \gjudg{\infertype F C} \quad \gjudg{\judgeq C {\prod_{x:A}B} U} \quad \gjudg{\hastype t A} }{\gjudg{\infertype {F t} {B[x/t]} }}
+%\]
+%\[
+%\trule{ \gjudg{\hastype a A} \quad \judg{\Gamma,x:A}{\hastype t B} }{ \gjudg{\judgeq {(\lambda x:A.\; t) a}{t[x/a]}{B[x/a]} } } \qquad
+%\trule{ \gjudg{\hastype {f,g}{\prod_{x:A}B}} \quad \judg{\Gamma,x:A}{\judgeq {fx}{gx}B} }{ \gjudg{ \judgeq fg{\prod_{x:A}B} } }
+%\]
+%\hrulefill
+%\[
+%\trule{\wfctx{\Gamma,x_1:T_1,\ldots x_n:T_n} \quad\max{T_1,\ldots,T_n}\in\{\type,\kind\} }{\gjudg{\infertype{\rectype{x_1:T_1,\ldots x_n:T_n}} }\max{T_1,\ldots,T_n} } \qquad
+%\trule{ \overbrace{\judg{\Gamma,x_1:T_1:=t_1,\ldots,x_{i-1}:T_{i-1}:=t_{i-1}}{\infertype{t_i}{T_i}}}^\text{For $i=1,\ldots,n$} }{ \gjudg{\infertype{\recexp{x_1:=t_1,\ldots,x_n:=t_n}}{\rectype{x_1:T_1,\ldots,x_n:T_n}} } }
+%\]
+%
+%\[ \scriptstyle\text{For }1\leq k\leq n: \quad
+%\trule{\gjudg{ \hastype r{\rectype{x_1:T_1,\ldots,x_n:T_n}}} }{\gjudg{\infertype{r.x_k}{T_k[r]}}} \qquad
+%\trule{\overbrace{\gjudg{\hastype {r.x_i}{T_i[r]}  }}^\text{For $i=1,\ldots,n$} }{\gjudg{\hastype r{\rectype{x_1:T_1,\ldots,x_n:T_n}}}}
+%\]
+%\[ \scriptstyle\text{For }1\leq k\leq n\text{ and }r = \recexp{x_1:=t_1,\ldots,x_n:=t_n}: \quad
+%	\trule{ \gjudg{\infertype rR } \quad \gjudg{\hastype{t_k[r]}{T_k}} }{\gjudg{\judgeq{r.x_k}{t_k[r]}{T_k[r]}}} \qquad
+%	\trule{\overbrace{\gjudg{\judgeq {r_1.x_i}{r_2.x_i}{T_i[r_1]}  }}^\text{For $i=1,\ldots,n$} }
+%		{\gjudg{\judgeq{r_1}{r_2}{\rectype{x_1:T_1,\ldots,x_n:T_n}}} }
+%\]
+%\end{minipage}}
+%\caption{The Basic Inference Rules for a Dependently-Typed Lambda Calculus (above the line) with Dependent Records (below)}
+%\label{fig:lfrules}
+%\end{figure}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "paper.tex"
+%%% End:
+
+%  LocalWords:  lf fig:lfgrammar centering fbox rcl cdot rectype recexp vspace ednote ctx
+%  LocalWords:  gjudg vdash hline hastype infertype inferrable judgeq subtp Subtyping G,x
+%  LocalWords:  equiv equiv a:nat,b:nat fig:lfrules ldots,x_n neq leq leq ldots textwidth
+%  LocalWords:  trule judg qquad Gamma,a Gamma,x hrulefill overbrace ldots,x_ ldots,n gx
+%  LocalWords:  defemph Semilattices fig:semilattices1 mathtt Semilattice assoc forall
+%  LocalWords:  x,y,z:U doteq rightrectype textsf emph textbf subseteq thm:subtp nrule
+%  LocalWords:  mathcal mforall mimplies wfctx judgeqc flavor mdframed gwfctx irule f,g
+%  LocalWords:  fig:genrules bidirectionality extensionality thm:variance thm:principal
+%  LocalWords:  ifshort MueRabKoh:tatreport18 Gamma,f

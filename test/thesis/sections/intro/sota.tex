@@ -1,0 +1,158 @@
+The attempt to systematically formalize both mathematical knowledge and its semantics goes back at least to the seminal work by Bertrand Russell and Albert North Whitehead \cite{principia}. In the 1950s and 1960s, computer systems were added to the tool chest for this endeavour, shifting the focus to designing foundations that combine both machine-friendliness and human readability. This enabled \emph{automated theorem proving}, thanks to ideas going back to Allen Newell, Herbert A. Simon, and Martin Davis. This has been most succesful for first-order logic and related systems. For more expressive languages, the \emph{verification} of human-written formal proofs has been the more successful approach, going back to 
+John McCarthy, Nicolaas Govert de Bruijn, Robin Milner, and Per Martin-L\"of. Modern proof assistants usually combine both approaches, generally verifying user input interactively and employing automation for routine proof steps whenever possible.
+
+Since developing sophisticated proof systems requires both a lot of practical work and a high level of theoretical knowledge, most popular proof assistants have invested a large amount of time and energy into building their systems. Consequently, formalization within one such system pays off mostly at large scales, calling for a community effort to extend the corresponding formal libraries. In practice, however, the availability of many different and mutually incompatible systems -- each with their own advantages and disadvantages -- has instead driven towards ever increasing specialization within the formal mathematics community, resulting in lots of different libraries with considerable (and from a heterogeneous point of view unnecessary) overlap of actual content.\medskip
+
+A more extensive summary of the state of the art and the scientific context of this work can be found in \cite{KohRab:qrtpflmk15}.
+
+\section{Foundations}\label{sec:form}
+
+\paragraph*{Overview} The notion of a \emph{foundation} goes back to the \emph{foundational crisis of mathematics} at the beginning of the 20th century. Resulting from a general confusion regarding the ontological status of informally defined objects like infinitesimals in real analysis, non-euclidean geometries and sets as objects of study in their own right, as well as debates over the validity of certain non-constructive proof techniques of ever growing abstraction and intricacy, the idea developed to find a formal, logical basis that fixes both an ontology as well as an unambiguous notion of what constitutes a valid proof.
+
+By now, it is generally accepted within the mathematical community, that the answer to this problem is the combination of first-order logic and some system of set theory, usually considered as (possibly extensions of) Zermelo-Fraenkel set theory with the axiom of choice (ZFC). However, already going back to \emph{Principia Mathematica} by Russell and Whitehead (which can be seen as an early variant of type theory), alternative foundations have been around. \medskip
+
+There's an inherent trade-off in every such foundation with respect to their complexity and expressiveness. Theoretically, a foundation should be simple with very few primitive notions, to make reasoning \emph{about} the foundation more convenient and establish trust in its consistency. On the other hand, since a foundation should ultimately establish a framework for all of mathematics, it should be as expressive as possible to allow mathematicians to talk about all of the desired objects and realms in terms of the foundation. This trade-off naturally lead to a large diversity of different foundations, which nowadays are used in different proof assistants.
+
+All of these systems fix one specific foundation as a basis for their specification language, usually variants of either constructive type theory, higher-order logic or (as implicitely used in mathematics) first-order set theory.  The constructive type theories are mostly based on Martin-L\"of
+type theory \cite{martinlof} or the calculus of constructions \cite{calcconstructions} and
+make use of the Curry-Howard correspondence \cite{curry,howard} to treat propositions as
+types (and proofs as $\lambda$-terms).  Systems include Nuprl \cite{nuprl}, Agda
+\cite{agda}, Coq \cite{coqmanual}, and Matita \cite{matita}.  The second group of systems
+go back to Church's higher-order logic \cite{churchtypes} and include HOL4 \cite{HOL4:on}, ProofPower \cite{proofpower}, Isabelle/HOL
+\cite{isabellehol}, and HOL Light \cite{hollight}. \medskip
+
+Since type theories and higher-order logics are more conveniently machine implementable, systems using set theories are noticably rarer. These are e.g. Mizar \cite{mizar},
+Isabelle/ZF \cite{isabelle_zf}, and Metamath~\cite{MetaMath:on}.
+
+The foundation of the PVS system (see \autoref{sec:intro:prelim:pvs}) includes a variant of higher-order logic, but has been specifically designed to have a set theoretic semantics. The IMPS system \cite{imps} is based on a
+variant of higher-order logic with partial functions.  The foundation of ACL2 \cite{acl2}
+is an untyped language based on Lisp.
+
+\paragraph*{Heterogeneous Reasoning} As mentioned in the previous section, even though all of ma\-the\-ma\-tics is assumed to be reducible to some foundation, the way mathematics is usually practiced is according to the \textbf{heterogeneous method}, in which all foundational aspects are ``hidden'' and left implicit, unless necessary in the respective context. One major advantage of this method, in which theories are used to introduce new primitive notions, is that (in connection with the \emph{little theories} approach) it allows for reusing mathematical results and moving them along \emph{theory morphisms} (i.e. truth-preserving maps) between theories. This approach has been applied successfully in software engineering and algebraic specification, where formal module systems are used to build large theories out of little ones, e.g., in SML \cite{sml} and ASL \cite{asl}.
+
+To accomodate for this more convenient style of reasoning, most formal systems have specific features that introduce some form of heterogeneity either \emph{explicitely} or \emph{implicitely}. Explicit features include e.g. ``locales'' in Isabelle,
+``parametric theories'' in PVS, ``modules'' in Coq, or ``structures'' in Mizar. The 
+IMPS system \cite{imps} is somewhat unique in so far, as it was designed specifically with heterogeneous reasoning in mind.
+
+To use the heterogeneous method implicitly, the user introduces a new formal construct (such as real numbers) by defining them in terms of existing ones (e.g. the usual construction via equivalence classes on Cauchy sequences) and proving the actually relevant (i.e. construction independent) theorems about them (e.g. field axioms, topological completeness). Finally, the user can rely on the proven properties alone, without ever needing to expand the concrete definition originally implemented, which in the process is rendered irrelevant for all practical purposes.
+
+To enable implicit heterogeneity, the system has to provide corresponding definition principles. Exam\-ples include type definitions in the HOL systems, provably terminating functions in Coq or Isa\-belle/HOL, or provably
+well-defined indirect definitions in Mizar.  However, it should be noted, that such implicit heterogeneous definitions are usually internally expanded into conservative extensions of the foundation.
+Alternatively, several data types provide an additional way to use heterogeneity implicitely. These include (Co)inductive types and record types e.g, as done by Mizar structures and with Coq records in the Mathematical Components project~\cite{MathComponents:on}. This has the additional advantage, that it allows for computation within the foundation.
+
+\paragraph*{The Incompatibility Problem} The homogeneous method (in combination with implicit heterogeneity) has an obvious advantage: Since the foundation is fixed and can not be extended by new axioms, the trusted code base remains fixed as well. Furthermore, is allows integrating computational methods e.g. to reason about equality, without having to tediously instantiate and apply the corresponding axioms. However, it has the major disadvantage of making reuse of formalized knowledge difficult, if not impossible. Since the techniques for implicit heterogeneity are elaborated on the basis of the foundation, the actual heterogeneous structure of some fragment of implemented knowledge is difficult to identify. Furthermore, since different systems offer different techniques to introduce implicit heterogeneity, the construction method used in one system can often not be easily translated into another system. Their elaborated implementations themselves are again framed in terms of the foundation (or an intrinsic part thereof), and are consequently useless for a system based on a differing foundation.
+
+Even though a fixed foundation is therefore reasonable for an individual formal system, if we envision a \emph{universal library of mathematics}  -- a major goal of formal mathematics going back at least to the QED project and
+manifesto~\cite{qed} of 1994 -- this is the wrong approach. Furthermore, different areas of mathematics favor different foundations (such as category theory, specifically in algebra), as do different communities dealing with formalizing mathematics, whether due to technical reasons or simply familiarity. Thus, formal libraries would profit from \textbf{foundational pluralism}, i.e., the ability to support multiple foundations in a single universal library.
+
+\section{Formal Libraries}\label{sec:libraries} 
+
+\paragraph*{Overview} Usually, implemented formal systems have some notion of a \emph{library}, a collection of formalizations (usually just the corresponding source files) that can be handled in specific ways -- imported and used when creating new content, collectively exported, etc. Most systems are distributed with some base library providing the most useful and ubiquitous settings of interest, such as Booleans or number spaces, and often maintain additional, community-created libraries with more advanced contents.
+
+The Isabelle and the Mizar groups maintain one centralized library each -- the ``Archive
+of Formal Proofs''~\cite{AFP:online} and the ``Mizar Mathematical
+Library''~\cite{MizarKB:on}, respectively.  The Coq group relies on a package manager on top of distributed Git repositories instead of a central archive.  These libraries contain individual formalizations with relatively few
+interdependencies. Other libraries are generated and maintained by communities apart from the developers of the system, however, these are still often valuable in their own right, such as Tom Hales's formalizations in
+HOL Light for the Kepler conjecture \cite{HalAdaBau:afpkc15} and Georges Gon\-thier's work in Coq for
+the recently proved Feit-Thompson theorem~\cite{oddorder}.  John Harrison's
+formalizations in his HOL Light system~\cite{hollight} and the NASA PVS
+library~\cite{PVSlibraries:on} have a similar flavor although they were not motivated by a
+single theorem but by a specific application domain.  The latter is one of the biggest
+decentralized libraries, whose maintenance is disconnected from that of the system. \medskip
+
+As mentioned, most of these systems are based on the homogeneous method. However, there are some libraries that are intrinsically heterogeneous, such as the IMPS library~\cite{ImpsKB:on}, the
+{\textsf LATIN} logic library \cite{CHKMR:latinabs:11} developed at KWARC (see \autoref{sec:intro:prelim:latin}) and the TPTP library \cite{tptp} of
+challenge problems for automated theorem provers. Unfortunately, none of these enjoy the level
+of interpretation, deduction, and computation support developed for individual fixed foundations.
+
+The OpenTheory format \cite{opentheory} offers some support for heterogeneity in order to
+allow moving theorems between systems for higher-order logic (specifically HOL Light,
+HOL4, and ProofPower).  It provides a generic representation format for proofs within
+higher-order logic that makes the dependency relation (i.e., the operators and theorems
+used by a theorem) explicit.  The OpenTheory library
+comprises several theories that have been obtained by manually refactoring exports from
+HOL systems.
+
+\paragraph*{Library Integration} There are two problems concerning library integration. The first is, given a single library, \textbf{refactoring} its contents to increase modularity. This results in a ``more heterogeneous'' set of theories, thus making it easier to reuse and blowing up the corresponding theory graph to make shared or inherited theories and results more visible and explicit. An attempt at giving a formal calculus for theory refactoring has recently been published \cite{Autexier15:StructureFormation}.
+
+The second, and for this thesis more relevant, problem is to \textbf{integrate} two or more given libraries \emph{with each other}, so that knowledge formalized in one of them can be reused in, translated to or identified with contents of the others. In the best case, two libraries might even be \textbf{merged} into a single library with ideally no redundant content. \medskip
+
+No strong tool support is available for any of these facets.  The state-of-the-art for
+refactoring a single library is manual ad hoc work by experts, maybe supported by simple
+search tools (often text-based). Also, the widespread use of the homogeneous method makes integrating and merging libraries in different systems extremely difficult, since usually basic concepts in one foundation cannot be directly translated to corresponding concepts in the other \cite{KohRabSac:fvip11}.  
+
+This is despite the large need for more integrated and easily reusable large libraries.
+For example, in Tom Hales's Flyspeck project \cite{HalAdaBau:afpkc15}, his proof of the Kepler conjecture is formalized in HOL
+Light. But it relies on results achieved using Isabelle's reflection mechanism, which
+cannot be easily recreated in HOL Light.  And this is an integration problem
+between two tools based on the same root logic.
+
+\paragraph*{Library Translations}
+
+There are two ways to take on library integration. Firstly, one can try to translate the contents of one formal system directly into another system; I will call this a \emph{library bridge}. This requires intimate knowledge of both systems and their respective foundations used, and is necessarily somewhat ad-hoc. 
+A small number of library bridges have been realized,
+typically in special situations. \cite{hol_coq} translates from HOL Light \cite{hollight}
+to Coq \cite{coqmanual} and \cite{hol_isahol} to Isabelle/HOL.  Both translations benefit from
+the well-developed HOL Light export and the simplicity of the HOL Light foundation.
+\cite{isahol_isazf} translates from Isabelle/HOL \cite{isabellehol} to Isabelle/ZF
+\cite{isabelle_zf}.  Here import and export are aided by the use of a logical framework to
+represent the logics.  The Coq library has been imported into Matita~\cite{matita} once, aided by the fact
+that both use very similar foundations.  The OpenTheory format \cite{opentheory}
+facilitates sharing between HOL-based systems but has not been used extensively.
+
+The second way is to use a more general \emph{logical framework} (see \autoref{sec:intro:sota:lf}) which provides some way to specify the respective foundations, and integrate the libraries under consideration directly into that framework. Then the framework can serve as a uniform intermediate data
+structure, via which other systems can import the integrated libraries. This approach will be extensively described in this thesis, using the
+logical framework LF \cite{lf} and making the libraries available to knowledge management
+services.  Another example is the Dedukti system \cite{dedukti}, which imports,
+e.g., Coq and HOL Light into a similar logical framework, namely LF extended with
+rewriting.
+
+Dedukti underlies the recent \emph{Logipedia} project~\cite{logipedia}, aiming to build an encyclopedia of formal proofs in simple type theory (originally developed in Matita), which can be exported to other systems.
+
+Again, the prevalence of the homogeneous method constitutes a major problem here. Even with implicit heterogeneity, the fact that e.g. theories such as the real numbers are still modeled as conservative extensions of a fixed foundation using some intricate construction principle (cauchy sequences, Dedekind cuts) means, that using different definitions can make it impossible to align a theory in one library to the corresponding theory in a different library, even though from a mathematical point of view they are ``the same'' (i.e. isomorphic). And even if the same abstract construction principle is used in two libraries, their implementations in terms of the underlying foundation can be different enough to make it difficult to identify the two resulting theories. \medskip
+
+Very little work exists to address this problem.  In \cite{hol_isahol}, some support for
+library integration was present: Defined identifiers could be mapped to arbitrary
+identifiers ignoring their definition.  No semantic analysis was needed because the
+translated proofs were rechecked by the importing system anyway.  This approach was
+revisited and improved in \cite{hol_isahol_kaliszyk}, which systematically aligned
+the concepts of the basic HOL Light library with their Isabelle/HOL counterparts and
+proved the equivalence in Isabelle/HOL.  The approach was further improved in
+\cite{hol_isahol_matching} by using machine learning to identify large sets of further
+alignments.
+
+The OpenTheory format \cite{opentheory} provides representational primitives that,
+while not explicitly using theo\-ries, effectively permit heterogeneous developments in HOL.
+The bottleneck here is manually re\-fac\-tor\-ing the existing homogeneous libraries to make use
+of heterogeneity.
+
+A partial solution aimed at overcoming the
+integration problem was sketched in \cite{RKS:integration:11}.
+
+\section{Logical Frameworks}\label{sec:intro:sota:lf} Over the last 20 years, formal systems have added an additional metal level through the introduction of logical frameworks. These provide tools to specify logical systems themselves in a formal way. An overview of the current state of art is given by \cite{logicalframeworks}.
+
+An example for one such framework is \LF \cite{lf} (see \autoref{sec:intro:prelim:lf}). % which is based on the dependently-typed $\lambda$-calculus and uses the judgments-as-types paradigm. This means, that, when specifying some logic, one usually introduces a new type constructor \expr{\vdash}, which maps a proposition $\varphi$ of that logic to the corresponding \emph{type of proofs of $\varphi$}. An element of type \expr{\vdash\varphi} is therefore a proof of $\varphi$ and declaring such an element corresponds to the judgement ``$\varphi$ holds''.
+Logical frameworks introduce the possibility to additionally reason \emph{about} logics, as e.g. in Twelf \cite{twelf}, which is the currently most mature implementation of \LF. Twelf has been used as a basis for the \latin library (see \autoref{sec:intro:prelim:latin}). Also, since in logical frameworks logics are themselves represented as theories, they allow for defining logical systems heterogeneously, by building them up in a modular way.
+
+Dedukti \cite{dedukti} implements LF modulo rewriting.
+By supplying rewrite rules (whose confluence Dedukti assumes) in addition to an \LF theory, users can give more elegant logic encodings.
+Moreover, rewriting can be used to integrate computation into the logical framework.
+A number of logic libraries have been exported to Dedukti, which is envisioned as a universal proof checker. Isabelle \cite{isabelle} implements intuitionistic higher-order logic, which (if seen as a pure type system with propositions-as-types) is rather similar to LF.
+Despite being logic-independent, most of the proof support in Isabelle is optimized for individual logics defined in Isabelle, most importantly Isabelle/HOL and Isabelle/ZF.
+
+$\lambda$Prolog -- in its most mature implementation ELPI~\cite{elpi} -- extends the logic programming paradigm with higher-order functionalities. As such, it allows higher-order abstract syntax approaches and can be (and is) used as a logical framework as well.\medskip
+
+Unfortunately, logical frameworks are not an efficient alternative to the prevailing homogeneous formal systems. State of the art proof assistents rely heavily on the specific peculiarities of their underlying foundation to provide efficient proof search techniques, which would be impossible to implement at the high level of generality that logical frameworks provide, at least without introducing cosiderable overhead and thus reducing efficiency.
+
+Another problem is that specific concepts used by some logic (noticably record types, subtyping principles, inductive definitions, etc.) may be difficult to realize in a logical framework in such a way, that type checking can be done effectively, since the necessary information for doing so can not always easily be lifted to the rather general level on which the type checker operates (see \autoref{ch:lf}).
+
+%\subsection{Projects at the KWARC research group}
+%
+%There has been a series of research projects at the KWARC research group that clearly ``converges'' towards solving some of the problems described above, starting with \mmt/\omdoc and continuing via \textsf{LATIN} to the OAF project. My research will be part of (and is funded by a DFG grant for) the latter.
+
+%\subsubsection{\mmt/\omdoc}\label{sec:MMT}
+
+%\subsubsection{LATIN}\label{sec:LATIN}
+
+%\subsubsection{OAF}
+

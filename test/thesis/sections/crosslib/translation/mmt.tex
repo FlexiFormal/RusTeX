@@ -1,0 +1,92 @@
+\subsubsection{Alignments}
+
+\paragraph{} We speak of \emph{alignment} if the same (or a closely related) concept occurs in different libraries, possibly with slightly different names, notations, or formal definitions. Two aligned symbols thus can be thought to represent ``the same" abstract mathematical concept while differing only in implementation details. The notion of alignments is intentionally broad as to cover a wide variety of ways in which two symbols can be seen as ``morally the same".
+
+For example, consider untyped and typed equality, e.g. in a set-theoretical and a dependently typed language respectively:
+\begin{align*}
+\textsf{eq}_1 &: \textsf{Set}\to\textsf{Set}\to\textsf{bool} \\
+\textsf{eq}_2 &:(T:\textsf{Type})\to T\to T\to \textsf{bool}.
+\end{align*}
+
+Obviously, these two symbols are not easily interchangeable since they don't even have the same type; nevertheless, if we assume either symbol belonging to a distinct formal system, they clearly represent the same mathematical concept (namely \emph{equality}). Furthermore, if we want to translate any expression from one system to the other, we will clearly need to replace occurrences of one kind of equality by the respective other one.
+
+It thus makes sense to think of both equalities as being \emph{aligned}.
+
+%\paragraph{} Since \mmt URIs are globally unique, we can use those to uniquely refer to symbols in various formal systems and libraries, which allows us to state alignments between libraries unambiguously. We refer to ~\cite{MueGauKal:alignmentsreport17} for an overview on the structure of \mmt URIs in general, as well as naming schemes for some of the most important formal systems.
+%
+%Alignments can then be introduced to the \mmt system either via a web-interface (described in \cite{MueGauKal:cacfms17})  or en mass using the following (here simplified) grammar:
+%\begin{center}
+%\begin{tabular}{l@{\tb}c@{\tb}l}
+%	Alignment & \bbc & URI URI $\rep{\bnfbracket{\mathrm{String} = ``\mathrm{String}"}}$
+%\end{tabular}
+%\end{center}
+%
+%The additional data in alignments (i.e. the $\mathrm{String} = "\mathrm{String}"$ part, representing key-value-pairs) make our standard extensible: any user
+%can standardize individual keys in order to define specific types of alignments, their source, meta data or additional translation instructions. Most notably, we have (so far) reserved some keys and values for translation purposes:
+%\begin{itemize}
+%	\item \textsf{direction=``both"}: A \emph{perfect} alignment; i.e. the two symbols can be directly substituted by each other during translation,
+%	\item \textsf{direction=``forward"}: The alignment is unidirectional (e.g. from a more specific to a more broad concept such as addition on natural numbers to addition on a more general type \textsf{num}); i.e. the first symbol can be translated to the second, but not vice versa.
+%	\item \textsf{arguments=``((i,j))*"}: During translation from the first symbol (representing a function) to the second, the argument with position \textsf i is to be replaced by the argument with position \textsf j. This also allows for leaving arguments open, ideally to be inferred automatically. The additional key-value-pair \textsf{direction=``both"} indicates that the same works in reverse by replacing the argument with position \textsf j by the one with position \textsf i.
+%\end{itemize}
+
+For example, the alignment between $\textsf{eq}_1$ and $\textsf{eq}_2$ can be given as
+	\[\textsf{system1:eq}_1\textsf{ system2:eq}_2\textsf{ arguments=``(1,2)(2,3)" direction=``both"}\]
+For details on alignments we refer to~\cite{MueGauKal:cacfms17}, where alignments are classified, discussed and their implementations in \mmt are described in detail.
+
+\subsubsection{The \mmt Framework}
+
+\mmt \cite{RabKoh:WSMSML13,rabe:howto:14} is a wide-coverage representation language for formal mathematical knowledge.
+It can be seen as a triple of the fragment of OMDoc \cite{Kohlhase:OMDoc1.2} dealing with logical and related knowledge, a rigorous semantics for that fragment, and a mature implementation.
+\ommt is designed to
+\begin{compactitem}
+ \item avoid a commitment to any particular foundational type system or logic,
+ \item allow for highly modular representations of foundational systems or domain knowledge,
+ \item support interoperability across foundations, tools, and libraries.
+\end{compactitem}
+That makes it an ideal choice for describing interface theories.
+%introduces several concepts to maximize modularity and to abstract from and mediate
+%between different foundations, to reuse concepts, tools, and formalizations.  The \ommt
+%language \emph{integrates successful representational paradigms}
+%\begin{compactitem}
+%\item the logics-as-theories representation from logical frameworks,
+%\item theories and the reuse along theory morphisms from the heterogeneous method,
+%\item the Curry-Howard correspondence from type theoretical foundations,
+%\item URIs as globally unique logical identifiers from \openmath,
+%\item the standardized XML-based interchange syntax of \omdoc,
+%\end{compactitem}
+%and makes them available in a single, coherent representational system for the first time.
+%The combination of these features is based on a small set of carefully chosen, orthogonal
+%primitives in order to obtain a simple and extensible language design.
+%
+%These primitives are
+%\begin{compactenum}
+%\item \emph{constants} with optional types and definitions,
+%\item types and definitions of constants are \emph{objects}, which are syntax trees with
+%  binding, using previously defined constants as leaves,
+%\item \emph{theories}, which are lists of constant declarations and
+%\item \emph{theory morphisms}, that map declarations in a domain theory to expressions
+%  built up from declarations in a target theory.
+%\end{compactenum}
+%Using these primitives, logical frameworks, logics and theories \emph{within} some logic
+%are all uniformly represented as \ommt theories, rendering all of those equally
+%accessible, reusable and extendable. Constants, functions, symbols, theorems, axioms,
+%proof rules etc. are all represented as constant declarations, and all terms which are
+%built up from those are represented as objects.
+
+In the sequel, we explain by example the key features of \mmt that are relevant for our purposes.
+
+
+\paragraph{} Using this modular approach as well as the foundation-independent nature of \ommt, the core primitives of various formal systems (such as interactive theorem provers)
+can be (and in some cases have been, see e.g. \cite{OAF:on} or \cite{KohRab:qrtpflmk15} for the big picture) represented in \ommt alongside their libraries by using a formalization of the former as 
+meta-theory for the theories in the latter, making either equally accessible to the system. This is what makes \mmt a ``meta-system'' suitable for our purposes, instead of the $n+1$st competing standard.
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "paper"
+%%% End:
+
+%  LocalWords:  sec:tg omdoc ommt RabKoh:WSMSML13,HorKohRab:emfsl12 formalizations emph
+%  LocalWords:  compactitem standardized Pfenning:lf01 wrapfigure vspace tikzpicture mult
+%  LocalWords:  xscale cgroup 20,in 15,in fig:meta ldots mmtsys Kohlhase:tffm13 Iancu:phd
+%  LocalWords:  analyzed formalized

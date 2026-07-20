@@ -19,9 +19,9 @@ profile 1:38 / 1:38     ==> 1:43
 thesis  0:15
  */
 fn main() {
-    //run();
+    run();
     //profile()
-    thesis()
+    //thesis();
     //test()
     //temp_test()
     //notes()
@@ -179,7 +179,8 @@ fn temp_test() {
     let ret = RusTeXEngine::do_file(
         //"/home/jazzpirate/work/MathHub/courses/UMR/GdMA/course/source/course/sec/Vorwort.de.tex",
         //"/home/jazzpirate/work/MathHub/Papers/25-CICM-MathMap/source/paper.tex",
-        "/home/jazzpirate/work/MathHub/FTML/math/source/test.tex",
+        concat!(env!("CARGO_MANIFEST_DIR"), "/../test/umlaut.tex"),
+        //"/home/jazzpirate/work/MathHub/FTML/math/source/test.tex",
         //"/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/tmptest.tex",
         Settings {
             verbose: true,
@@ -193,27 +194,29 @@ fn temp_test() {
     //std::fs::write("/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/numtest.html", &ret.out).unwrap();
     ret.write_out(Path::new(
         //"/home/jazzpirate/rustex.out.html"
-        "/home/jazzpirate/work/MathHub/FTML/math/source/test.html",
+        concat!(env!("CARGO_MANIFEST_DIR"), "/../test/out.html"),
         //"/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/tmptest.html", //"/home/jazzpirate/work/MathHub/courses/UMR/GdMA/course/source/course/sec/Vorwort.de.tex.html"
     ))
     .unwrap();
 }
 
+#[test]
 fn thesis() {
     //env_logger::builder().filter_level(log::LevelFilter::Info).try_init();
     let ret = RusTeXEngine::do_file(
-        "/home/jazzpirate/work/LaTeX/Papers/19 - Thesis/thesis.tex",
+        concat!(env!("CARGO_MANIFEST_DIR"), "/../test/thesis/thesis.tex"),
         Settings {
             verbose: false,
             log: true,
             sourcerefs: true,
-            image_options: Default::default(),
+            image_options: rustex_lib::ImageOptions::Embed,
             insert_font_info: false,
         },
     );
-    ret.write_out(Path::new(
-        "/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/thesis.html",
-    ))
+    ret.write_out(Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../test/thesis.html"
+    )))
     .unwrap();
 }
 

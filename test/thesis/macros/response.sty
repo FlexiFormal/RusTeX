@@ -1,0 +1,14 @@
+\RequirePackage{framed}
+\newenvironment{marked}{%
+  \def\FrameCommand{\vrule width 1pt \hspace{5pt}}%
+  \MakeFramed {\advance\hsize-\width \FrameRestore}}%
+ {\endMakeFramed}
+
+\newcommand{\markEnv}[1]{%
+\expandafter\let\csname theorems@#1\expandafter\endcsname\csname#1\endcsname% \begin{theorems@#1} = \begin{#1}
+\expandafter\let\csname theorems@end#1\expandafter\endcsname\csname end#1\endcsname% \begin{theorems@end#1} = \end{#1}
+\renewenvironment{#1}{\begin{marked}\begin{theorems@#1}}{\end{theorems@#1}\end{marked}}%
+}
+
+\newenvironment{reviewer}{\em}{}
+\markEnv{reviewer}

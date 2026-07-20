@@ -1,0 +1,94 @@
+\newcommand{\LFM}{LFM}
+\newcommand{\parr}{arr}
+
+%basic LF
+%\newcommand{\types}[1]{\op{Types}(#1)}
+%\newcommand{\terms}[2]{{\op{Terms}^{#1}}(#2)}
+\newcommand{\Types}[2]{\op{Types}(#1,#2)}
+\newcommand{\Terms}[3]{{\op{Terms}^{#1,#2}}(#3)}
+\newcommand{\CTypes}[1]{\op{Types}(#1)}
+\newcommand{\CTerms}[2]{{\op{Terms}^{#1}}(#2)}
+
+\newenvironment{LFsig}{\bgroup
+ \setlength{\parindent}{0cm}
+ \renewcommand{\:}{:\;}
+ \renewcommand{\.}{.\;}
+ \renewcommand{\=}{\;=\;}
+ \renewcommand{\arr}{\ensuremath{\;\rightarrow\;}}
+ \renewcommand{\>}{\hspace*{.5cm}}\medskip
+}{
+ \medskip\egroup\\
+}
+
+%modules
+\newcommand{\module}{\mathrm{Mod}}
+\newcommand{\declval}[3]{#1=#3:#2}
+\newcommand{\moddecl}[2]{#1=\{#2\}}
+\newcommand{\modinst}[3]{#1:#2=#3}
+\newcommand{\includ}{\mathrm{include}}
+\newcommand{\subtype}{\mathrm{extend}}
+\newcommand{\incl}[3]{#1\mbox{ where }#2\;#3}
+\newcommand{\modincl}[3]{\includ\;\incl{#1}{#2}{#3}}
+\newcommand{\subtypeincl}[3]{\subtype\;\incl{#1}{#2}{#3}}
+\newcommand{\map}[2]{#1:= #2}
+\newcommand{\ren}[2]{#1\rewrites #2}
+\newcommand{\issigtype}[2]{#1\der #2\;\module}
+\newcommand{\isrename}[3]{#1\der #3::#2}
+\newcommand{\prdecl}[2]{#1\Vdash #2}
+\newcommand{\lpf}[2]{\ov{#2}^{#1}}
+
+%Auxiliary functions
+\newcommand{\domr}[1]{\op{dom}^*(#1)}
+\newcommand{\domst}[2]{\op{dom}^{#1}(#2)}
+\newcommand{\body}[2]{#2^{#1}}
+\newcommand{\context}[2]{#2_{#1}}
+\newcommand{\cobo}[2]{\context{#1}{#2},\body{#1}{#2}}
+\newcommand{\this}[1]{\%this.#1}
+\newcommand{\Ren}[2]{#2^{#1}}
+\newcommand{\repl}[3]{#1[#2/#3]}
+%
+%Extensions
+%\newcommand{\extendf}[2]{\overline{{#1^{#2}}}}
+%\newcommand{\extend}[3]{\extendf{#1}{#2}(#3)}
+%\newcommand{\extendif}[2]{\overline{{#1}^{#2}}}
+%\newcommand{\extendi}[3]{\extendif{#1}{#2}(#3)}
+%\newcommand{\replmap}[3]{{[#3]^{#1,#2}}}
+%
+%\newcommand{\elab}[1]{E(#1)}
+
+%\newcommand{\replmapf}[2]{{[\_]^{#1/#2}}}
+%\newcommand{\ninm}[2]{{{#1}^{#2}}}
+%\newcommand{\lup}[2]{lup^{#1}(#2)}
+%\newcommand{\lupval}[2]{val^{#1}(#2)}
+%\newcommand{\contextst}[3]{cont^{#1,#2}(#3)}
+%\newcommand{\base}[2]{#2\;base\;in\;#1}
+%\newcommand{\notbase}[2]{#2\;not\; base\;in\;#1}
+%\newcommand{\compatible}[5]{C}
+%\newcommand{\spec}[2]{#1\rewrites #2}
+%\newcommand{\inh}[2]{inh(#1,#2)}
+%\newcommand{\comp}[5]{#1\circ^{#2,#4,#5} #3}
+
+%needed?
+%\newcommand{\push}[5]{#4+#5}
+%\newcommand{\pushe}[2]{#1+#2}
+%\newcommand{\dedv}{ded}
+%\newcommand{\ded}{\dedv\;}
+%\newcommand{\redv}{red}
+%\newcommand{\red}{\redv\;}
+%\newcommand{\Par}{Par}
+%\newcommand{\Hyp}{h}
+%\newcommand{\Ccl}{c}
+%\newcommand{\subdet}[2]{#1/#2}
+%\newcommand{\subs}[2]{#1[#2]}
+%\newcommand{\sub}[3]{#1[\subdet{#2}{#3}]}
+%\newcommand{\objects}[2]{Obj_{#1}(#2)}
+%\newcommand{\objectsC}[3]{Obj_{#2}(#1,#3)}
+%\newcommand{\cons}[1]{Cons(#1)}
+%\newcommand{\range}[2]{Rng_{#1}(#2)}
+%\newcommand{\inst}[2]{Inst_{#1}(#2)}
+%\newcommand{\Form}[1]{Form_{#1}}
+%\newcommand{\Judg}[1]{Judg_{#1}}
+%\newcommand{\Proofs}[3]{Prfs_{#1}(#2,#3)}
+%\newcommand{\query}[1]{\%query\; #1}
+%\newcommand{\Val}{val}
+%

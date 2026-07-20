@@ -1,0 +1,201 @@
+Intuitively, \mmt is a declarative language for theories and views over an arbitrary object language.
+Its treatment of object languages is abstract enough to subsume most logics and type theories which are practically relevant.
+
+Fig.~\ref{fig:mmt} gives an overview of the fundamental MMT concepts.
+In the simplest case, \textbf{theories} $\Sigma$ are lists of \textbf{constant declarations} $c:E$, where $E$ is an expression that may use the previously declared constants.
+Naturally, $E$ must be subject to some type system (which MMT is also parametric in), but the details of this are not critical for our purposes here.
+We say that $\Sigma'$ includes $\Sigma$ if it contains every constant declaration of $\Sigma$.
+
+\begin{figure}[htb]\centering
+\begin{tabular}{|l|l|l|}\hline
+\multicolumn{3}{|c|}{meta-theory: a fixed theory $M$}\\\hline
+       & Theory $\Sigma$    & View $\sigma:\Sigma\to\Sigma'$ \\\hline
+set of & typed constant declarations $c:E$ & assignments $c\mapsto E'$ \\
+$\Sigma$-expressions $E$ & formed from $M$- and $\Sigma$-constants  & mapped to $\Sigma'$ expressions \\\hline
+\end{tabular}
+\caption{Overview of MMT Concepts}\label{fig:mmt}
+\end{figure}
+
+Correspondingly, a \textbf{view} $\sigma:\Sigma\to\Sigma'$ is a list of \textbf{assignments} $c\mapsto e'$ of $\Sigma'$-expressions $e'$ to $\Sigma$-constants $c$.
+To be well-typed, $\sigma$ must preserve typing, i.e., we must have $\vdash_{\Sigma'}e':\ov{\sigma}(E)$.
+Here $\ov{\sigma}$ is the homomorphic extension of $\sigma$, i.e., the map of $\Sigma$-expressions to $\Sigma'$-expressions that substitutes every occurrence of a $\Sigma'$-constant with the $\Sigma'$-expression assigned by $\sigma$.
+We call $\sigma$ \textbf{simple} if the expressions $e'$ are always $\Sigma'$-\emph{constants} rather than complex expressions.
+The type-preservation condition for an assignment $c\mapsto c'$ reduces to $\ov{\sigma}(E)=E'$ where $E$ and $E'$ are the types of $c$ and $c'$.
+We call $\sigma$ \textbf{partial} if it does not contain an assignment for every $\Sigma$-constant and \textbf{total} otherwise.
+A partial view from $\Sigma$ to $\Sigma'$ is the same as a total view from some theory included by $\Sigma$ to $\Sigma'$.
+
+Importantly, we can then show generally at the MMT-level that if $\sigma$ is well-typed, then $\ov{\sigma}$ preserves all typing and equality judgments over $\Sigma$.
+In particular, if we represent proofs as typed terms, views preserve the theoremhood of propositions.
+This property makes views so valuable for structuring, refactoring, and integrating large corpora.
+
+MMT achieves language-independence through the use of \textbf{meta-theories}: every MMT-theory may designate a previously defined theory as its meta-theory.
+For example, when we represent the HOL Light library in MMT, we first write a theory $L$ for the logical primitives of HOL Light.
+Then each theory in the HOL Light library is represented as a theory with $L$ as its meta-theory.
+In fact, we usually go one step further: $L$ itself is a theory, whose meta-theory is a logical framework such as LF.
+That allows $L$ to concisely define the syntax and inference system of HOL Light.
+
+However, for our purposes, it suffices to say that the meta-theory is some fixed theory relative to which all concepts are defined.
+Thus, we assume that $\Sigma$ and $\Sigma'$ have the same meta-theory $M$, and that $\ov{\sigma}$ maps all $M$-constants to themselves.
+
+
+\begin{wrapfigure}r{4.2cm}\vspace*{-2em}
+\begin{tabular}{l@{\quad}c@{\quad}l}
+ $\Gamma$	& $::=$	& $(x:E)^\ast$ \\
+ $E$      & $::=$ & $c \mid x \mid \ombind{E}{\Gamma}{E^+}$ \\
+\end{tabular}\vspace*{-2em}
+\end{wrapfigure}
+It remains to define the exact syntax of expressions.   
+In the grammar on the right $c$ refers to constants (of the meta-theory or previously declared in the current theory) and $x$ refers to bound variables.
+Complex expressions are of the form $\ombind{o}{x_1:t_1,\ldots,x_m:t_m}{a_1,\ldots,a_n}$, where
+\begin{compactitem}
+ \item $o$ is the operator that forms the complex expression,
+ \item $x_i:t_i$ declares variable of type $t_i$ that are bound by $o$ in subsequent variable declarations and in the arguments,
+ \item $a_i$ is an argument of $o$
+\end{compactitem}
+The bound variable context may be empty, and we write $\oma{o}{\vec{a}}$ instead of $\ombind{o}{\cdot}{\vec{a}}$.
+For example, the axiom $\forall x:\cn{set},y:\cn{set}.\; \cn{beautiful}(x) \wedge y
+\subseteq x \Rightarrow \cn{beautiful}(y)$ would instead be written as \[\ombind{\forall}{x:\cn{set},y:\cn{set}}{\oma{\Rightarrow}{\oma{\wedge}{\oma{\cn{beautiful}}{x},\oma{\subseteq}{y,x}},\oma{\cn{beautiful}}{y}}}\]
+
+Finally, we remark on a few additional features of the MMT language that are important for large-scale case studies but not critical to understand the basic intuitions of results.
+MMT provides a module system that allows theories to instantiate and import each other. The module system is conservative: every theory can be \emph{elaborated} into one that only declares constants.
+MMT constants may carry an optional definiens, in which case we write $c:E=e$.
+Defined constants can be eliminated by definition expansion.
+
+
+%\begin{example}[$\lambda$-calculus]\label{ex:lamsyn}
+%To give an urtheory for the simply-typed $\lambda$-calculus in \mmt, we use $4$ constructors $\mathcal{C}=\{\type,\to,\lambda,@\}$.
+%Alternatively, we can add constructors $\kind$ and $\Pi$ to obtain an urtheory for the dependently-typed $\lambda$-calculus.
+%
+%We introduce the usual notations for them as follows:
+%
+%\begin{center}
+%\begin{tabular}{|l|l|l|}
+%\hline
+%Constructor       & Abstract \mmt expression     & Concrete notation\\
+%\hline
+%universe of types & $\cons{\type}{\cdot}{\cdot}$ & $\type$ \\
+%function types    & $\cons{\to}{\cdot}{A,B}$     & $A\to B$  \\
+%abstraction       & $\cons{\lambda}{x:A}{t}$     & $\lambda x:A.t$ \\
+%application       & $\cons{@}{\cdot}{f,t}$       & $f\,t$\\
+%\hline
+%universe of kinds & $\cons{\kind}{\cdot}{\cdot}$ & $\kind$ \\
+%dependent function types & $\Pi(x:A;t)$  & $\Pi x:A.t$ \\
+%\hline
+%\end{tabular}
+%\end{center}
+%\end{example}
+
+%\begin{oldpart}{FR: replaced with the above}
+%For the purposes of this paper, we will work with the (only slightly simplified) grammar given in Figure \ref{fig:mmtgrammar}.
+%
+%\begin{figure}[ht]\centering\vspace*{-1em}
+%  \begin{mdframed}
+%    \begin{tabular}{rl@{\quad}l|l}
+%      \cn{Thy} 	$::=$ 	& $T[:T]=\{ (\cn{Inc})^\ast\ (\cn{Const})^\ast \}$	& Theory				& \multirow{2}{*}{Modules} \\
+%      \cn{View} 	$::=$	& $T : T \to T = \{ (\cn{Ass})^\ast \}$			& View 				& \\ \hline
+%      \cn{Const} 	$::=$ 	& $C [:t] [=t]$ 								& Constant Declarations& \multirow{3}{*}{Declarations} \\
+%      \cn{Inc}	$::=$	& $\incl T$								& Includes			& \\
+%      \cn{Ass}	$::=$	& $C = t$									& Assignments		& \\ \hline
+%      $\Gamma$	$::=$	& $(x [:t][=t])^\ast$						& Variable Contexts	& \multirow{2}{*}{Objects} \\
+%      $t$ 		$::=$ 	& $x \mid T?C \mid \oma{t}{(t)^+} \mid \ombind{t}{\Gamma}{t} $		& Terms 	& \\\hline\hline
+%      $T$		$::=$ 	& \cn{String}								& Module Names 		& \multirow{3}{*}{Strings} \\
+%      $C$		$::=$ 	& \cn{String}								& Constant Names		& \\
+%      $x$		$::=$ 	& \cn{String}								& Variable Names		& \\
+%    \end{tabular}
+%  \end{mdframed}\vspace*{-.5em}
+%  \caption{The MMT Grammar}\label{fig:mmtgrammar}\label{fig:mmtgrammar}\vspace*{-1em}
+%\end{figure}
+%
+%In more detail:
+%\begin{itemize}
+%	\item Theories have a module name, an optional \emph{meta-theory} and a body consisting of \emph{includes} of other theories
+%		 and a list of \emph{constant declarations}.
+%	\item Constant declarations have a name and two optional term components; a \emph{type} ($[:t]$), and a \emph{definition} ($[=t]$).
+%	\item Views $V : T_1 \to T_2$ have a module name, a domain theory $T_1$, a codomain theory $T_2$ and a body consisting of assignments
+%		$C = t$.
+%	\item Terms are either 
+%		\begin{itemize}
+%			\item variables $x$, 
+%			\item symbol references $T?C$ (referencing the constant $C$ in theory $T$), 
+%			\item applications $\oma{f}{a_1,\ldots,a_n}$ of a term $f$ to a list of arguments $a_1,\ldots,a_n$ or
+%			\item binding application $\ombind{f}{x_1[:t_1][=d_1],\ldots,x_n[:t_n][=d_n]}{b}$, where $f$ \emph{binds} the variables
+%				$x_1,\ldots,x_n$ in the body $b$ (representing binders such as quantifiers, lambdas, dependent type constructors etc.).
+%		\end{itemize}
+%\end{itemize}
+%The term components of a constant in a theory $T$ may only contain symbol references to constants declared previously in $T$, or that are declared in some theory $T'$ (recursively) included in $T$ (or its meta-theory, which we consider an \emph{include} as well). 
+%We can eliminate all includes in a theory $T$ by simply copying over the constant declarations in the included theories; we call this process \emph{flattening}. We will often and without loss of generality assume a theory to be \emph{flat} for convenience.
+%
+%An assignment in a view $V:T_1\to T_2$ is syntactically well-formed if for any assignment $C=t$ contained, $C$ is a constant declared in the flattened domain $T_1$ and $t$ is a syntactically well-formed term in the codomain $T_2$. We call a view \emph{total} if all \emph{undefined} constants in the domain have a corresponding assignment and \emph{partial} otherwise.
+%
+%\end{oldpart}
+
+%\ifshort\else
+\subsection{Proof Assistant Libraries in MMT}\label{sec:oaf}
+
+As part of the OAF project~\cite{OAFproject:on}, we have imported several proof assistant libraries into the MMT system. To motivate some of the design choices made in this paper, we will outline the general procedure behind these imports.
+
+\paragraph{} First, we formalize the core logical foundation of the system. We do so by using the logical framework LF~\cite{lf} (at its core a dependently-typed lambda calculus) and various extensions thereof, which are implemented in and supported by the MMT system. In LF, we can formalize the foundational primitives using the usual judgments-as-types and higher-order abstract syntax encodings -- hence theorems and axioms are represented as constants with a type $\vdash P$ for some proposition $P$, and primitive constructs like lambdas are formalized as LF-functions taking LF-lambda-expressions -- which serve as a general encoding of any variable binders -- as arguments.
+
+The resulting formalizations are then used as meta-theory for imports of the libraries of the system under consideration. This results in a theory graph as in Figure \ref{fig:oaf}.
+
+\begin{figure}[ht]\centering
+ \begin{tikzpicture}
+ \node (MMT) at (2,2.5) {MMT};
+ 
+ \draw[fill=orange!40] (2,1) ellipse (1.5cm and .6cm);
+ \node[color=orange] at (-3.3,1) {Logical Frameworks};
+ \node (L) at (1,1) {LF};
+ \node (Lx) at (3,1) {LF+X};
+ \draw[arrow](MMT) -- (L);
+ \draw[arrow](MMT) -- (Lx);
+ \draw[arrow](L) -- (Lx);
+
+ \draw[fill=red!40] (2,-.5) ellipse (3.2cm and .6cm);
+ \node[color=red] at (-3.3,-.5) {Foundations};
+ \node at (2,-.7) {\ldots};
+
+ \draw[fill=blue!40] (0,-2.25) ellipse (1.9cm and .8cm);
+
+ \node (H) at (0,-.5) {HOL Light};
+ \node[color=blue!80] at (-3.5,-2) {HOL Light library};
+ \node (B) at (-1,-2) {Bool};
+ \node (A) at (1,-2) {Arith};
+ \node (E) at (0,-2.5) {\ldots};
+ \draw[arrow](L) -- (H);
+ \draw[arrow](H) -- (B);
+ \draw[arrow](H) -- (A);
+ \draw[arrow](B) -- (A);
+
+ \draw[fill=olive!40] (4,-2.25) ellipse (1.9cm and .8cm);
+
+ \node (M) at (4,-.5) {PVS};
+ \node[color=olive] at (-3.3,-2.5) {PVS library};
+ \node (B') at (3,-2) {Booleans};
+ \node (A') at (5,-2) {Reals};
+ \node (E') at (4,-2.5) {\ldots};
+
+ \node (A) at (1,-2) {Arith};
+ \node (E) at (0,-2.5) {\ldots};
+ \draw[arrow](Lx) -- (M);
+ \draw[arrow](M) -- (B');
+ \draw[arrow](M) -- (A');
+ \draw[arrow](B') -- (A');
+ \end{tikzpicture}
+ \caption{A (Simplified) Theory Graph for the OAF Project}\label{fig:oaf}
+\end{figure}
+%\fi
+
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% eval:  (set-fill-column 5000)
+%%% eval:  (visual-line-mode)
+%%% TeX-master: "paper"
+%%% End:
+
+%  LocalWords:  fig:mmt textbf textbf mapsto vdash_ emph hline ctabular ldots,x_m:t_m vec
+%  LocalWords:  ldots,a_n compactitem cdot vec ednote ex:lamsyn urtheory mathcal f,t y,x
+%  LocalWords:  x:A;t oldpart fig:mmtgrammar centering vspace mdframed multirow ldots,x_n
+%  LocalWords:  OAFproject:on vdash formalized formalizations tikzpicture ldots Arith s,t
+%  LocalWords:  newpart forall subseteq Rightarrow forall Rightarrow subseteq t,s lf

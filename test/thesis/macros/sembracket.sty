@@ -1,0 +1,4 @@
+\RequirePackage{stmaryrd} % semantic brackets
+
+\newcommand{\sqrbrc}[1]{\llbracket #1\rrbracket}
+\newcommand{\sem}[3][]{\sqrbrc{\ifnonempty{#1}{#1|}#2}^{#3}}

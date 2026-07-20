@@ -1,0 +1,11 @@
+\RequirePackage{xcolor}
+\RequirePackage{listings}
+\lstdefinelanguage{Twelf}{alsoletter={\%},
+  keywords=[1]{type},keywords=[2]{\%namespace,\%sig,\%struct,\%view,\%include,\%open,\%as,\%infix,\%prefix},
+  otherkeywords={:,=,:=,->,[,],\{,\}},
+  comment=[l]\%\%,morecomment=[s]{\%\{}{\}\%},
+  literate={\ ->\ }{{\ }{$\to$}{\ }}4{\ <-\ }{{\ }{$\leftarrow$}{\ }}4
+}
+\lstset{basicstyle=\footnotesize,breaklines,mathescape,columns=[c]fixed,
+  language=Twelf,keywordstyle=,keywordstyle=[2]\bf,commentstyle=\color{gray},
+  emphstyle=[1]\color{red},emphstyle=[2]\color{blue},emphstyle=[3]\color{olive}}

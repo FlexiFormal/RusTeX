@@ -1,0 +1,17 @@
+Having covered importing fully formal theorem prover libraries, we will now turn our attention to systems, where the semantics of the imported ontology is less precise. Specifically, we will look at our methodologies to integrate external databases of mathematical objects (exemplarily the \LMFDB) and computer algebra systems (examplarily the \GAP and \Sage systems). In other words, the \emph{tabulation} and \emph{computation} aspects of the tetrapod (see \autoref{ch:intro}).
+
+Integrating these into the \mmt system was done as part of the \ODK project (see \autoref{sec:intro:prelim:odk}) with the aim to facilitate data exchange and remote procedure calls between the systems, using the Math-in-the-Middle approach (MitM, see \autoref{sec:lf:mitm}). 
+
+\begin{disclaimer*}
+	Parts of the contents of this and the following chapter have been published in \cite{DehKohKon:iop16} with coauthors Paul-Olivier Dehaye, Mihnea Iancu, Michael Kohlhase, Alexander Konovalov, Samuel Leli{\`e}vre, Markus Pfeiffer, Florian Rabe, Nicolas M. Thi{\'e}ry and Tom Wiesing.
+	
+	Both the writing as well as the theoretical results were developed in close collaboration between the authors, hence it is impossible to precisely assign authorship to individual authors. With respect to the writing itself, this applies only to the introductory sections and descriptions of the systems involved, and my contribution with regards to these can be assumed to be minor. However, they provide important context for the methodologies described.
+	
+	My contribution in this and the following chapter consists of
+	\begin{itemize}
+		\item A detailed description of the workflows involved in importing the system ontologies.
+		\item Implementing the importers for \Sage and \GAP.
+		\item Implementing the schema theories for the \LMFDB.
+		\item Minor parts in the implementation of the infrastructure connecting the schema theories to the \LMFDB backend.
+	\end{itemize}
+\end{disclaimer*}

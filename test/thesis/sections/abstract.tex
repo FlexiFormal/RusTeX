@@ -1,0 +1,34 @@
+\section*{Abstract}
+
+This dissertation is concerned with the problem of integrating formal libraries: There is a plurality of theorem prover systems and related software with different strengths and weaknesses, that are fundamentally incompatible. This is due to different input languages, IDEs, library management facilities etc., but also due to fundamental theoretical aspects; primarily the reliance on different logical foundations, such as set theories, type theories, and additional primitive features (e.g. subtyping, specific module systems,...).
+
+This thesis describes the approach towards solving this problem pursued at our research group. Specifically, it is divided into three main parts:
+\begin{enumerate}
+	\item I demonstrate how we can develop modular logical frameworks within the \mmt system -- a foundation-agnostic framework for formal knowledge management based on the \ommt language. This allows for specifying almost arbitrarily complicated logics, type theories and related systems. An important aspect of such a framework is the ability to include potentially complex and computationally expensive features (such as subtyping mechanisms or record types) on demand only.
+	\item We can use this framework to formalize the logical foundation -- or, if nonexistent, at least the foundational ontology -- of a formal system, which we can use in turn to translate the associated \emph{libraries} to \ommt. I demonstrate this exemplary on the theorem prover PVS, the computer algebra systems Sage and GAP, and the LMFDB database.
+	\item This enables accessing the core concepts and libraries of various systems from within the \mmt system, and hence implement knowledge management services generically, acting on multiple libraries at once. I present a few such services:
+	\begin{enumerate}
+		\item Curating \emph{alignments} (roughly: two symbols $S, T$ are called \emph{aligned} if they represent the same platonic mathematical concept,
+		\item a generic method for \emph{translating} formal expressions between systems and libraries; using known alignments, theory morphisms and (if necessary) programmatic tactics,
+		\item an algorithm for automatically finding morphisms between theories (modulo alignments, if between theories from different libraries) and
+		\item \emph{Theory Intersections} as a method to refactor given theories using theory morphisms.
+	\end{enumerate}
+\end{enumerate}
+
+\newpage
+\section*{Zusammenfassung}
+
+Diese Doktorarbeit widmet sich dem Integrationsproblem formaler Bibliotheken: Es gibt eine Vielzahl an Theorembeweisern und verwandter formaler Software mit unterschiedlichen Stärken und Schwächen, die grundlegend inkompatibel sind. Dies liegt sowohl an unterschiedlichen Eingabesprachen, IDEs, Bibliotheksmanagement etc., als auch grundlegenden theoretischen Aspekten; primär die Verwendung unterschiedlicher logischer Fundamente, wie Mengentheorien, Typentheorien, und zusätzlichen primitiven Features (z.B. Subtyping, spezifische Modulsysteme,...). % Gerade letztere sind jedoch häufig charakteristisch für ein System, und stark suggestiv für bestimmte Vorgehensweisen bei der systematischen Entwicklung der Bibliotheken des jeweiligen System. 
+
+Die Arbeit beschreibt den von unserer Forschungsgruppe verfolgten Ansatz, dieses Problem anzugehen. Konkret ist sie in drei zentrale Abschnitte geteilt:
+\begin{enumerate}
+	\item Ich zeige, wie wir innerhalb des \mmt Systems -- einem fundament-agnostischen Framework für formales Wissensmanagement mit zugrundeliegender Sprache \ommt\ -- logische Frameworks modular entwickeln können, was es uns erlaubt nahezu beliebig komplexe Logiken, Typentheorien und ähnliche fundamentale Systeme darin zu spezifizieren. Wichtig ist hierbei, dass die potentiell komplexen Features die wir dafür auf Ebene des logischen Frameworks brauchen (wie Subtyping-Mechanismen oder record types) auch nur dort aktiv sind, wo wir sie explizit brauchen.
+	\item Dieses Framework können wir nun nutzen um die logischen Fundamente -- oder, falls nicht vorhanden, zumindest die zugrundeliegende Ontologie -- eines formalen Systems zu formalisieren, und auf Basis dessen die zugehörigen Bibliotheken nach \ommt zu übersetzen, was ich am Beispiel des Beweissystems PVS, den Computeralgebrasystemen Sage und GAP, und der LMFDB Datenbank demonstriere. 
+	\item Dies innerlaubt es uns, \emph{innerhalb des \mmt Systems} auf die zugrundeliegenden Konzepte verschiedener Systeme und deren Bibliotheken zuzugreifen, und entsprechende Services zu implementieren die auf mehreren verschiedenen Bibliotheken agieren. Entsprechend stelle ich einige solcher Features vor:
+	\begin{enumerate}
+		\item Das kuratieren von \emph{Alignments} (Grob: zwei symbole $S,T$ heißen \emph{aligned}, wenn sie das selbe abstrakte/platonische mathematische Konzept repräsentieren),
+		\item eine generische Methode, formale Ausdrücke zwischen Systemen und Bibliotheken zu \emph{übersetzen}; unter Verwendung bekannter Alignments, Theoriemorphismen und (notfalls) programmatischen Methoden,
+		\item einen Algorithmus, der Morphismen zwischen Theorien findet (modulo Alignments, falls zwischen unterschiedlichen Bibliotheken) und
+		\item \emph{Theory Intersections} als eine Methode, gefundene Theoriemorphismen auszunutzen um gegebene Theorien zu refaktorisieren.
+	\end{enumerate}
+\end{enumerate}

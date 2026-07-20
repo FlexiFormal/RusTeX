@@ -1,0 +1,34 @@
+We have seen how a view finder can be used for theory \emph{classification} and finding constants with specific desired properties, but many other potential use cases are imaginable. The main problems to solve with respect to these is less about the algorithm or software design challenges, but user interfaces.
+
+The theory classification use case described in \autoref{sec:crosslib:vf:impl} is mostly desirable in a setting where a user is actively writing or editing a theory, so the integration in jEdit is sensible. However, the across-library use case in \autoref{sec:crosslib:vf:cross} already would be a lot more useful in a theory exploration setting, such as when browsing available archives on MathHub~\cite{mathhub} or in the graph viewer integrated in \mmt ~\cite{RupKohMue:fitgv17}. Additional specialized user interfaces would enable or improve the following use cases:
+\begin{itemize}
+\item \textbf{Model-/Countermodel Finding:} If the codomain of a view is a theory representing a specific model, it would tell a user that those are \emph{examples} of her abstract theory.
+		
+  Furthermore, partial views -- especially those that are total on some included theory -- could be insightful \emph{counterexamples}.
+	
+\item \textbf{Library Refactoring:} Given that the view finder looks for \emph{partial} views, we can use it to find natural extensions of a starting theory. Imagine Jane removing the last of her axioms for ``beautiful sets'' -- the other axioms (disregarding finitude of her sets) would allow her to find e.g. both Matroids and \emph{Ideals}, which would suggest to her to refactor her library accordingly.
+		
+  Additionally, \emph{surjective} partial views would inform her, that her theory would probably better be refactored as an extension of the codomain, which would allow her to use all theorems and definitions therein.
+		
+\item \textbf{Theory Generalization:} If we additionally consider views into and out of the theories found, this can make theory classificationeven more attractive. For example, a view from a theory of vector spaces intro matroids could inform Jane additionally, that her beautiful sets, being matroids, form a generalization of the notion of linear independence in linear algebra.
+		
+\item \textbf{Folklore-based Conjecture:} If we were to keep book on our transfomations during preprocessing and normalization, we could use the found views for translating both into the codomain as well as back from there into our starting theory.
+		
+  This would allow for e.g. discovering and importing theorems and useful definitions from some other library -- which on the basis of our encodings can be done directly by the view finder.
+		
+  A useful interface might specifically prioritize views into theories on top of which there are many theorems and definitions that have been discovered.
+\end{itemize}
+For some of these use cases it would be advantageous to look for views \emph{into} our working theory instead. 
+			
+Note that even though the algorithm is in principle symmetric, some aspects often depend on the direction -- e.g. how we preprocess the theories,	which constants we use as starting points or how we aggregate and evaluate the resulting (partial) views (see Sections \ref{sec:algparams} and \ref{sec:normalizeinter}).
+
+%%% Local Variables:
+%%% mode: latex
+%%% eval:  (set-fill-column 5000)
+%%% eval:  (visual-line-mode)
+%%% TeX-master: "paper"
+%%% End:
+
+%  LocalWords:  emph specialized generalization transfomations normalization prioritize
+%  LocalWords:  sec:usecase newpart sec:pvs mathhub RupKohMue:fitgv17 textbf Countermodel
+%  LocalWords:  sec:algparams sec:normalizeintra sec:normalizeinter

@@ -1,0 +1,119 @@
+\section{Representing the \GAP Ontology in \ommt}
+
+To facilitate the kind of integration demanded by the \ODK project (such as remote procedure calls), we need appropriate representations of the functionalities offered by the targeted systems. In particular, we need to represent the underlying ontologies of the systems.
+
+In the case of \GAP, this ontology is based on the notion of \emph{filters}, as described above: Every object belongs to several categories and satisfies a list of filters, which can be thought of as predicates (e.g. \expr{IsGroup} and \expr{Abelian}, jointly specifying that the object is an abelian group). The way a user interacts with the system is by calling \emph{operations} (e.g. the order of a group) on an object, which has to satisfy certain filters in order for the operation to be applicable. Notably however, each operation is implemented by possibly multiple \emph{methods}: specific algorithms for computing an operation. The system uses the known filters of an object to determine which specific method to use for a specific operation. For example,the order of a group might be easier to compute if the group is known to be abelian, hence the system would choose a more appropriate method to compute the order of an abelian group than for a group that is not (known to be) abelian.
+Notably, the system chooses the method automatically; a user only interacts with the system by calling operations.
+
+This notion of filters effectively yields a soft typing system, which we formalize as in \autoref{lst:import:gap:foundation}.
+
+\begin{nmmtcode}[caption= {The \GAP Foundational Ontology in \mmt\protect\footnotemark},label=lst:import:gap:foundation]
+theory Types : ur:?PLF =
+	object : type ❙
+	category : type ❙
+	
+	booleans : type ❙
+	integers : type ❙
+	floats : type ❙
+	rule rules?Booleans ❙
+	rule rules?Integers ❙
+	rule rules?Floats ❙
+	
+	gapbool : booleans ⟶ object ❙
+	gapint : integers ⟶ object ❙
+	gapfloat : floats ⟶ object ❙
+	
+	filter = object ⟶ type ❙
+	hastp : object ⟶ filter ⟶ type ❘ = [o][f] f o ❘ # 1 $ 2 ❙
+	
+	filter_and : filter ⟶ filter ⟶ filter ❘ # 1 and 2 ❙
+	filter_and_hasFilter1 : {x : object,f : filter,g : filter} x $ f ⟶ x $ g ⟶ x $ (f and g) ❙
+	filter_and_hasFilter2 : {x : object,f : filter,g : filter} x $ (f and g) ⟶ x $ f ❙
+	filter_and_hasFilter3 : {x : object,f : filter,g : filter} x $ (f and g) ⟶ x $ g ❙
+	
+	catFilter : category ⟶ filter ❙
+	propertyFilter : (object ⟶ object) ⟶ filter ❘ = [p] [o] ded (p o) ❙
+	
+	CategoryCollection : filter ⟶ category ❙
+	Set : filter ⟶ (object ⟶ object) ❙
+❚
+\end{nmmtcode}
+\footnotetext{\url{https://gl.mathhub.info/ODK/GAP/blob/master/source/types.mmt}}
+
+The most primitive notions in the \GAP ontology are objects and categories, which we represent as \LF types. Naturally, \GAP uses literals for booleans, integers and real numbers; consequently we introduce new types for these and populate them with literals as well (lines 5--10).To convert our literals to \GAP objects, we introduce conversion functions (lines 12--14). These \GAP native literals do not occur in the JSON-export; they are needed for most services implemented in the \ODK project however. For example, they are needed for translating even simple commands such as \expr{2+2} into the \GAP ontology to allow for remote procedure calls.
+
+We formalize filters as functions $\expr{\lfarrow{\cn{object}}{\cn{type}}}$ and effectively use judgments-as-types for the judgment $\expr{ o \$ f}$ representing ``object \cn o has filter \cn f''. The \cn{filter\_and}-operator corresponds to a conjunction of filters.
+\cn{catFilter} allows to build the corresponding filter to a given category, conversely, \expr{CategoryCollection} allows to form the category of all objects satisfying a given filter.
+An operation $f$ is considered a \emph{property} if it returns a boolean value. In this case we can form the corresponding filter $\expr{propertyFilter(f)}$ that an object satisfies iff the operation $f$ returns \emph{true} on that object.\medskip
+
+Using this formalization, we can systematically translate the contents of the JSON-export of the \GAP ontology mentioned above into \ommt declarations.
+
+The export contains a JSON object for each category and operation. For categories, it additionally contains the list of implied filters, for example, the category \expr{IsAbelianNumberFieldPolynomialRing} implies filters such as \expr{IsCollection} and \expr{IsDuplicateFree}. Naturally, a category $C$ is translated to a constant of type $\expr{category}$. For each implied Filter $F$, we generate an additional constant of type $\lfpi{x:\cn{object}}{\lfarrow{x\$\cn{catFilter}(C)}{x\$ F}}$.
+
+Unfortunately, the current JSON export does not yet contain any information regarding the required filters of an operation, or the filters of the return object. In the course of the work on the export described above, attempts are being made to make those accessible as well. For now, all operations are correspondingly simply typed as $\lfarrow{\cn{object}^n}{\cn{object}}$, depending on the arity. \medskip
+
+While more detailled information regarding the filters would be desirable for documentation purposes, the above import methodology is sufficient to translate \GAP objects, operations, and applications of operations to objects into well-formed \ommt expressions.\footnote{The resulting ontology is available at \url{https://gl.mathhub.info/ODK/GAP}}
+
+\section{Representing the \Sage Ontology in \ommt}
+
+Having covered the \GAP ontology already, extending the same methodology to a smiliar system as \Sage is in many respects straight forward. Notably however, whereas \GAP implements its own fundamental notions for even simple concepts like integers, \Sage is a python library, and as such operates on many of python's datatypes directly. Consequently, we start with a formalization of the python datatypes relevant for our purposes:
+
+\begin{mmtcode}[caption= {Python Datatypes in \mmt\protect\footnotemark},label=lst:import:sage:python]
+theory Python : ur:?PLF =  
+  // types❙
+  python_type : type ❙
+  Str   : python_type❙
+  Int   : python_type❙
+  Float : python_type❙
+  Bool  : python_type❙
+  Tuple : python_type❙
+  List  : python_type❙
+  Dict  : python_type❙
+  None  : python_type❙
+  Fun   : python_type❙
+  Type  : python_type❙
+
+  // object constructors ❙
+  python_obj  : type ❙
+  false : python_obj❙
+  true  : python_obj❙
+  tuple : python_obj❙
+  list  : python_obj❙
+  // dict takes arguments of the form tuple(key,value) ❙
+  dict  : python_obj❙
+  // dot takes a and a string f and returns a.f❙
+  dot   : python_obj❙
+  none  : python_obj❙
+❚
+
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/ODK/Sage/blob/master/source/sage.mmt}}
+
+Note that since python uses a dynamic type system, we can not assign a fixed type to a given python object. This is reflected by our ontology, which specifies even the \emph{constructors} for the various types as having type \expr{python\_object} rather than some dependent type on \expr{python\_type}. As with \GAP, these datatypes are not needed for the import of the ontology, but rather for services that operate on expressions within the ontology.
+
+For the ontology itself, we use -- as with \GAP -- a generic type \expr{object}.
+
+\begin{mmtcode}[caption= {The \Sage Foundational Ontology in \mmt\protect\footnotemark},label=lst:import:sage:foundation]
+theory Types : ur:?PLF =
+  object : type ❙
+  prop : type ❙
+  ded : prop ⟶ type ❘ ## ⊦ 1 ❙
+  structural : type ❙
+  structureof : structural ⟶ type ❘ ## ≤ 1 ❙
+❚
+theory Sage : ?Python = 
+  include ?Types ❙
+  sage_type : type ❙
+  sageMMT   : sage_type ⟶ type ❙
+  sagepy    : sage_type ⟶ python_type❙
+❚ 
+\end{mmtcode}
+\footnotetext{Ibid.}
+
+As mentioned above, knowledge in \Sage -- and hence in its JSON-export -- is organized in \emph{categories} (e.g. \expr{Ring}). A category satisfies certain \emph{axioms/properties} (which after translating live in the type \expr{prop} in \autoref{lst:import:sage:foundation}) and implements certain \emph{structures} (or \emph{signatures}, which will live in \expr{structural}) -- e.g. the category of rational polynomials implements the signature of a ring, and satisfies (among others) the axioms of a commutative ring.
+
+Each category provides certain methods; namely \emph{element methods} that operate on the elements in an object of the category (e.g. addition or multiplication in a ring), \emph{parent methods} that operate on an object of the category directly (e.g. its characteristic or degree), and \emph{morphism methods} that operate on the respective morphisms of the category.\medskip
+
+We translate categories directly to \ommt theories. The JSON-export currently provides no further information on neither the axioms nor the structures. Correspondingly, we treat them as atomic objects of the respective type. We collect all axioms and structures occuring during the import and store them in separate generated theories \expr{Axioms} and \expr{Structures}, which are included in all the theories corresponding to categories. If a category $C$ statisfies an axiom $A$ or implements a structure $S$, we add to the theory constants of types $\vdash A$ or $\leq S$, respectively.
+
+As with \GAP, we currently have no information about the input or output types (or categories) of methods; hence we are left with translating those to functions $\lfarrow{\cn{object}^n}{\cn{object}}$, depending on their arity. Again, this yields a sufficient formalization of the functionalities provided by \Sage to facilitate the goals of the \ODK project.\footnote{The full import of the \Sage import can be found at \url{https://gl.mathhub.info/ODK/Sage}}

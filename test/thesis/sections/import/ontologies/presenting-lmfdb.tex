@@ -1,0 +1,158 @@
+\section{LMFDB Knowledge and Interoperability}\label{sec:lmfdb}
+%\subsection{Short description of LMFDB's goals and implementation}
+\subsection{Introduction}
+The \emph{$L$-functions and modular forms database} is a project involving dozens of
+mathematicians who assemble computational data about $L$-functions, modular forms, and
+related number theoretic objects. The main output of the project is a website, hosted at
+\url{http://www.lmfdb.org}, that presents this data so that it can serve as a
+reference for research efforts, and is accessible for postgraduate students.
+The mathematical concepts underlying the \LMFDB are complex and varied, and a large amount of effort has been focused on how to relay knowledge, such as mathematical definitions
+and their relationships, to data and software. For this purpose, the \LMFDB has developed so-called
+\emph{knowls}, which are a technical solution to present \LaTeX-encoded information
+interactively, heavily exploiting the concept of transclusion. The end result is a
+very modular and highly interlinked set of definitions in mathematical vernacular
+which can be easily anchored in vastly different contexts, such as an interface to a database,
+to browsable data, or as constituents of an encyclopedia \cite{lmfdb-definitions}.
+
+The \LMFDB code is primarily written in \Python, with some reliance on \Sage for
+the business logic. The backend
+uses the database system PostgreSQL. Again, due to the
+complexity of the objects considered, many idiosyncratic encodings are used for the
+data. This makes the whole data management lifecycle particularly tricky, and dependent on
+different select groups of individuals for each component.
+
+%\subsection{Tentative approach to MMT semantic layers for the LMFDB}
+As the LMFDB spans the whole ``vertical'' workflow, from writing software, to producing new
+data, up to presenting this new knowledge, it is a perfect test case for a large scale
+case study of the MitM approach. Conversely, a semantic layer would be beneficial to integrating its
+activities across data, knowledge and software.
+
+\section{Integrating the \LMFDB with Math-in-the-Middle}
+
+Among the components of the LMFDB, elliptic curves stand
+out as a well-documented data set, and a source of best practices for other areas. 
+%
+% For this reason,
+% the \ODK collaboration targeted that relatively small subset of the LMFDB for its
+% prototype. We plan to extend coverage in a second phase, and expect it to be relatively
+% easy if we manage to demonstrate the added value of a semantic layer for our prototype.
+%
+We have generated MitM interface theories for \LMFDB elliptic curves by (manually)
+refactoring and flexiformalizing the {\LaTeX} source of knowls into \sTeX (see
+\autoref{stex-ec} for an excerpt), which can be converted into flexiformal OMDoc/MMT
+automatically. The MMT system can already type-check the definitions, avoiding circularity
+and ensuring some level of consistency in their scope and make it browsable through
+\textsf{MathHub.info}.
+
+\lstinputlisting[language={[sTeX]TeX},label={stex-ec},firstline=31,
+   caption= {\protect\stex Flexiformalization of an \LMFDB Knowl (original: \cite{lmfdb-mwm})}]
+   {sections/lf/mitm/examples/elliptic-curve.tex}
+
+The first step consisted of translating these informal definitions into progressively
+more exhaustive MMT formalizations of mathematical concepts (see
+\autoref{lst:mmt-ec}) as part of the MitM library. The two representations are coordinated via the theory and
+symbol names -- we can see the \sTeX representation as a human-oriented documentation
+of the \mmt equivalent.
+
+\begin{mmtcode}[caption= {MMT Formalization of Elliptic Curves\protect\footnotemark},
+label=lst:mmt-ec]
+theory Elliptic_curve : ?Base = 
+  include ?Weierstrass_model ❙
+    
+  elliptic_curve : type ❙
+  base_field : elliptic_curve ⟶ field ❙
+  weierstrass_model_construction : weierstrass_model ⟶ elliptic_curve ❙
+  minimal_Weierstrass_model : elliptic_curve ⟶ weierstrass_model ❙
+  construction_surjective: {A} ⊦ weierstrass_model_construction (minimal_Weierstrass_model A) ≐ A ❙
+❚
+
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/MitM/smglom/blob/master/source/elliptic_curves/minimal-Weierstrass-model.omf.mmt}}
+
+This gives us the necessary formal content to more precisely specify the semantics of the contents of the \LMFDB elliptic curves database. The entries in this database represent elliptic curves and contain fields such as their Cremona-label, that uniquely identifies a curve, its $2$-adic generators, conductor, degree, etc.
+
+The core methodology to connect a database to the MitM infrastructure is described in detail in \cite{WieKohRab:vtuimkb17}. It relies on the following strategy:
+\begin{itemize}
+	\item The contents of a database are specified by a \emph{schema theory} in \mmt, whose constants specify the columns of the database and their semantics (via metadata), and whose URI specifies the URL at which the database can be queried.
+	\begin{mmtcode}[caption= {The Schema Theory for Elliptic Curves\protect\footnotemark},label=lst:import:lmfdb:schema]
+theory ec_curves : lmfdb:/omf?EllipticCurves =
+  meta /?Metadata?implements elliptic_curve❙
+  meta /?Metadata?constructor from_record❙
+  meta /?Metadata?key "label"❙
+
+  2adic_gens: List (matrix int_lit 2 2)
+    ❘ meta /?Metadata?codec standardList (standardMatrix standardInt 2 2)
+    ❘ link /?Metadata?implements MitM:/smglom/elliptic_curves?Rouse_classification?rouse_generators ❙
+  ...
+  conductor: pos_lit ❘ meta /?Metadata?codec standardPos
+    ❘ link /?Metadata?implements MitM:/smglom/elliptic_curves?Conductor?conductor❙
+  degree : pos_lit ❘ meta /?Metadata?codec standardPos
+    ❘ link /?Metadata?implements MitM:/smglom/elliptic_curves?Modular_degree?modular_degree❙
+❚
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/ODK/lmfdb/blob/master/source/schemas/elliptic_curves.mmt}}
+	\item A database corresponds to a \emph{virtual theory} in \mmt -- a theory whose declarations are generated on demand by querying the database.
+	\item An entry in the database corresponds to a constant in its virtual theory, whose name is generated from the \expr{key}-metadatum in the schema theory, whose type is specified by the \expr{implements}-metadatum (e.g. \expr{elliptic\_curve} obtained from the formalization above), and whose definiens is a dedicated constuctor specified by the \expr{constructor}-metadatum (e.g. \expr{from\_record}) applied to a \emph{record expression} (see \autoref{sec:lf:records}).
+	\item This record is obtained by generating a field for each constant in the schema theory, and applying \emph{codecs} to the query result obtained from the database, that compute \ommt objects of the required type. For example, \expr{standardInt} converts a JSON number to an integer literal of type \expr{int\_lit}, and \expr{standardMatrix} converts an array of arrays to a MitM matrix.
+	\item A new computation rule (see \autoref{ch:lf}) guarantees that the relevant functions (specified by the \expr{implements}-metadatum) formalized in \ommt applied to the constants obtained simplify to the field in the record corresponding to the function. For example, the function \expr{Conductor?conductor} applied to an expression $\expr{from\_record(\recexp{\ldots,conductor:=5,\ldots})}$ simplifies to $\expr{\recproj{\recexp{\ldots,conductor:=5,\ldots}}{conductor}}$ and hence ultimately to $5$.
+\end{itemize}
+
+This methodology is generic and extends beyond the motivating databases in the LMFDB. \cite{BerKohRab:tumdi19} describes how to add the necessary infrastructure to cover additional databases and generate e.g. query interfaces and other services directly from schema theories.
+
+\autoref{lst:import:lmfdb:ex} shows how we can use the resulting constants in practice. The included theory \expr{db?ec\_curves} is the virtual theory generated by the schema theory in \autoref{lst:import:lmfdb:schema}. The constant \expr{11a1} is computed as described above from the entry in the database with label \expr{11a1} when it is first referenced. Applying the \expr{conductor} function to this constant yields an \expr{int\_lit} with the value obtained from querying the database. 
+
+\begin{mmtcode}[caption= {Using Virtual Theories\protect\footnotemark},label=lst:import:lmfdb:ex]
+  include db?ec_curves❙
+  // get elliptic curve 11a1 from LMFDB ❙
+  mycurve: elliptic_curve❘= `db?ec_curves?11a1❙
+  // let c be its conductor (as stored in the LMFDB) ❙
+  c: int_lit ❘ = conductor mycurve❙ // = 11 ❙
+
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/ODK/lmfdb/blob/master/source/schemas/tutorial_example.mmt}}
+
+As a result, we obtain access to all the objects in the databases from within the \mmt system. 
+The objects have globally unique \mmt URIs, and all properties and values for a given object that are
+stored in the database are obtainable using the \mmt syntax. In other words: The database behaves just like
+any other collection of \mmt theories and can consequently be used for any of the applications described in this
+thesis; most importantly those described in \autoref{ch:crosslib} and those relevant for the \ODK project.
+
+%Finally, we have to integrate computational data into the interface theories. Based on
+%recent ongoing efforts \cite{lmfdb-formats} to document the \LMFDB ``data schemata'' we
+%established OMDoc/MMT theories that link the database fields to their data types (string
+%\emph{vs.} float \emph{vs.} integer tuple, for instance) and mathematical types (elliptic
+%curves or polynomials) -- the latter based on the vocabulary in the interface theories
+%generated from the \LMFDB knowls. This schema theory is complemented by a theory on
+%functorial hence composable \emph{MMT codecs}, which in turn acts as a specification for a collection of
+%implementations in various programming languages (currently \Python, Scala, and
+%C\textsuperscript{++} for \Sage, MMT, and \GAP respectively) which are first instances of
+%a computational foundation.  For instance, one can compose
+%two MMT codecs, say \emph{polynomial-as-reversed-list} and
+%\emph{rational-as-tuple-of-int}, to signify that the data $[(2,3),(0,1),(4,1)]$ is meant
+%to represent the polynomial $4x^2+2/3$. Of course, these codecs could be further
+%decomposed (e.g. for signaling which variable name to use). The initial cost of
+%developing these codecs is high, but the clarity gained in documentation is valuable, they
+%are highly reusable, and they drastically expand the range of tooling that can be built
+%around data management.
+
+
+%\paragraph{A typical application}
+%Based on these MitM interface theories we can generate I/O interfaces that translate
+%between the low-level \LMFDB API, which delivers raw \Mongo data in JSON format into MMT
+%expressions that are grounded in the interface theories. This ties the \LMFDB database
+%into the MitM architecture transparently. As a side effect, this opens up the \LMFDB to
+%programmatic queries via the MMT API, which can be queried and can then relay them to the
+%\LMFDB API directly and transparently.
+
+%  LocalWords:  subsubsection emph knowls textsf lmfdb-repo stex-ec stex knowl mmt-ec odk
+%  LocalWords:  Weierstrass emphasizing alltt tp rightarrow vdash doteq vdash doteq lst
+%  LocalWords:  polynomial_equation_injectivity a_invariants_factors_injectivity colorbox
+%  LocalWords:  minimality_idempotence lmfdb-formats emphasized composable standardize
+%  LocalWords:  rda-typing lstinputlisting mathescape elliptic-curve.mmt lmfdb firstline
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "paper"
+%%% End:
+%  LocalWords:  flexiformal flexiformalization flexiformalizing ednote mathhub mitm
+%  LocalWords:  lmfdb-mwm functorial signaling

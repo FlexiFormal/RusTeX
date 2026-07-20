@@ -1,0 +1,76 @@
+\pvs~\cite{pvs} is a verification system,
+combining language expressiveness with automated tools. Its language is
+based on higher-order logic, and is strongly typed.  It includes
+types and terms for concepts such as: numbers, records, tuples, functions,
+quantifiers, and recursive definitions.  Full predicate subtypes are
+supported, which makes type checking undecidable; \pvs generates type
+obligations (TCCs) as artefacts of type checking.  For example, division is
+defined such that the second argument is nonzero, where nonzero is defined:
+\begin{code}
+nonzero_real: TYPE = {r: real | r /= 0}
+\end{code}
+Note that functions in \pvs are total; partiality is only supported via subtyping.
+
+Beyond this, the \pvs language has structural subtypes (i.e., a record that
+adds new fields to a given record), dependent types for records, tuples, and
+functions, recursive and co-recursive datatypes, inductive and co-inductive
+definitions, theory interpretations, and theories as parameters,
+conversions, and judgements that provide control over the generation of
+proof obligations.  Specifications are given as collections of
+parameterized theories, which consist of declarations and formulas, and
+are organized by means of imports. \medskip
+
+The \pvs prover is interactive, but with a large amount of automation built
+in.  It is closely integrated with the type checker, and features a
+combination of decision procedures, including BDDs, automatic simplification,
+rewriting, and induction.  There are also rules for ground evaluation,
+random test case generation, model checking, and predicate abstraction.
+The prover may be extended with user-defined proof strategies.
+
+\pvs has been used as a platform for integration.  It has a rich API, making it relatively
+easy to add new proof rules and integrate with other systems.  Examples of this include
+the model checker, Duration Calculus, MONA, Maple, Ag, and Yices.  The system is normally
+used through a customized Emacs interface, though it is possible to run it standalone
+(PVSio does this), and \pvs features an XML-RPC server (developed independently of
+the work presented here) that will allow for more flexible interactions.  \pvs is open source, and is
+available at \url{http://pvs.csl.sri.com}.\medskip
+
+As an example, \autoref{fig:intro:prel:pvs:equivclos} gives a part of the \pvs theory defining \emph{equivalence closures} on a type \expr{T} in its original syntax.
+\pvs uses upper case for keywords and logical primitives; square brackets are used for types and round brackets for term arguments.
+The most important declarations in theories are 
+\begin{itemize}
+	\item includes of other theories, e.g., the binary subset predicate \expr{subset?} and the type \expr{equivalence} of equivalence relations on \expr{T} are included from the theories \expr{sets} and \expr{relations} (These includes are redundant in the \pvs prelude and added here for clarity.), 
+	\item typed identifiers, possibly with definitions such as \expr{EquivClos}, and 
+	\item named theorems (here with omitted proof) such as \expr{EquivClosSuperset}.
+\end{itemize}
+
+\expr{VAR} declarations are one of several non-logical declarations: they only declare variable types, which can then be omitted later on; here \expr{PRED[[T,T]]} abbreviates the type of binary relations on \expr{T}.
+
+\begin{figure}[ht]\centering
+\begin{code}
+EquivalenceClosure[T : TYPE] : THEORY
+BEGIN
+  IMPORTING sets, relations
+  R: VAR PRED[[T, T]]
+  x, y : VAR T
+  EquivClos(R) : equivalence[T] =
+    { (x, y) | FORALL(S : equivalence[T]) : subset?(R, S) IMPLIES S(x, y) }
+  EquivClosSuperset : LEMMA
+    subset?(R, EquivClos(R))
+  ...
+END EquivalenceClosure
+\end{code}
+\caption{An Excerpt From the \pvs Prelude Library}\label{fig:intro:prel:pvs:equivclos}
+\end{figure}
+
+%  EquivClosMonotone : LEMMA
+%    subset?(R, S) IMPLIES subset?(EquivClos(R), EquivClos(S))
+
+
+%%% Local Variables: 
+%%% mode: latex
+%%% TeX-master: "paper"
+%%% End: 
+
+%  LocalWords:  pvs subtyping parameterized organized Yices lstlisting emph centering
+%  LocalWords:  fig:pvsequivclos EquivClos EquivClosSuperset mathhub

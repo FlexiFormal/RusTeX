@@ -1,0 +1,54 @@
+%While a framework such as \LF (see \autoref{sec:intro:prelim:lf}) is sufficient for basic logics such as first-order or higher-order logic, modal logics or classical type theories, the foundations employed by formal systems \emph{in the real world} often have advanced features that are less trivial to capture formally. However, often it is precisely those features that distinguish one specific system from others, since they suggest certain best practices for the libraries developed therein (for example theory morphisms in IMPS, predicate subtyping and parametric theories in \pvs) and are correspondingly ubiquitous.
+%
+%In our experience, it is often the case that non-trivial features of a formal language can only be fully formalized in a logical framework if the same feature is already available on the level of the framework itself. A prime example for this is \emph{record types}: While they can be eliminated in theory (by introducing a destructor function for each field in a record type, and axiomatically declaring their values for each record term), this elimination precludes anonymous record types and terms and -- more gravely -- hides the original structure of the terms in the originating library. This is counter to the aim of preserving the original library as accurately as possible when translating to a universal format.\footnote{Our implementation of record types is presented in detail in \autoref{sec:lf:records}.}
+
+\paragraph{} Hence we need logical frameworks with advanced features. However, not all additional features should be active and available simultaneously all the time -- the additional inference rules, even if in conjunction logically sound, can cause problems such as slowing down type checking\footnote{An example for such a feature is the naive implementation of declared subtyping in \autoref{sec:lf:lfx:declsubtp}. In general, we try to avoid such implementations in this thesis.}, reserving notations, making the type system unnecessarily complex and potentially destroying adequacy of a library translation. Especially the first can happen easily in the presence of a \emph{critical pair} of typing rules -- two rules concluding the same judgement, but from different (and potentially expensive to check) premises. An example for such a critical pair on the \emph{meta}-level is the two fundamental strategies in a bidirectional type checking algorithm (see \autoref{sec:prelim:notation:judg}).
+
+What we actually need in practice is therefore a modular meta logical framework with a library of optional features that can be included on demand.
+
+This library can be seen as an analog for \latin (see \autoref{sec:intro:prelim:latin}) for logical frameworks. Where \latin resulted in a modular library for logics using a fixed logical framework (namely \LF), what we need to go beyond the ``simple'' logics in \latin is a similarly modular library of logical frameworks, written in an appropriate meta-framework.
+
+This is more difficult than it seems in that the rules for each feature must be implemented in such a way that they are \emph{orthogonal} -- they should be compatible (if possible) with each other and be minimally dependent on other features. A natural starting point of such a framework is the set of orthogonal features of Martin-Löf type theory~\cite{Martin-Loef84}, which are covered in Chapters \ref{sec:lf:lfx:sigma} and \ref{sec:lf:lfx}. One of these -- dependent function types -- is already implemented by \LF and described in \autoref{sec:intro:prelim:lf}.\medskip
+
+% This part covers our approach for designing such a framework, based on the logical framework \LF. 
+Various extensions of \LF have been proposed and designed before; \cite{Pfenning93} presents an extension of \LF with refinement types (and \emph{intersection types}, which we will cover in \autoref{sec:lf:lfx:intersect}), \cite{stolze:hal-01534035} adds additional \emph{union types} (essentially equivalent to coproducts, see \autoref{sec:lf:lfx:coprod}). The grammatical framework GF~\cite{Ranta:GF04} is based on an extension of \LF by record types.
+
+Apart from the latter, all the mentioned extensions lack an implementation, and all of them have been designed with the additional feature as a primitive -- in other words, the rules are intrinsically non-compositional and consequently not suited for a modular approach. The advantage of the primitive approach is that it allows for tightly controlling the interactions of different primitive typing features. This makes it relatively easy to ensure some desirable aspects of the typing system in the presence of several features at once, such as good performance or decidability. In fact, \cite{Pfenning93} makes decidability one of its central results. Our modular approach on the other hand makes it considerably more difficult to verify these kinds of properties. However, adding e.g. \emph{predicate subtyping} to a logical framework -- as is necessary for formalizing \pvs for example (see \autoref{ch:import:pvs}) -- renders the type system immediately undecidable anyway. This also holds for many other features that increase the \emph{expressivity} of a logical framework, such as the model types presented in \autoref{sec:lf:records}. Since expressivity is our primary concern, we consider losing decidability less of a problem in the context of this thesis. Similarly, in a tradeoff between modularity/expressivity and performance, we prioritize the former.
+
+Conveniently, the modular implementation of the type checking component of \mmt, and the abstractions provided in the \mmt API, result in a very small difference between the theoretical design of a logical framework and its implementation in \mmt. In fact, the set of formal rules as developed on paper corresponds closely to the set of implemented classes in Scala.
+
+\paragraph{} In this part, I will present various extensions of \LF. % on both the statement level (via new typing features) and module level (by introducing model types, implicit morphisms and theory expressions). 
+In doing so, I will explain in detail how to implement new language features in \mmt. For that reason, we will start with a relatively simple feature -- namely \sigmasym-types in \autoref{sec:lf:lfx:sigma} -- as an introduction to the relevant classes of the \mmt API. \autoref{sec:lf:lfx} covers additional simple typing features (primarily those of Martin-Löf type theory), culminating in a logical framework based on homotopy type theory~\cite{hottbook} as a case study in \autoref{sec:lf:lfx:hott}. Our approach to implementing logical frameworks in \mmt is briefly described in \cite{MueRab:rpfsm}, but essentially previously undocumented and hence covered in greater detail.
+
+Continuing with more complicated features, \autoref{sec:lf:lfx:subtp} covers subtyping mechanisms in \mmt, and \autoref{sec:lf:records} covers our implementation of record and model types in detail. % \autoref{sec:lf:expr} and \autoref{sec:lf:implicit} cover theory expressions and and implicit morphisms. 
+% Finally, \autoref{sec:lf:mitm} presents the Math-in-the-Middle library of interface theories, which serves as a case study for most of the features presented in this part. 
+
+\subparagraph{} All the rule systems presented in this part follow a general pattern for typing rules presented in \autoref{remark:prelim:lf:pattern}. Also, note \autoref{remark:prelim:mmt:rules} on how to read our rules algorithmically. The \mmt API provides a dedicated class interface for each kind of rule -- \autoref{fig:lf:rulestoc} gives an overview of those covered in this part.
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+  \begin{framed}
+      \begin{tabular}{l|l}
+      	\textbf{General Aspects} & \\
+      	\mmt Judgments & \autoref{sec:prelim:notation:judg} \\
+      	Symbol References & \autoref{sec:lf:lfx:sigma:symbolrefs} \\
+      	Solver Judgments and Continuations & \autoref{sec:lf:lfx:sigma:judg} \\\hline
+      	\textbf{Typing Rules} & \\
+      	Type Inference Rules & \autoref{sec:lf:lfx:rules:inference} \\
+      	Type Checking Rules & \autoref{sec:lf:lfx:rules:checking} \\
+      	Subtyping Rules & \autoref{sec:lf:lfx:rules:subtyping} \\
+      	Universe Rules & \autoref{sec:lf:lfx:hierarchy:univrules} \\\hline
+      	\textbf{Equality Rules} & \\
+      	Type Based Equality Rules & \autoref{sec:lf:lfx:rules:equality} \\
+      	Term Head Based Equality Rules & \autoref{sec:lf:lfx:coprod:impl} \\
+      	Irrelevance Rules & \autoref{sec:lf:lfx:finite:impl} \\
+      	Computation Rules & \autoref{sec:lf:lfx:rules:computation} \\\hline
+      	\textbf{Other Features} & \\
+      	Generic Literals & \autoref{sec:lf:lfx:literals} \\
+      	Structural Features & \autoref{sec:lf:lfx:wtypes:sf} \\
+      	Rule Generators / Change Listeners & \autoref{sec:lf:lfx:declsubtp}
+      \end{tabular}
+\end{framed}
+  \caption{Table of \mmt API Classes for Solver Rules}\label{fig:lf:rulestoc}%\vspace*{-1em}
+\end{figure}
+
+\paragraph{} Most inference rules in Chapters \ref{sec:lf:lfx:sigma} and \ref{sec:lf:lfx} are taken from \cite{hottbook} with minor adaptations to minimize dependencies on other typing features and be consistent in their presentation with the rest of this thesis. Where multiple design options exist, these are discussed explicitly -- notably, in that case we do not decide on a specific rule system, but rather implement all of them as separate theories extending the same core rules, allowing to pick the most adequate implementation for a given logic formalization while reusing the same symbols across logics for the required features.

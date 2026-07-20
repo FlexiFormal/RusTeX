@@ -1,0 +1,27 @@
+\documentclass{standalone}
+\usepackage{tikz,stex,amstext,amssymb}
+\usetikzlibrary{shapes,arrows,mmt}
+\begin{document}
+\begin{tikzpicture}[xscale=1.7]
+  \node[thy,inner sep=.5cm,fill=lightgray] (s1) at (0,0) {};
+  \node[thy,inner sep=.3cm,fill=white] (t1) at (0,0) {};
+  \node at (t1.north west) {$S'$};
+  \node[thy,inner sep=.5cm,fill=lightgray] (s2) at (3,0) {};
+  \node[thy,inner sep=.3cm,fill=white] (t2) at (3,0) {};
+  \node at (t2.north west) {$T'$};
+  \node[thy,inner sep=.3cm,fill=gray] (t3) at (.8,-1) {};
+  \node at (t3) {$D$};
+  \node[thy,inner sep=.3cm,fill=gray] (t4) at (2.2,-1) {};
+  \node at (t4) {$C$};
+  \draw[include] (t3) -- (s1);
+  \draw[view] (t3.north east) to[bend left=10] node[above,near end] {$\sigma$} (s2);
+  \draw[include] (t4) -- (s2);
+  \draw[view] (t4.north west) to[bend right=10] node[above,near end] {$\delta$} (s1);
+  \draw[view] (t3) to[out=10,in=170] node[above] {$\sigma$} (t4);
+  \draw[view] (t4) to[in=-10,out=190] node[below] {$\delta$} (t3);
+\end{tikzpicture}
+\end{document}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

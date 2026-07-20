@@ -1,0 +1,90 @@
+%\paragraph{Defining PVS}
+To define the language of PVS in \mmt, we carry out two steps.
+
+Firstly, we choose a suitable logical framework by picking the necessary features presented in \autoref{ch:lf}. Notably, we include three features: anonymous
+record types (see \autoref{sec:lf:records}), predicate subtypes (see \autoref{sec:lf:lfx:subtp}), and imports of multiple instances of the same parametric
+theory. The latter is achieved by a structural feature (see \autoref{sec:lf:lfx:wtypes}) that elaborates into the lambda-abstracted declarations of the imported theory.
+
+Then we use this logical framework to define the \mmt theory for PVS. \autoref{fig:pvsmmtbasics} shows the most fundamental constants of this theory.
+
+%\begin{figure}[ht]\centering
+\begin{mmtcode}[caption={The Fundamental Higher-Order Logic of PVS \protect\footnotemark},label=fig:pvsmmtbasics]
+tp : type &\RS&
+expr : tp → type &\US& # 1 prec -1 &\RS&
+tpjudg : {A} expr A → tp → type &\US& # 2 : 3 &\RS&
+
+pvssigma : {A} (expr A ⟶ tp) ⟶ tp ❘ # Σ 2 ❙
+tuple_tp : tp ⟶ tp ⟶ tp ❘ #  1 × 2  ❘ = [A][B] Σ [x:expr A]B ❙
+tuple_expr : {A,B} expr A ⟶ expr B ⟶ expr A × B ❘ # < 3 , 4 > ❘ ## ( 3 , 4 ) ❙
+proj : {A,B} expr A ⟶ expr NatLit ⟶ expr B ❘ # 3 _ 4 ❙
+
+pvspi : {A} (expr A → tp) → tp &\US& # Π 2 &\RS&
+fun_type : tp → tp → tp &\US& = [A,B] Π [x: expr A] B &\US& # 1 ⟹ 2 &\RS&
+pvsapply : {A,f : expr A → tp} expr (Π f) → {a:expr A} expr (f a) 
+	&\US& # 3 ( 4 ) prec -1000015 &\RS&
+lambda : {A,f : expr A → tp} ({a:expr A}expr (f a)) → expr (Π f) &\US& # λ 3 &\RS&
+
+bool : tp ❙
+boolean : tp ❘ = bool ❙
+  
+FALSE : expr bool ❙
+TRUE: expr bool ❙
+NOT @ ¬ ❘ : expr (bool ⟹ bool) ❙
+...
+
+NatLit : tp ❙
+StringLit : tp ❙
+RatLit : tp ❙
+rule rules?NatLiterals ❙
+rule rules?StringLiterals ❙
+rule rules?RationalLiterals ❙	
+...
+
+setsub : {A} (expr (A ⟹ bool)) ⟶ tp ❘ # ⟨ 1 | 2 ⟩ ❙
+rule rules?SetsubRule ❙
+
+rectp : {' '} ⟶ tp ❘ ## 1 ❙
+recordexpr : {r : {' '} } {' '} ⟶ expr (rectp r) ❘ ## 2 ❙
+fieldapp # 1 .@ 2 ❘  ## 1 . 2 ❙
+
+recursor : {A} (expr A ⟶ expr A) ⟶ expr A ❘ ## INDUCTIVE 2❙
+
+\end{mmtcode}
+%\caption{Some Basic Typing related Symbols for PVS\protect\footnotemark}\label{fig:pvsmmtbasics}
+%\end{figure}
+\footnotetext{\url{https://gl.mathhub.info/PVS/Prelude/blob/master/source/pvs.mmt}}
+
+We begin with a definition of PVS's higher-order logic using only LF features.  This
+includes dependent product and function types\footnote{Contrary to typical
+  dependently-typed languages, PVS does not allow declaring dependent \emph{base} types,
+  but predicate subtyping can be used to introduce types that depend on
+  terms. Interestingly, this is neither weaker nor stronger than the dependent types in
+  typical $\lambda\Pi$ calculi.}, classical booleans, and the usual formula constructors
+(see \autoref{fig:pvsmmtbasics}).  This is novel in how exactly it mirrors the syntax
+of PVS (e.g., PVS allows multiple aliases for primitive constants) but requires no special
+\mmt features.
+
+We declare three constants for the three types of built-in literals together with \mmt
+rules for parsing and typing them.  Using the new framework features, we give a shallow
+encoding of predicate subtyping (see \autoref{fig:pvsmmtsubtypes} for the new typing
+rule), a shallow definition of anonymous record types, as well as new declarations for
+PVS-style inductive and co-inductive types.
+
+%\begin{figure}[ht]\centering
+%\hrule
+\begin{scalacode}[caption={PVS-Style Predicate Subtyping in MMT and the Corresponding Rule \protect\footnotemark},label=fig:pvsmmtsubtypes]
+object SetsubRule extends ComputationRule(PVSTheory.expr.path) {
+  def apply(check: CheckingCallback)(tm: Term, covered: Boolean)
+    (implicit stack: Stack, history: History): Option[Term]
+   = tm match {
+    case expr(PVSTheory.setsub(tp,prop)) => 
+      Some(LFX.Subtyping.predsubtp(expr(tp),proof("internal_judgment",
+        Lambda(doName,expr(tp),pvsapply(prop,OMV(doName),expr(tp),
+        		bool.term)._1))))
+    case _ => None
+  }
+}
+\end{scalacode}
+%\caption{PVS-Style Predicate Subtyping in MMT and the Corresponding Rule \protect\footnotemark}\label{fig:pvsmmtsubtypes}
+%\end{figure}
+\footnotetext{Ibid. and \url{https://github.com/UniFormal/MMT/blob/master/src/mmt-pvs/src/info/kwarc/mmt/pvs/Plugin.scala}}

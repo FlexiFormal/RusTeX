@@ -1,0 +1,371 @@
+\section{\mmt Modules}
+
+%\begin{modexp}
+% \paragraph{Modularity in MMT}
+As much as possible, theories and morphisms are treated uniformly, and we use the word \textbf{module} to refer to them collectively.
+\mmt allows constructing large modules from small ones in two ways:
+\begin{compactitem}
+  \item \textbf{structured modules} contain declarations that import other, previously defined ones,
+  \item \textbf{module expressions} are anonymous expressions (akin to formulas, terms, etc.) that denote modules.
+\end{compactitem}
+
+These two kinds of constructions have very different advantages but the same expressivity.
+For example, we can construct the theory of commutative groups as the structured theory $\cn{CommutativeGroup}=\{\icl{Group},\icl{CommutativeMagma}\}$ or as the theory expression $\cn{Group}\cup\cn{CommutativeMagma}$.
+The former is more practical when building named toplevel theories in software systems because each include is a separate declaration that can be parsed, checked, and flattened individually.
+While negligible in this example, this becomes relevant quickly in large theories with complex structure.
+The latter is more practical when building anonymous theory that are only needed temporarily.
+In software systems, they also allow reusing operations like equality and $\lambda$-abstraction that already be implemented at the level of the base logic.
+Building large morphism is as important as building large theories: for example, we want to be able to build morphisms out of $\cn{CommutativeGroup}$ by combining compatible morphisms out of $\cn{Group}$ and $\cn{CommutativeMagma}$.
+%\end{modexp}
+
+\subsection{Flat Modules}
+\textbf{Flat theories} are lists of constant declarations $c:E[=e]$ where $E$ and $e$ are expressions, and the latter is optional.
+We write $\dom{T}$ for the set of constant identifiers $c$ in $T$.
+Every theory induces the set $\Exp{T}$ for the set of closed \textbf{expressions} using only the symbols $c\in\dom{T}$.
+Constant declarations subsume virtually all basic declarations common in formal systems such as type/function/predicate symbols, axioms, theorems, inference rules, etc.
+In particular, theorems can be represented via the propositions-as-types correspondence as declarations $c:F=P$, which establish theorem $F$ via proof $P$.
+Similarly, \mmt expressions subsume virtually all objects common in formal systems such as terms, types, formulas, proofs.
+
+\textbf{Flat morphisms} from a theory $S$ to a theory $T$ are lists of assignments $c:=e$ where $c\in\dom{S}$ and $e\in\Exp{T}$.
+Every morphism $M$ induces a \textbf{homomorphic extension} $M(-):\Exp{S}\to\Exp{T}$, which replaces every $c\in\dom{S}$ in an $S$-expression with the $T$-expression $e$ such that $c:=e$ in $M$.
+
+A \textbf{diagram} consists of a set of theory and morphism declarations.
+%\begin{nomodexp}
+%For a given diagram, we write $\Thy$ for the set of declared \textbf{theories}.
+%For theories $S,T\in\Thy$, we write $\Mo{S}{T}$ for the set of \textbf{morphisms} defined by
+%\begin{compactitem}
+% \item for every declaration $m:S\to T=\{\cdot\}$, we have $m\in\Mo{S}{T}$,
+% \item for every $T\in\Thy$, we have $\id{T}\in\Mo{T}{T}$,
+% \item for every $M\in\Mo{R}{S}$ and $N\in\Mo{S}{T}$, we have $M;N\in\Mo{R}{T}$ (where $M;N$ corresponds to the usual function composition).
+%\end{compactitem}
+%$\Thy$ and $\Mo{S}{T}$ form the category of theories and morphisms.
+%\end{nomodexp}
+%\begin{modexp}
+Every diagram induces sets of anonymous module expressions.
+These are mutually recursive: the names of the former provide the base cases for inductively forming the latter, and the latter may occur in the bodies of the former.
+Every diagram induces sets
+\begin{compactitem}
+ \item $\thy$ of identifiers of theories $t$,
+ \item $\Thy\supseteq \thy$ of theory expressions $T$,
+ \item $\mo{S}{T}$ of identifiers of atomic morphisms $m$ from $S$ to $T$, and
+ \item $\Mo{S}{T}\supseteq\mo{S}{T}$ of morphism expressions $M$ from $S$ to $T$.
+\end{compactitem}
+%\end{modexp}
+
+The theories and morphisms in a diagram may be structured (e.g., by using \emph{include} declarations), and \mmt defines their semantics via \textbf{flattening}, which defines for each $T\in\Thy$ the flat theory $\flt{T}$, and for each $M\in\Mo{S}{T}$ the flat morphism $\flt{M}$ from $\flt{S}$ to $\flt{T}$.
+
+\subsection{Logics and Well-Formed Expressions}
+The logic and the definition of well-formed expressions are not a primary interest of this paper, and we only recap the essential structure needed in the sequel.
+We refer to \cite{rabe:howto:14} for details.
+
+\mmt is independent of the base logic and provides a theory and theory morphism layer on top of an arbitrary declarative language.
+Individual logics $L$ arise as fragments of \mmt: they single out the well-formed expressions by defining the \textbf{judgment} $\der_T e=e':E$ for typing and equality.
+(We treat the plain typing judgment $\der_T e:E$ as the special case $\der_T e=e:E$.)
+The logic $L$ is itself represented as an \mmt theory, which we call the \textbf{meta-theory} of $T$.
+$L$ provides, in particular, the primitive operators and typing rules that are used to form the well-formed expressions of $T$.
+$L$ may and often has a meta-theory as well, usually a logical framework used to define the logic. 
+Unless mentioned otherwise, all results in this paper apply for a fixed arbitrary meta-theory, which we will occasionally omit from the notation.
+
+%This is already sufficient to define logical theorems as those formulas $F$ for which there is an object $p$ (the proof) such that $\der_T p:F$.
+The declarations in theories and assignments in morphisms are subject to typing conditions, and the main theorem about \mmt is that under reasonable assumptions on $L$, the well-typed morphisms $M:S\to T$ preserve all judgments, i.e., if $\vdash_S e=e':E$, then $\vdash_T M(e)=M(e'):M(E)$.
+This includes the preservation of truth via the propositions-as-types principle if $E$ is a proposition and $e$ its proof.
+
+We do not give all rules for these judgments.
+The only rule that is relevant to our purposes here is the one for constants:
+\[\rul{c:E[=e] \minn \flt{T}}{\vdash_T c[=e]:E}\]
+(Here, we merge the two cases where $c$ has a/no definiens $e$ into one rule for convenience.)
+Correspondingly, the definition of the homomorphic extension of a morphism with domain $S$ includes the following case for constants:
+\[M(c) = \cas{e\mifc (c:E) \in \flt{S}, (c:=e)\in\flt{M} \\ M(e) \mifc (c:E=e)\in \flt{S}}\]
+Here if $c$ has a definiens in $S$, we expand it before applying $M$.%
+\footnote{The \mmt tool accepts $(c:=e)\in \flt{M}$ even if $(c:E=e')\in\flt{S}$. In that case, \mmt checks $\vdash_T M(e')=e:M(E)$ and puts $M(c)=e$. This is important for efficiency but not essential for our purposes here.}
+
+These base cases introduce a mutual recursion between well-formedness and flattening:
+the well-formedness of a declaration in a theory depends on the flattening of all preceding declarations;
+correspondingly, the well-formedness of an assignment in a morphism depends on the homomorphic extension of the morphism obtained by flattening of all preceding assignments.
+Vice versa, well-formedness is a precondition for defining the flattening --- the definition of flattening may become nonsensical if applied to ill-formed modules.
+It might be desirable to define well-formedness independently of flattening.
+But our definition captures the typical behavior of practical systems, which first parse, check, and flatten one declaration entirely before moving on to the next one.
+
+Therefore, we will make flattening a partial function, i.e., $\flt{X}$ is undefined if the module $X$ is not well-formed. 
+
+%Consider any declaration $n[:E][=e]$ in the body of a theory $t$.
+%It is well-formed if $n$ is a fresh name $E$ and $e$ are well-formed expressions over $t$.
+%(Additionally, $E$ and $e$ must satisfy typing conditions that are not essential for our purposes.)
+%Importantly, $E$ and $e$ must be from $\Exp{\flt{t}}$ using only constants that were introduced in preceding declarations.
+%
+%Similarly, consider an assignment $c:=e$ in a morphism $m$ from $S$ to $T$, where $c:E$ is a declaration is $S$.
+%It is well-formed if $\vdash_T e:\flt{m}(E)$.
+
+\subsection{Syntax}
+
+We start with the syntax for theories (which arises as a special case of the one given in \cite{RK:mmt:10}):
+
+\begin{definition}[Theory]\label{def:theory}
+The grammar for theories and expressions is
+\begin{grammar}
+TDec     & T\opt{:T}=\{Dec,\ldots,Dec\}  & \text{theory declaration} \\
+Dec      & n:E\opt{=E}           & \text{constant declaration}\\
+c        & T?n                   & \text{qualified constant identifiers} \\
+E        & c \alt \ldots         & \text{expressions built from constants} \\
+\end{grammar}
+
+In a theory declaration $T:L=\{\vec{D}\}$, the \textbf{meta-theory} $L$ (if present) must be a previously declared theory, each symbol \textbf{name} $n$ may be declared only once, and its \textbf{type} and \textbf{definiens} (if present) must be closed expressions over the previously introduced constants (including those of $L$).
+We omit the productions and typing rules for the remaining expressions, which include application, binding, variables, literals, etc.
+\end{definition}
+
+\begin{example}\label{ex:thgroup}
+For the purposes of our running examples, we assume a fixed meta-theory $\Log$ that provides a simple type system:
+\texttt{type} is the universe of types, \lstinline|A|$\rightarrow$\lstinline|B| is the type of functions, and lambda abstraction is written \lstinline|[x:A] t x|.
+We also use \mmt notations, which are attached to constant declarations as \lstinline|# <notation>|; these are omitted from the formal grammar above because we only use them in the examples.
+
+Then the (flat) theories $\cn{Group}$ and $\cn{DivGroup}$ from the introduction are:
+\begin{mmtcode}
+Group: $\Log$ =
+  U       : type
+  op      : U $\to$ U $\to$ U	 # 1 $\circ$ 2 
+  unit    : U
+  inverse : U $\to$ U   # 1 $^{-1}$ 
+  // axioms omitted
+\end{mmtcode}
+\begin{mmtcode}
+DivGroup: $\Log$ =
+  U   : type
+  div : U $\to$ U $\to$ U  # 1 / 2 
+  unit: U
+  // axioms omitted
+\end{mmtcode}
+\end{example}
+
+%
+%These theories are similar to OpenMath content dictionaries \cite{openmath}.
+%In particular, \mmt uses OpenMath-style qualified symbol identifiers $t?n$.%
+%\footnote{Of course, the \mmt IDE and web interface parse and display these identifiers only as $n$ (if that is unambiguous), especially if they are used in formulas.
+%But the interface always knows the qualified identifier and shows it, e.g., on hover.}
+%Thus, symbols of the same name declared in different atomic theories are always distinguished.
+%
+We proceed accordingly for flat morphisms:
+
+\begin{definition}[Morphism]\label{def:morphism}
+The grammar for \textbf{morphisms} is
+\begin{grammar}
+MDec   & m:T\to T=^{\opt{M}}\{Ass,\ldots,Ass\} & \text{flat morphism declaration}\\
+Ass    & c:=E                            & \text{assignment to symbol}\\
+M      & m \alt \id{T} \alt M;M          & \text{morphism expressions}
+\end{grammar}
+A morphism $m:S\to T=^M\{\vec{A}\}$ must contain exactly one assignment $c:=e$ for each $(c:E)\in\flt{S}$, all of which must satisfy $\der_T e: m(E)$.
+Moreover, if $S$ has a meta-theory $L$, then $M$ must be present and must be a morphism from $L$ to $T$.
+\end{definition}
+
+\begin{example}[Morphisms]\label{ex:dg2g}
+We give the morphism \cn{DG2G} between the theories from Ex.~\ref{syn:incl}:
+\begin{mmtcode}
+DG2G : DivGroup -> Group =$^{\id{\Log}}$
+  U     := U
+  div 	:= [a,b] a $\circ$ (b$^{-1}$) 
+  unit 	:= unit
+  // assignments to axioms omitted
+\end{mmtcode}
+Here $\id{\Log}$ maps the meta-theory to itself.
+Then universe and unit of a division group are mapped to the corresponding notions of a group.
+And we have $\cn{DG2G}(a/b)=a\circ b^{-1}$.
+Additionally, the morphism maps every axiom of \cn{DivGroup} to a proof in \cn{Group} of the translated statement, but we omit those assignments.
+\end{example}
+
+%Crucially, morphisms \textbf{preserve judgments}, in particular they map theorems to theorems.
+%Formally, an atomic morphism $m:S\to T$ is \emph{well-formed} if
+%\begin{compactitem}
+%\item whenever $c$ has type $t$ in $\flt{S}$ and $c:= o$ in $\flt{m}$, then $\der_T o:m(t)$,
+%\item whenever $c$ has definiens $d$ in $\flt{S}$ and $c:= o$ in $\flt{m}$, then $\der_T o\equiv m(d)$.
+%\end{compactitem}
+%Then we can show that for every $M\in\Mo{S}{T}$ if $\der_S o:o'$ (or $\der_S o\equiv o'$), then $\der_T M(o):M(o')$ (or $\der_T M(o)\equiv M(o')$).
+%The details can be found in \cite{rabe:howto:14}.
+%%In particular, this means that $M$ maps $S$-theorems to $T$-theorems.
+
+Finally, we define diagrams as collections of modules:
+
+\begin{definition}[Diagram]
+A \textbf{diagram} is a list of theory and morphism declarations:
+\begin{grammar}
+Dia    & \rep{(TDec \alt MDec)}          & \text{diagrams}\\
+\end{grammar}
+Each theory/morphism declaration must have a unique name and be well-formed relative to the diagram preceding it.
+\end{definition}
+
+At this point, the grammar only allows forming flat theories and morphisms.
+%\begin{modexp}
+It is intentionally independent of the concrete choice of modularity principles, i.e., the kinds of module-structuring declarations (e.g., includes) and the module-expression-forming operators (e.g., union).
+But it already introduces all non-terminals for modularity: new declaration kinds for structured theories arise by adding productions for the non-terminal $Dec$ and new theory expressions are formed by adding productions for the non-terminal $T$.
+%\end{modexp}
+Structuring features can be added to the language incrementally and individually.
+%\begin{modexp}
+We give some examples how to add modularity principles to the grammar:
+%\end{modexp}
+
+\begin{example}[Includes]\label{syn:incl}
+We extend the grammar with
+\begin{grammar}
+  Dec & \icl{T} & \text{include a theory into a theory} \\
+  Ass & \icl{M} & \text{include a morphism into a morphism}
+\end{grammar}
+This allows writing the theory $\cn{Group}$ from Ex.~\ref{ex:thgroup} by extending a theory of monoids.
+Again omitting all axioms, this looks as follows:
+\begin{mmtcode}
+Monoid: $\Log$ =
+  U 	: type
+  op 	: U $\to$ U $\to$ U	 # 1 $\circ$ 2 
+  unit	: U
+Group: $\Log$ =
+  include Monoid
+  inverse : U $\to$ U   # 1$^{-1}$ 
+\end{mmtcode}
+\end{example}
+
+%\begin{union}
+\begin{example}[Union]\label{syn:union}
+We extend the grammar with
+\begin{grammar}
+  T   & T\cup T & \text{union of theories} \\
+  M   & M\cup M & \text{union of morphisms}
+\end{grammar}
+\end{example}
+%\end{union}
+
+%\begin{modexp}
+\begin{example}[Category of Theories]\label{syn:cat}
+To obtain the category structure of theories and morphisms, we need identity and composition.
+We add them to the grammar as follows:
+\begin{grammar}
+  M   & \id{T} & \text{identity morphism} \\
+  M   & M;M    & \text{morphism composition}
+\end{grammar}
+\end{example}
+%\end{modexp}
+
+\subsection{Semantics}
+
+\paragraph{Flattening}
+The definition of flattening is \textbf{compositional} in the sense that new modularity principles can be added independently of each other.
+%\begin{modexp}
+In particular, for every module expression $X$, we define its flattening $\flt{X}$ by induction on the syntax.
+This follows the principle of compositional semantics, e.g., $\flt{(f(X,Y))}$ depends only on $\flt{X}$ and $\flt{Y}$. 
+For theories $T$, at this point, this induction only has the base case of a reference to a declared theory $t$.
+Further cases arise when we add structuring declarations.
+%\end{modexp}
+
+\begin{definition}[Flattening]
+For the base case, of a theory $t:L=\{\Sigma\}$, we define $\flt{t}$ by induction on the declarations in $\Sigma$:
+\[\flt{t}=\flt{\Sigma} \tb\mwhere\tb \flt{\cdot}=\flt{L} \tb\mand\tb
+ \flt{(\Sigma,D)}=\flt{\Sigma}\cup\fltd{\flt{\Sigma}}{D},\]
+ where $\cdot$ denotes the empty sequence.
+ If $L$ is not present, we can assume it to be the empty theory.
+ 
+Here $\fltd{T}{D}$ is the flattening of declaration $D$ relative to $\flt{\Sigma}$.
+At this point, we only have one case for declarations $D$, namely constant declarations.
+Their flattening is trivial:
+ \[\fltd{\Sigma}{(n:E[=e])}=\{t?n:E[=e]\}\]
+where $t$ is the name of the containing theory.
+
+Correspondingly, for a declared morphism $m:S\to T=^{\opt{M}}\{\sigma\}$, $\flt{m}$ is defined by induction on the assignments in $\sigma$:
+\[\flt{m}=\flt{\sigma} \tb\mwhere\tb \flt{\cdot}=\flt{M} \tb\mand\tb\flt{(\sigma,\;A)}=\flt{\sigma}\cup\fltd{\flt{\sigma}}{A}\]
+with the trivial base case
+ \[\fltd{\sigma}{(c:=e)}=\{c:=e\}\]
+If $M$ is not present, we can assume it to be empty morphism.
+ 
+%\begin{nomodexp}
+%Moreover, for $T\in\Thy$ we define $\flt{\id{T}}=\{c:=c \;|\; (c:E)\in\flt{T}\}$
+%And for $M;N\in\Mo{R}{T}$, we define $\flt{(M;N)}=\{c:=\flt{N}(\flt{M}(c)) \;|\; (c:E)\in\flt{R}\}$.
+%Note that in both cases, we only have to consider constants without definiens.
+\%end{nomodexp}
+\end{definition}
+
+\begin{example}[Includes (continued from Ex.~\ref{syn:incl})]\label{sem:incl}
+The $\keyword{include}$ operator adds new declarations $D$ to a theory, so we have to add cases to the definition of $\fltd{\Sigma}{D}$.
+We do this as follows
+  \[\fltd{\Sigma}{(\icl{S})} = \flt{S}\]
+This has the effect of copying over all declarations from the included into the including theory.
+
+There is some flexibility as to when the including and the included theory have different meta-theories $L$ resp. $L'$.
+We define that such an include is only allowed if $L'$ is also included into $L$.
+That way, an include declaration never changes the meta-theory of the including theory.
+
+Note that, because $\flt{S}$ is a \textit{set} of declarations, the include relation is transitive: if $t$ includes $s$ via two different paths, $\flt{t}$ only contains one copy of the declarations of $\flt{s}$.
+
+Because we use qualified identifiers $t?n$, includes can never lead to name clashes.
+The situation is slightly more complicated for morphisms: if a morphism $\sigma$ out of $t$ includes two different morphisms out of $s$, these have to agree.
+Therefore, flattening is not always defined:
+  \[\fltd{\sigma}{(\icl{M})} = \flt{M}\]
+if $\sigma,\icl{M}$ is well-formed and $\flt{M}$ agrees with $\flt{\sigma}$ on any constant that is in the domain of both.
+\end{example}
+
+\begin{example}[Continuing Ex.~\ref{syn:incl}]
+$\cn{Group}^\flat$ is obtained by copying all included symbols (from $\cn{Monoid}$) over to $\cn{Group}$, resulting in the theory as given in Ex.~\ref{ex:thgroup} except that the identifiers are now, e.g., $\cn{Monoid}?U$ instead of $\cn{Group}?U$.
+\end{example}
+
+\begin{remark}[Qualified Identifiers]
+According to the grammar, any occurrence of a constant $c$ in an expression is of the form $t?n$, i.e., qualified by its theory name.
+In the definition all declarations in $\flt{t}$ are qualified accordingly.
+This precludes any name clashes when constants of the same local name are declared in multiple theories that become part of $\flt{t}$, e.g., via the meta-theory or includes.
+
+The form $t?n$ is \emph{abstract} system-facing syntax.
+In \emph{concrete} user-facing syntax (as used in our examples), it is usually sufficient to write $n$ and let the \mmt parser infer which constant is meant.
+\end{remark}
+
+%\begin{union}
+\begin{example}[Union (continued from Ex.~\ref{syn:union})]\label{sem:union}
+We define the semantics of unions of theories as
+\[\flt{(S\cup T)}=\flt{S}\cup\flt{T}\]
+The handling of name clashes is the same as for includes:
+Because the theories declared in a diagram have unique names and declarations in the flattening are qualified by theory names, union theories cannot have name clashes.
+But we have to watch out when taking unions of morphisms:
+We define $M_1\cup M_2\in \Mo{S_1\cup S_2}{T}$ if $M_i\in\Mo{S_i}{T}$ and $M_1$ and $M_2$ agree for every constant in $\dom{\flt{S_1}}\cap\dom{\flt{S_2}}$.
+In that case, we put
+\[\flt{(M\cup N)}=\flt{M}\cup\flt{N}\]
+\end{example}
+%\end{union}
+
+%Includes between theories are always well-formed (assuming the included theory is).
+%But includes between morphisms are more difficult -- we have to impose two restrictions.
+%Firstly, an assignment $\icl{M}$ is well-formed in an atomic morphism $m:S\to T$ if $R\harr S$ and $M\in\Mo{R}{T}$.
+%Its intended effect is that $m$ maps all $c\in\dom{R}$ to $M(c)$.
+%That yields the second restriction: For any two morphisms $M_i\in\Mo{R_i}{T}$ included into $m$ and any theory $C$ satisfying $C\harr R_1$ and $C\harr R_2$, we require that $M_1|_C\equiv M_2|_C$.
+%Thus, any two included morphisms must agree on their common domain $C$; that is necessary so that $\flt{m}$ does not contain multiple assignments for the same identifier.
+
+
+%\begin{modexp}
+\subsection{Semantic Properties}
+
+For two theories $S,T\in\Thy$, we say that $S$ is \textbf{included} into $T$, written $S\harr T$, if $\flt{S}\sq\flt{T}$.
+%Clearly, $m(o)=o$ for all $S$-objects $o$.
+Thus, every declaration of $S$ is also available in $T$ and $\Exp{S}\sq\Exp{T}$.
+This induces an inclusion morphism, which maps every $c\in\dom{S}$ to itself.
+We do not introduce a name for that morphism and simply define $\id{S}\in\Mo{S}{T}$ whenever $S\harr T$ (which includes the special case $S=T$).
+Moreover, if $S\harr T$ and $M\in\Mo{T}{U}$, we define the restriction $M|_S\in\Mo{S}{U}$ of $M$ to $S$ by $\id{S};M$.
+
+We say that two theories $S,T\in\Thy$ are \textbf{equal}, written $S\equiv T$, if $\flt{S}=\flt{T}$.
+This is equivalent to $S\harr T$ and $T\harr S$.
+
+Correspondingly, we say that two morphisms $M,N\in\Mo{S}{T}$ are \textbf{equal}, written $M\equiv N$, if $\flt{M}=\flt{N}$.
+In that case, $M(e)=N(e)$ for all expressions $e\in\Exp{S}$.
+
+Clearly, $\equiv$ is an equivalence relation and $\harr$ is an order relation (if anti-symmetry is taken with respect to $\equiv$).
+
+\begin{example}[Includes (continued from Ex.~\ref{sem:incl})]\label{rel:incl}
+We have the following soundness theorem for includes: if a theory is declared as $t=\{\Sigma\}$ and $\Sigma$ contains $\icl{S}$, then $S\harr t$.
+
+Note that in the absence of include declarations or unions, $s\harr t$ never holds because all $c\in\dom{s}$ are of the form $s?n$ and all $c\in\dom{t}$ are of the form $t?n$.
+In fact, $\flt{s}$ and $\flt{t}$ unless $s=t$.
+\end{example}
+
+%\begin{union}
+\begin{example}[Union (continued from Ex.~\ref{sem:union})]\label{rel:union}
+We have the following soundness theorem for unions: $S_i\harr S_1\cup S_2$.
+Moreover, $S_1\cup S_2$ is a colimit in the category of theories and morphism, and given $M_1\in\Mo(S_1,T)$ and $M2\in\Mo{S_2,T}$ we have the universal morphism $M_1\cup M_2\in\Mo{S_1\cup S_2}{T}$ out of it.
+\end{example}
+%\end{union}
+
+\begin{example}[Category of Theories (continued from Ex.~\ref{sem:cat})]\label{rel:cat}
+Identity and composition are congruent with respect to $\equiv$.
+Moreover, composition is associative and identity neutral with respect to $\equiv$.
+Thus, each diagram indeed yields the structure of a category with objects $\Thy$ and arrows $\Mo{S}{T}$.
+\end{example}
+%\end{modexp}

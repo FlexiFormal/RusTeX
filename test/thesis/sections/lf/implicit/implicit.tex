@@ -1,0 +1,224 @@
+\subsection{Overview}
+
+Our key idea is to use a commutative subdiagram of the \mmt diagram, which we call the \emph{implicit diagram}.
+It contains all theories but only some of the morphisms --- the ones designated as \emph{implicit}.
+Because the implicit-diagram commutes, there can be at most one implicit morphism from $S$ to $T$ --- if this morphism is $i$, we write $\ipc{i}{S}{T}$.
+%Practically, this hasis a multi-graph whose nodes are the theories and whose edges are the atomic morphisms.
+%We can extend the correspondence by identifying all paths with the composition of all edges along the path.
+%Then concatenation of paths is just composition of morphisms, and the empty path from $T$ to itself is the identity morphism $\id{T}$.
+%(This is well-defined because composition is associative and identity is neutral.)
+%A diagram is commutative if any two paths between the same nodes are equal (with respect to $\equiv$), i.e., there is at most one morphism between any two nodes.
+The implicit-diagram generalizes the inclusion relation:
+All identity and inclusion morphisms are implicit, and we recover the inclusion relation $S\harr T$ as the special case $\ipc{\id{S}}{S}{T}$.
+And just like inclusion, the relation ``exists $i$ such that $\ipc{i}{S}{T}$'' is a preorder.
+
+Consequently, many of the advantages of inclusions carry over to implicit morphisms:
+\begin{compactitem}
+\item It is very easy to maintain the implicit-diagram, e.g., as a partial map that assigns to a pair of theories the implicit morphism between them (if any).
+\item We can generalize the visibility of identifiers: If $\ipc{i}{S}{T}$, we can use all $S$-identifiers in $T$ as if $S$ were included into $T$.
+Any $c\in\dom{S}$ is treated as a valid $T$-identifiers with definiens $M(c)$.
+\item We can use canonical identifiers $S?n$ without worrying about ambiguity.
+Because there can be at most one implicit morphism $\ipc{i}{S}{T}$, using $S?n$ as an identifier in $T$ is unambiguous.
+%Crucially, we can use $S?n$ without bothering what $i$ is.
+\end{compactitem}
+
+In practice, the \mmt system searches for an implicit morphism $\ipc{i}{S}{T}$ whenever needed to make an expression well-formed, e.g.,
+\begin{compactitem}
+ \item An $S$-constant $c$ is used in $T$: treat $c$ as an abbreviation for $i(c)$.
+ \item A model $M$ of $T$ is used even though a model of $S$ is expected: reduce $M$ via $i$.
+ \item A morphism $M:R\to S$ is composed with a morphism $M':T\to U$: treat $M;M'$ like $M;i;M'$.
+\end{compactitem}
+
+%Thus the main question arises what other morphisms we should make implicit.
+
+\subsection{Syntax}
+
+We introduce the family of sets $\IMo{S}{T}$ as a subset of $\Mo{S}{T}$, holding the \textit{implicit} morphisms.
+The intuition is that $\Thy$ and $\IMo{S}{T}$ (up to equality of morphisms) form a thin broad subcategory of $\Thy$ and $\Mo{S}{T}$.
+
+It remains to define which morphisms are implicit.
+For that purpose, we allow \mmt declarations to carry \textit{attributes}:
+
+\begin{definition}[Attributes for Implicitness]
+We add the following productions
+\begin{grammar}
+MDec   & Att\; MDec  & \text{attributed morphism} \\
+Dec    & Att\; Dec   & \text{attributed declaration}\\
+Att    & \keyword{implicit} \alt \ldots & \text{attributes}
+\end{grammar}
+\end{definition}
+
+The set of attributes is itself extensible, and the above grammar only lists the one that we use to get started.
+Additional attributes can be added when adding modularity principles.
+
+\begin{example}\label{ex:dg2gimplicit}
+We can now change the declaration of the morphism $\cn{DG2G}$ from Ex.~\ref{ex:dg2g} by adding the attribute \keyword{implicit}.
+\end{example}
+
+\subsection{Semantics}
+
+We only have to make two minor changes to the semantics to accommodate implicit morphisms.
+The first change governs how we obtain implicit morphisms, the second one how we use them.
+
+\begin{definition}[Obtaining Implicit Morphisms]
+We define the set $\IMo{S}{T}\sq\Mo{S}{T}$ of \textbf{implicit} morphisms to contain the following elements:
+\begin{itemize}
+ \item all declared morphisms $m:S\to T=\{\sigma\}$ whose declaration carries the attribute $\keyword{implicit}$,
+ \item if $t$ has meta-theory $L$, the identity map as an implicit morphism $L\to t$,
+%\begin{nomodexp}
+% \item all identity morphisms $\id{T}$,
+% \item all compositions $M;N$ of implicit morphisms $M$ and $N$,
+%\end{nomodexp}
+ \item all morphisms that additional language features designate as implicit based on the use of additional attributes.
+\end{itemize}
+
+Adding an $\keyword{implicit}$ attribute to a declaration is well-formed only if there is (up to equality of morphisms) at most one implicit morphism for any pair of theories.
+\end{definition}
+
+%\begin{modexp}
+Depending on what modularity principles we add, equality of morphisms may or may not be decidable.
+Therefore, in the general case, implementations may have to employ sound but incomplete criteria for equality (see Sect.~\ref{sec:commute}).
+%\end{modexp}
+
+%\begin{modexp}
+The following example phrases the restriction on implicit morphisms in categorical terms:
+\begin{example}[Category of Theories and Implicit Morphisms (continued from Ex.~\ref{sem:cat})]\label{impl:cat}
+We define the following morphisms are implicit:
+\begin{compactitem}
+ \item all identity morphisms $\id{T}$,
+ \item all compositions $M;N$ of implicit morphisms $M$ and $N$.
+\end{compactitem}
+Thus, the implicit morphisms form a thin broad subcategory of theories and morphisms.
+In other words, the implicit morphisms form commutative diagram.
+\end{example}
+%\end{modexp}
+
+\begin{example}[Includes (continued from Ex.~\ref{sem:incl})]\label{impl:incl}
+For include morphisms, we add the following definition: if a theory $T$ contains the declaration $\icl{S}$, then the induced morphism from $S$ to $T$ is implicit.
+
+Combined with composition morphisms, we see that all transitive includes between theories are implicit.
+That corresponds to the intuition that anything that is included is available by its original (i.e. qualified) name.
+\end{example}
+
+\begin{example}
+	For our morphism $\cn{DG2G}$ from Ex.~\ref{ex:dg2gimplicit}, this means that all symbols declared in the theory $\cn{DivGroup}$ (see Ex.~\ref{ex:thgroup}) are now visible in the theory $\cn{Group}$ with the definitions provided by $\cn{DG2G}$.
+	For example, we can write $a/b$ in $\cn{Group}$, where $/$ refers to the identifier $\cn{DivGroup}?\cn{div}$.
+	
+	(Note that notations are carried over by implicit morphisms as well)
+\end{example}
+
+%\begin{union}
+It is plausible to say that there are implicit morphisms $S_i\harr S_1\cup S_2$ for $i=1,2$ that map all constants to themselves.
+However, union expressions do not interact very well with implicit morphisms.
+First of all, we have to be careful to maintain the uniqueness condition.
+For example, assume there is a implicit morphism $M:S\to T$ that is not simply an inclusion.
+Then the union $S\cup T$ cannot be well-formed.
+If it were, we would have two different implicit morphisms $S\to S\cup T$, namely $M$ and the inclusion into the union.
+
+Secondly, it becomes difficult to lookup whether an implicit morphism exists between union theories.
+We need to consider the equational theory of union (including commutativity, idempotence, and associativity), which is doable for unions but may become undecidable if more module expression formation operators are added.
+Already the interaction between union and composition morphisms can be tricky.
+
+Therefore, we use the following definition in our system:
+
+\begin{example}[Union (continued from Ex.~\ref{sem:union})]\label{impl:union}
+We assume the definitions from Ex.~\ref{impl:cat} and~\ref{impl:incl} are in place.
+We want to add union theories.
+First of all, we note that every theory can be normalized into a union of named theories.
+
+Now we make the following restriction on implicit morphisms: we maintain a diagram of implicit morphisms in which all nodes are \emph{named} theories, i.e., we do not allow implicit morphisms between union theories.
+Because there are only finitely many named theories, this is a finite data structure.
+
+Consequently, we have to forbid morphism declarations $\keyword{implicit}\,m:S\to T_1\cup T_2$ is a union --- there would be no way to record them in our diagram.
+We can allow declarations declarations $\keyword{implicit}\,m:s_1\cup\ldots\cup s_n\to t$ where the domain is a union of named theories --- in that case we simply record $m$ as an implicit morphism from $s_i$ to $t$ for all $i$.
+Similarly, any declaration $\icl{s_1\cup\ldots\cup s_n}$ in the body of theory $t$ poses no problems --- we record inclusion morphism $s_1\harr t$.
+
+Now to look up the implicit morphism (if any) from $s_1\cup\ldots\cup s_k\to t_1\cup\ldots\cup t_l$, we look up for every $i$ an implicit morphism $m_i:s_i\to t_j$ for some $j$.
+If all these $m_i$ exist and $m=m_1\cup \ldots\cup m_k$ is well-formed, then $m$ is the needed implicit morphism.
+\end{example}
+%\end{union}
+
+The intuition behind implicit morphisms is that all $S$-constants $c:E$ that can be mapped into the current theory via an implicit morphism $M:S\to T$ are directly available in $T$.
+We can practically realize this by adding new defined constants $c:M(E)=M(c)$ to $T$.
+However, physically adding definitions can be inefficient.
+It is more elegant to modify the typing rules such that $\vdash_T c:M(c)=M(E)$ holds without any changes to $T$.
+
+To do that, we only have to make a small modification to the original rules of \mmt as presented in Sect.~\ref{sec:mmt}.
+To illustrate how simple the modification is, the following definition repeat the original rule first for comparison:
+
+\begin{definition}[Using Implicit Morphisms]\label{def:useimpl}
+We replace the rule
+\[\rul{c:E[=e] \minn \flt{T}}{\vdash_T c[=e]:E} \tb \mwith\tb \rul{c:E[=e] \minn \flt{S}\tb \ipc{M}{S}{T}}{\vdash_T c=M(c):M(E)}\]
+\end{definition}
+
+Note that the modified rule gives every constant a definiens.
+This is a technical trick to subsume the original rule: if $c$ is already declared in $T$, we use $M=\id{T}$ and obtain $\vdash_T c=c:E$.
+
+The following theorem is our central theoretical result.
+It shows that the modification made in Def.~\ref{def:useimpl} has the intended properties:
+\begin{theorem}[Conservativity of Implicit Morphisms]
+For well-formed diagrams and $S,T\in\Thy$ and $M\in\IMo{S}{T}$:
+\begin{compactenum}
+ \item Whenever the original system proves $\vdash_T e=e':E$, so does the modified one.
+ \item Whenever the modified system proves $\vdash_T e=e':E$, then the original system proves $\vdash_T \ov{e}=\ov{e'}:\ov{E}$.
+\end{compactenum}
+Here $\ov{E}$ is the expression that arises from $E$ by recursively replacing every constant with its definiens.
+\end{theorem}
+
+\begin{proof}
+For the first claim, we proceed by induction on derivations.
+We only need to consider the case where the original rule was applied.
+So assume it yields $\vdash_T c[=e]:E$, i.e., $(c:E[=e]) \minn \flt{T}$.
+We apply the modified rule for the special case $\ipc{\id{T}}{T}{T}$.
+The conclusion reduces to
+\begin{compactitem}
+ \item if $e$ is absent: $\vdash_T c=c:E$, which is equivalent to $\vdash_T c:E$,
+ \item if $e$ is present: $\vdash_T c=e:E$ because $M(c)=M(e)$ according to the definition of $M(-)$.
+\end{compactitem}
+
+For the second claim, we proceed by induction on derivations.
+We only need to consider the case where the modified rule was applied.
+So assume it yields $\vdash_T c=M(c):M(E)$ for $(c:E[=e]) \minn \flt{S}$ and $\ipc{M}{S}{T}$.
+We distinguish two cases:
+\begin{compactitem}
+ \item $M(c)=c$, i.e., $e$ is absent, and $\ov{c}=c$.
+   According to the definition of $\flt{S}$, this is only possible if $S\harr T$ (including the special case $S=T$).
+   In that case, $\flt{S}\sq\flt{T}$ and $M$ is the include/identity morphism that maps all $S$-constants to themselves.
+   Now applying the induction hypothesis to the well-formedness derivation of $E$ yields $\vdash_T c:\ov{E}$ as needed.
+ \item $M(c)\neq c$, i.e., $e$ is present or $M$ assigns a non-trivial value to $c$.
+  Definition expansion eliminates $c$ in favor of $M(c)$, and thus $\ov{c}=\ov{M(c)}$.
+  We only have to show that $\vdash_T \ov{M(c)}:\ov{M(E)}$. That follows from the judgment preservation of morphisms.
+\end{compactitem}
+\end{proof}
+
+
+With implicit morphisms, we can also relax the semantics of many structuring features:
+
+\begin{example}[Includes and Meta-Theories (continued from Ex.~\ref{sem:incl})]\label{impl:incl2}
+Consider $t:L=\{\ldots,\icl{S},\ldots\}$ where $S$ has meta-theory $L'$.
+Instead of requiring $L'\harr L$ as in Ex.~\ref{sem:incl}, we require only $\ipc{i}{L'}{L}$.
+
+In that case, we treat $\icl{S}$ as an abbreviation for $\icl{i(S)}$, where $i(S)$ is the pushout of $S$ along $i$ (see \cite{rabe:howto:14} for details on \mmt pushouts).
+If $L'\harr L$, this reduces to the original semantics.
+\end{example}
+
+%\subsection{Commutativity}\label{sec:commute}
+%
+%To prove commutativity, we have to find all paths in the implicit-diagram and check $M\equiv M'$ for all pairs of morphisms between the same nodes.
+%
+%\mmt reduces $M\equiv M'$ for $M,M'\in\Mo{S}{T}$ to a first-order problem in the theory of categories, which uses the following axioms:
+%\begin{compactitem}
+%\item associativity of composition,
+%\item neutrality of identity,
+%\item $M;M'\equiv \id{S}$ as well as $M';M\equiv\id{T}$ if $M\in\Mo{S}{T}$ and $M'$ is the known *inverse of $M$,
+%\item if an atomic morphism $m$ includes $M\in\Mo{R}{T}$, then $M|_R\equiv M$.
+%\end{compactitem}
+%
+%This is a sound but not complete axiomatization of $M\equiv M'$.
+%We can obtain a complete axiomatization in a totally different way: Check $\der_T M(c)\equiv M'(c)$ for all $c\in\dom{S}$.
+%However, this can be extremely expensive: It requires computing $\dom{S}$ and proving an object level equality for each identifier.
+%Even if the equality of objects is decidable, this is often too expensive.
+%
+%In fact, because implicit morphisms are meant to be used in very particular cases, we expect the above incomplete calculus to perform reasonably well in practice.
+%If showing the equality of certain morphisms is hard, one should probably not make them implicit in the first place.
+

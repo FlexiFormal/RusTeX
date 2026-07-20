@@ -1898,6 +1898,7 @@ impl ShipoutNodeH {
                 name: accentglyph.name().to_string().into(),
             }
         } else {
+            //println!("Here: {glyph:?}+{accentglyph:?}");
             // TODO merge better
             let cos = glyph.to_string() + &accentglyph.to_string();
             ShipoutNodeH::Char(cos.into())

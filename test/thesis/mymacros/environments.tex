@@ -1,0 +1,440 @@
+\usepackage{mdframed,realboxes}
+\usepackage[most]{tcolorbox}
+\usepackage{caption}
+
+\newenvironment{rand}%
+     {\begin{list}{}%
+             {\setlength{\leftmargin}{0.5cm}}%
+             \item[]%
+     }
+     {\end{list}}
+
+\newenvironment{framed}{\begin{mdframed}\begin{center}}{\end{center}\end{mdframed}}
+\newcommand{\scaled}[2][0.9\hsize]{\begin{center}\resizebox{#1}{!}{\begin{minipage}{\textwidth} #2 \end{minipage}}\end{center}}
+
+%--- proofs --------------------------------------------------
+
+\let\oldproof\proof
+
+\renewenvironment{proof}
+{
+	\begin{mdframed}[linewidth=1pt,backgroundcolor=white]
+	\begin{oldproof}
+	\begin{list}{}
+		{\setlength{\leftmargin}{0.2cm}%\setlength{\rightmargin}{0.5cm}
+		}
+		\item[]
+}
+{{\flushright\qed}\end{list}\end{oldproof}\end{mdframed}}
+
+% --- colors and counters ------------------------------
+
+\colorlet{colexam}{blue!55!black}
+\colorlet{colremark}{red!55!black}
+\colorlet{coldefi}{black}
+\colorlet{colthm}{green!55!black}
+\colorlet{colax}{blue!55!black}
+
+\newcounter{example}[chapter]
+\newcommand\exampleautorefname{Example}
+\makeatletter
+\renewcommand\p@example{\thechapter.}
+\makeatother
+
+\newcounter{remark}[chapter]
+\newcommand\remarkautorefname{Remark}
+\makeatletter
+\renewcommand\p@remark{\thechapter.}
+\makeatother
+
+\newcounter{thmcount}[chapter]
+\newcommand\thmcountautorefname{Theorem}
+\makeatletter
+\renewcommand\p@thmcount{\thechapter.}
+\makeatother
+
+\newcounter{axcount}[chapter]
+\newcommand\axcountautorefname{Axiom}
+\makeatletter
+\renewcommand\p@axcount{\thechapter.}
+\makeatother
+
+\newcounter{defcount}[chapter]
+\newcommand\defcountautorefname{Definition}
+\makeatletter
+\renewcommand\p@defcount{\thechapter.}
+\makeatother
+
+\newcounter{deflistcount}[defcount]
+\newcommand\deflistcountautorefname{Definition}
+\makeatletter
+\renewcommand\p@deflistcount{\thechapter.\thedefcount.}
+\makeatother
+
+\newcounter{thmlistcount}[thmcount]
+\newcommand\thmlistcountautorefname{Theorem}
+\makeatletter
+\renewcommand\p@thmlistcount{\thechapter.\thethmcount.}
+\makeatother
+
+\newcounter{disclcount}[chapter]
+\newcommand\disclcountautorefname{Disclaimer}
+\makeatletter
+\renewcommand\p@axcount{\thechapter.}
+\makeatother
+
+% ---examples--------------------------------------------------
+
+\NewDocumentEnvironment{example}{ O{} }
+{
+\newtcolorbox{examplebox}{
+    empty,
+    title={Example \arabic{chapter}.\theexample: #1},
+    attach boxed title to top left,
+       minipage boxed title,
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=colexam,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt,
+    overlay unbroken={\draw[colexam,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay first={\draw[colexam,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay middle={\draw[colexam,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay last={\draw[colexam,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    }
+\refstepcounter{example}\begin{examplebox}
+}{\end{examplebox}\endlist}
+
+\NewDocumentEnvironment{example*}{ O{} }
+{
+\newtcolorbox{examplebox}{
+    empty,
+    title={Example: #1},
+    attach boxed title to top left,
+       minipage boxed title,
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=colexam,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    overlay unbroken={\draw[colexam,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay first={\draw[colexam,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay middle={\draw[colexam,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay last={\draw[colexam,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    }
+\begin{examplebox}
+}{\end{examplebox}\endlist}
+
+%---remarks----------------------------------------------------------
+
+\NewDocumentEnvironment{remark}{ O{} }
+{
+\newtcolorbox{remarkbox}{
+    empty,
+    title={Remark \arabic{chapter}.\theremark: #1},
+    attach boxed title to top left,
+       minipage boxed title,
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=colremark,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    overlay unbroken={\draw[colremark,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay first={\draw[colremark,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay middle={\draw[colremark,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay last={\draw[colremark,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    }
+\refstepcounter{remark}\begin{remarkbox}%\begin{mdframed}[linewidth=1pt,backgroundcolor=white]
+}
+{\end{remarkbox}\endlist}
+
+\NewDocumentEnvironment{remark*}{ O{} }
+{
+\newtcolorbox{examplebox}{
+    
+    empty,
+    title={Remark: #1},
+    	 
+    attach boxed title to top left,
+       
+       minipage boxed title,
+    
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=colexam,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    
+    overlay unbroken={\draw[colexam,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    
+    overlay first={\draw[colexam,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    
+    overlay middle={\draw[colexam,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+   
+    overlay last={\draw[colexam,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },%
+    }
+\begin{examplebox}\begin{mdframed}[linewidth=1pt,backgroundcolor=white]
+}
+{\end{mdframed}\end{examplebox}\endlist}
+
+%---definitions--------------------------------------------------------
+
+\NewDocumentEnvironment{definition}{ O{} }
+{
+\newtcolorbox{defbox}{
+    empty,
+    title={Definition \thechapter.\thedefcount: #1},
+    attach boxed title to top left,
+       minipage boxed title,
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=coldefi,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    overlay unbroken={\draw[coldefi,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay first={\draw[coldefi,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay middle={\draw[coldefi,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay last={\draw[coldefi,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    }
+\refstepcounter{defcount}\begin{defbox}\begin{mdframed}[linewidth=1pt,backgroundcolor=lightgray!33!white]%\itshaped
+}
+{\end{mdframed}\end{defbox}\endlist}
+
+\NewDocumentEnvironment{definition*}{ O{} }
+{
+\newtcolorbox{defbox}{
+    
+    empty,
+    title={Definition: #1},
+        
+    attach boxed title to top left,
+       
+       minipage boxed title,
+    
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=coldefi,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    
+    overlay unbroken={\draw[coldefi,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    
+    overlay first={\draw[coldefi,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    
+    overlay middle={\draw[coldefi,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+   
+    overlay last={\draw[coldefi,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },%
+    }
+\begin{defbox}\begin{mdframed}[linewidth=1pt,backgroundcolor=lightgray!33!white]%\itshaped
+}
+{\end{mdframed}\end{defbox}\endlist}
+
+%---definitionlists--------------------------------------------------------
+
+\newcommand{\defitem}[1]{
+	\refstepcounter{deflistcount}
+	\begin{itemize}
+		\item[\thedeflistcount.] #1
+	\end{itemize}
+}
+
+%---theoremlists--------------------------------------------------------
+
+\newcommand{\thmitem}[1]{
+	\refstepcounter{thmlistcount}
+	\begin{itemize}
+		\item[\thethmlistcount.] #1
+	\end{itemize}
+}
+\makeatletter
+\def\ifenv#1{
+   \def\@tempa{#1}%
+   \ifx\@tempa\@currenvir
+      \expandafter\@firstoftwo
+    \else
+      \expandafter\@secondoftwo
+   \fi
+}
+\makeatother
+\newcommand{\forcebreakhere}{\ifenv{mdframed}{\end{mdframed}\begin{mdframed}[linewidth=1pt,backgroundcolor=lightgray!33!white]}}{ }
+
+%---theorems--------------------------------------------------------------
+
+\NewDocumentEnvironment{theorem}{ O{} }
+{
+\newtcolorbox{thmbox}{
+    empty,
+    title={Theorem \arabic{chapter}.\thethmcount: #1},
+    attach boxed title to top left,
+       minipage boxed title,
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=colthm,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    overlay unbroken={\draw[colthm,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay first={\draw[colthm,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay middle={\draw[colthm,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay last={\draw[colthm,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    }
+\refstepcounter{thmcount}\begin{thmbox}\begin{mdframed}[linewidth=1pt,backgroundcolor=lightgray!33!white]\par\itshape
+}
+{
+\par\end{mdframed}\end{thmbox}\endlist
+}
+
+\NewDocumentEnvironment{theorem*}{ O{} }
+{
+\newtcolorbox{thmbox}{
+    
+    empty,
+    title={Theorem: #1},
+    	    
+    attach boxed title to top left,
+       
+       minipage boxed title,
+    
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=colthm,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    
+    overlay unbroken={\draw[colthm,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    
+    overlay first={\draw[colthm,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    
+    overlay middle={\draw[colthm,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+   
+    overlay last={\draw[colthm,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },%
+    }
+\begin{thmbox}\begin{mdframed}[linewidth=1pt,backgroundcolor=lightgray!33!white]\par\itshape
+}
+{\par\end{mdframed}\end{thmbox}\endlist}
+
+%---lemmata------------------------------------------------------------------------------
+
+\NewDocumentEnvironment{lemma}{ O{} }
+{
+\newtcolorbox{lembox}{
+    empty,
+    title={Lemma \arabic{chapter}.\thethmcount: #1},
+    attach boxed title to top left,
+       minipage boxed title,
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=colthm,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    overlay unbroken={\draw[colthm,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay first={\draw[colthm,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay middle={\draw[colthm,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay last={\draw[colthm,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },%
+    }
+\refstepcounter{thmcount}\begin{lembox}\begin{mdframed}[linewidth=1pt,backgroundcolor=lightgray!33!white]\par\itshape
+}
+{
+\par\end{mdframed}\end{lembox}\endlist
+}
+
+\NewDocumentEnvironment{lemma*}{ O{} }
+{
+\newtcolorbox{lembox}{
+    
+    empty,
+    title={Lemma: #1},
+    	    
+    attach boxed title to top left,
+       
+       minipage boxed title,
+    
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=colthm,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    
+    overlay unbroken={\draw[colthm,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    
+    overlay first={\draw[colthm,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    
+    overlay middle={\draw[colthm,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+   
+    overlay last={\draw[colthm,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },%
+    }
+\begin{lembox}\begin{mdframed}[linewidth=1pt,backgroundcolor=lightgray!33!white]\par\itshape
+}
+{\par\end{mdframed}\end{lembox}\endlist}
+
+%---axioms-------------------------------------------------------------------------------
+
+\NewDocumentEnvironment{axiom}{ O{} }
+{
+\newtcolorbox{axbox}{
+    empty,
+    title={Axiom \arabic{chapter}.\theaxcount: #1},
+    attach boxed title to top left,
+       minipage boxed title,
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=colax,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    overlay unbroken={\draw[colax,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay first={\draw[colax,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay middle={\draw[colax,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay last={\draw[colax,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    }
+\refstepcounter{axcount}\begin{axbox}\begin{mdframed}[linewidth=1pt,backgroundcolor=lightgray!33!white]%\itshaped
+}
+{\end{mdframed}\end{axbox}\endlist}
+
+\NewDocumentEnvironment{axiom*}{ O{} }
+{
+\newtcolorbox{axbox}{
+    empty,
+    title={Axiom: #1},
+    attach boxed title to top left,
+       minipage boxed title,
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=colax,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    overlay unbroken={\draw[colax,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay first={\draw[colax,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay middle={\draw[colax,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay last={\draw[colax,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    }
+\begin{axbox}\begin{mdframed}[linewidth=1pt,backgroundcolor=lightgray!33!white]%\itshaped
+}
+{\end{mdframed}\end{axbox}\endlist}
+
+
+\NewDocumentEnvironment{disclaimer}{ O{} }
+{
+\newtcolorbox{defbox}{
+    empty,
+    title={Disclaimer \thechapter.\thedisclcount: #1},
+    attach boxed title to top left,
+       minipage boxed title,
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=coldefi,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    overlay unbroken={\draw[coldefi,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay first={\draw[coldefi,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay middle={\draw[coldefi,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay last={\draw[coldefi,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    }
+\refstepcounter{disclcount}\begin{defbox}\begin{mdframed}[linewidth=1pt,backgroundcolor=white]%\itshaped
+}
+{\end{mdframed}\end{defbox}\endlist}
+
+\NewDocumentEnvironment{disclaimer*}{ O{} }
+{
+\newtcolorbox{defbox}{
+    empty,
+    title={Disclaimer: #1},
+    attach boxed title to top left,
+       minipage boxed title,
+    boxed title style={empty,size=minimal,toprule=0pt,top=4pt,left=3mm,overlay={}},
+    coltitle=coldefi,fonttitle=\bfseries,
+    before=\par\medskip\noindent,parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+       before upper=\csname @totalleftmargin\endcsname0pt, 
+    overlay unbroken={\draw[coldefi,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay first={\draw[coldefi,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay middle={\draw[coldefi,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+    overlay last={\draw[coldefi,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },%
+    }
+\begin{defbox}\begin{mdframed}[linewidth=1pt,backgroundcolor=white]%\itshaped
+}
+{\end{mdframed}\end{defbox}\endlist}

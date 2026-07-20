@@ -1,0 +1,151 @@
+\begin{disclaimer*}
+	A significant part of the contents of this chapter (except for \autoref{sec:crosslib:translate:ex})  has been previously published as \cite{MRLR:alignments:17} with coauthors Florian Rabe, Colin Rothgang and Yufei Liu. Both the writing as well as the theoretical results were developed in close collaboration between the authors, hence it is impossible to precisely assign authorship to individual authors. In particular, \autoref{sec:crosslib:translate:interfaces} is primarily the result of a student experiment executed by Rothgang and Liu, under joint supervision by Rabe and me. The writing has been reworked for this thesis.
+	
+	My contribution in this chapter consists of the actual implementation presented in \autoref{sec:crosslib:translate:impl}, which I have rewritten from scratch for this thesis. Additionally, I have implemented the alignments, interface theories and translators for the use case in \autoref{sec:crosslib:translate:ex}.
+\end{disclaimer*}
+
+Using alignments, we can equivocate symbols from different libraries with each other. Ideally, in the case of a perfect alignment we can then reduce translation to a one-to-one symbol substitution. However, given a multitude of libraries in our framework, naively approaching the task of aligning them in the first place still means sifting through two libraries in parallel, implying $n^2$ alignment tasks for $n$ libraries.
+
+%\paragraph{Motivation}
+%There is a vast plurality of formal systems and corresponding libraries for formalized knowledge.
+%However, almost all of these are non-interoperable because they are based on differing, mutually incompatible logical foundations (e.g. set theory, higher-order logic, variants of type theory etc.), implementations, and library structures, and much work is spent developing the respective basic libraries in each system.
+%Because a library in one such system is not reusable in another system, developers are forced to spend a large amount of time and energy developing parallel formalizations in multiple systems.
+%
+%Ideally, given two or more libraries, one would want to integrate them with each other so that knowledge formalized in one of them can be reused in, translated to or identified with contents of the others.
+%In particular, translation across formal systems offers up many potential applications such as 
+%\begin{compactitem}
+%	\item accessing and using contents from other libraries during formalization,
+%	\item aiding premise selection by importing the premises used in proofs from other systems,
+%	\item presenting contents of an unfamiliar library using notations of a familiar one, or 
+%	\item freely combining user interfaces with libraries from different systems.
+%\end{compactitem}
+
+%\paragraph{Integrating Libraries}
+%There are two ways to take on library integration.
+%Firstly, we can try to translate the contents of one formal system directly into another system.
+%This requires intimate knowledge of both systems and their respective foundations used.
+%%A small number of library bridges have been realized:
+%%\cite{KellerW10:holcoq} translates from HOL Light
+%%to Coq~\cite{CoqV6} and \cite{Obua2006} to Isabelle/HOL.
+%%\cite{Krauss2010} translates from Isabelle/HOL \cite{Nipkow-Paulson-Wenzel:2002} to Isabelle/ZF.
+%%The Coq library has been imported into Matita~\cite{AspSacTasZac:uimpa08} once.
+%
+%Secondly, we can use a \emph{logical framework} that provides a uniform intermediate data structure, in which we can specify the respective foundations and their libraries.
+%This approach has been used by the authors' research group in \cite{IanKohRab:tmmlof11} for Mizar, in \cite{KalRab:hollight:14} for HOL Light and in \cite{KohMueOwr:mpagsiuf17} for PVS, using the \mmt framework \cite{RabKoh:WSMSML13}.
+%A similar approach is currently underway using Dedukti \cite{dedukti} as the framework system.
+%
+%Neither solution has proved particularly successful.
+%On the one hand, direct translations are expensive and must be developed for each pair of systems.
+%On the other hand, logical frameworks are a step in the right direction because they allow for a star-shaped integration architecture.
+%But they do not magically solve the library integration problem: logic and library translations remain extremely difficult.
+%A detailed analysis is given in \cite{KohRab:qrtpflmk15}.
+
+In recent work, our research group has come to understand this problem more clearly and suggested a systematic solution.
+Firstly, in \cite{KohRabSac:fvip11} and \cite{KohRab:qrtpflmk15}, Michael Kohlhase, Florian Rabe and Claudio Sacerdoti Coen developed the idea of \textbf{interface theories}.
+Using an analogy to software engineering, we can think of interface theories as specifications and of theorem prover libraries as implementations of formal knowledge.
+
+%Secondly, in \cite{KalKohMue:alfms16}, we introduced \textbf{alignments} as a primitive concept for lightweight translations between libraries.
+%In the simplest case, an alignment is a pair of symbol identifiers from two different libraries such that both symbols are ``morally the same'' mathematical concept.
+%In particular, two aligned symbols may use entirely different (possibly not even logically equivalent) definitions.
+%Specifically, alignments between an interface theory and a theorem prover provide the information how a library implements the concepts of the interface theory.
+
+Secondly, in the \ODK project~\cite{DehKohKon:iop16,OpenDreamKit:on} (see \autoref{sec:intro:prelim:odk}) we pursue the same approach (Math-in-the-Middle, see \autoref{sec:lf:mitm}) in the context of computer algebra systems.
+In this context, we have already developed some interface theories for basic logical operations such as equality, with approximately 300 alignments to theorem prover libraries.
+
+Not surprisingly, the methodology described in this chapter, while in theory originally developed for fully formal libraries originating from theorem prover systems, has consequently been used to realize the objectives of \ODK as well.
+\medskip
+%
+%In this paper we follow up on this suggestion by designing several interface theories and finding their alignments to several major formal libraries.
+%Concretely, we have built theories for numbers, sets, lists, topology, combinatorics and analysis as representative examples of important domains.
+%Moreover, we have found alignments of the involved symbols with the libraries of HOL Light, PVS, and Mizar.
+%
+%Consider for example the PVS symbol \expr{member} and the HOL Light symbol \expr{IN}.
+%Both represent the mathematical concept of element-hood of (typed) sets, but they live in different libraries based on different foundations employed by different systems. 
+
+While alignments have the big advantage that they are cheap to find and implement, they have the disadvantage of not being very expressive; in fact, the definition of alignment itself is (somewhat intentionally) vague. %\footnote{In \cite{MueGauKal:cacfms17}, we attempt to classify alignments in more detail to contribute to a solution.} 
+In particular when a translation needs to consider foundational aspects beyond the individual system dialects, alignments alone are insufficient. This is where interface theories come into play: given different implementations of the same mathematical concept, their interface theory contains only those symbols that are a) common to all implementations and b) necessary to \emph{use} the concept (as opposed to formalizing it in detail)  -- which in practice turn out to be the same thing.
+
+Libraries of interface theories hence must critically differ from typical theorem prover libraries: they must follow the axiomatic method (as opposed to the method of definitional extensions), be written with minimal foundational commitment, and largely not rely on definitions or proofs in order to stay compatible with development approaches based on alternative definitions.
+
+Using interface theories and the Math-in-the-Middle approach, we can see two symbols being aligned via a sequence of consecutive steps of abstraction:
+\begin{enumerate}
+	\item We import the libraries of formal systems to a generic, foundationally neutral formal language (namely \ommt) with the help of a formalization of the system's primitives (see \autoref{ch:import:pvs}).
+	\item We align the system specific symbols (which we collectively refer to as the \emph{system dialect})\label{lbl:dialect}
+		with generic representations of the same concept. E.g. we align a symbol for HOL Light's function-application with a generic symbol for function application.
+	\item Ultimately, we (possibly after additional steps) end up with the same purely mathematical concept
+		expressed in a system- and foundationally neutral language.
+\end{enumerate}
+
+Consider for a simple example the PVS symbol \expr{member} and the HOL Light symbol \expr{IN}, we capture this with
+\begin{compactitem}
+ \item a symbol for elementhood in a (new) interface theory for sets,
+ \item two alignments of this new symbol with the symbols \expr{member} and \expr{IN}, respectively.
+\end{compactitem}
+
+This yields a star-shaped network as in the diagram in \autoref{fig:crosslib:trans:mitm} with various formal libraries on the outside, which are connected by alignments via representations of their system dialects (lower-case letters) to the interface theory in the center. Note the very deliberate similarity to \autoref{fig:interface-theories} -- the primary difference is that we substituted \ODK systems with OAF systems (see \autoref{sec:intro:objectives}).
+
+\begin{figure}%{r}{6.1cm}\vspace{-1em}
+\centering
+ \begin{tikzpicture}[scale=1.5]
+      \tikzstyle{withshadow}=[draw,drop shadow={opacity=.5},fill=white]
+      \tikzstyle{system}=[draw]
+      \tikzstyle{standard}=[circle,fill=blue!30]
+      \tikzstyle{interface}=[circle,fill=purple!30,inner sep = 1pt,]
+      \node[system] (a) at (-0.1,.3) {PVS};
+      \node[system] (c) at (2.2,0.7) {HOL Light};
+      \node[system] (e) at (1.1,2.7) {Mizar};
+      \node[system] (g) at (-0.9,2) {Coq};
+      \node[standard] (m) at (.5,1.5) {I};
+      \node[interface] (ia) at (0.2,.9) {p};
+      \node[interface] (ic) at (1.1,1.2) {h};
+      \node[interface] (ie) at (.8,2.1) {m};
+      \node[interface] (ig) at (-.1,1.75) {c};
+      \draw (m) -- (ia) -- (a);
+      \draw (m) -- (ic) -- (c);
+      \draw (m) -- (ie) -- (e);
+      \draw (m) -- (ig) -- (g);
+      \begin{pgfonlayer}{background}
+        \node[draw,cloud,fit=(ia) (ic) (ie) (ig),
+                   inner sep=-7pt,withshadow] (st) {};
+       % \node[fit=(d) (id),ellipse,inner sep=-1pt,rotate=20,draw,dashed,red] (sys) {};
+      \end{pgfonlayer}
+\end{tikzpicture}
+	\caption{Aligning Libraries via Interface Theories}\label{fig:crosslib:trans:mitm}
+\end{figure}
+
+
+
+%\paragraph{Leveraging Alignments}
+%Here we focus on using alignment to translate expressions between libraries.
+%However, alignments also allow for a variety of other services such as simultaneous browsing and searching of multiple corpora, aiding premise selection, statistical analogies or refactoring of formal corpora; for more details we refer to~\cite{MueGauKal:cacfms17}.
+%Examples include:
+%\begin{compactitem}
+%\item Transporting knowledge. Alignments can show which definitions or theorems are present in some but missing in other libraries.
+%Expression translation can then be used to transport the definition and proof sketches.
+%\item Simultaneous browsing of multiple corpora. This is already enabled (so far for a limited
+%  number of corpora) by the \mathhub system~\cite{IanJucKoh:sdm14}.
+%\item Imperfect alignments can be used to search for a single
+%  query expression in multiple corpora at once. This has been demonstrated in the Whelp
+%  search engine~\cite{AspertiGCTZ04} where Coq and Matita shared the URI syntax with the
+%  basic Calculus of Constructions constants aligned, as well as by the MathWebSearch engine
+%  \cite{KalRab:hollight:14}.
+%\item Statistical analogies
+%extracted from large formal libraries combined with imperfect alignments can be used to
+%create new conjectures and thus to automatically explore a logical corpus~\cite{tgckju16cicmwip}.
+%This complements the more classical conjecturing and theory exploration mechanisms. % Cite Bundy, Theorema, Hipster?
+%\item Automated reasoning services can make use of alignments to provide more precise
+%  proof recommendations. The quality of the HOL(y)Hammer proof advice for HOL Light
+%  can be improved from 30\% to 40\%
+%  by using the imperfect alignments to HOL4~\cite{tgck-lpar15}.
+%\item Refactoring of proof assistant corpora. Aligning concepts across versions of the same
+%  proof corpus combined with statement normalization and consistent name hashing allowed
+%  discovering 39 symbols with equivalent definitions~\cite{ckju-mcs-hh} in the Flyspeck
+%  development~\cite{hales-pisigma15}.
+%\end{compactitem}
+
+%\paragraph{Overview}
+%In Sect.~\ref{sec:mmt}, we recap the relevant preliminaries about alignments and the \mmt framework.
+%Then we describe the interface theories and our alignments in Sect.~\ref{sec:interfaces} and~\ref{sec:alignments}, respectively.
+%It is worth noting that these results were not found in that order: we first collected a large set of alignments between the formal libraries, then we constructed interface theories by abstracting over these alignments.
+%In Sect.~\ref{sec:implementations} we apply our design to concrete expression translations.
+%We conclude in Sect.~\ref{sec:conclusion} with a vision of a future collaborative effort expanding our work with many more interface theories and alignments.

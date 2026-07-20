@@ -1,0 +1,30 @@
+%flat
+\newcommand{\emptysig}{\cdot} %empty signature
+\providecommand{\emptycon}{\cdot} %empty context
+\newcommand{\decl}[2]{#1\!:\!#2}
+\newcommand{\declo}[2]{\decl{\op{#1}}{#2}} %first argument is not a meta-variable; then different font
+\renewcommand{\P}[2]{\Pi_{#1:#2}\,}
+\newcommand{\lam}[2]{\lambda_{#1:#2}\,}
+\renewcommand{\S}[2]{\Sigma_{#1:#2}\,}
+\newcommand{\pair}[2]{\rang{#1,#2}}
+\newcommand{\kity}{\mathtt{type}}
+\newcommand{\kiki}{\mathtt{kind}}
+\newcommand{\subap}[2]{#1(#2)}
+\newcommand{\subapexpl}[2]{#1[#2]}
+%EVIL; do not use \renewcommand
+\renewcommand{\sb}[2]{#1/#2} %Syntax: \sb{x}{t}
+\newcommand{\subapo}[3]{\subapexpl{#1}{\sb{#2}{#3}}}
+
+%Judgements
+\newcommand{\issig}[1]{\der #1\;\mathtt{Sig}} %well-formed signature
+\newcommand{\iscont}[2]{\der_{#1} #2\;\mathtt{Ctx}} %well-formed context
+\newcommand{\issubs}[4]{\der_{#1}#4:#2\arr #3} %well-formed substitution from #2 into #3
+\newcommand{\iskind}[3]{#2\der_{#1} #3\;\kiki} %well-formed kind
+\newcommand{\oftype}[4]{#2\der_{#1} #3:#4} %typing judgment
+\newcommand{\Ciskind}[2]{\der_{#1} #2\;\kiki} %closed kind
+\newcommand{\Coftype}[3]{\der_{#1} #2:#3} %closed term
+\newcommand{\oftypeval}[5]{#1,#2\der #3\equiv #5:#4} %typing and equality
+\newcommand{\Coftypeval}[4]{\der_{#1} #2\equiv #4:#3} %closed term with typing and equality
+
+\newcommand{\ext}[2]{\ov{#1}\left(#2\right)}
+\newcommand{\extf}[1]{\ov{#1}}

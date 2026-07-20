@@ -1,0 +1,240 @@
+%\ednote{CAS library may be transparent}
+
+%\ednote{improve: emphasize why alignments are useful, continuum between perfect and imperfect alignments; list advantages of using imperfect advantages more clearly}
+
+\begin{disclaimer*}
+	The contents of this chapter have largely been previously published as \cite{MueGauKal:cacfms17} (Extended in \cite{MueGauKal:alignmentsreport17}), \cite{KKMR:alignments:16} and \cite{MRLR:alignments:17} with coauthors Cezary Kaliszyk, Thibault Gauthier, Michael Kohlhase, Florian Rabe, Colin Rothgang and Yufei Liu. Both the writing as well as the theoretical results were developed in close collaboration between the authors, hence it is impossible to precisely assign authorship to individual authors. The writing has been reworked for this thesis.
+	
+	My contribution in this chapter consists of the actual implementations presented in \autoref{sec:crosslib:alignments:system} and the practical evaluation of the concept.
+\end{disclaimer*}
+
+%\paragraph{Motivation}
+The sciences are increasingly collecting and curating their knowledge systematically in
+machine-processable corpora.  For example, in biology many important corpora take the form
+of ontologies, e.g., as collected on BioPortal.  These corpora typically overlap
+substantially, and much recent work has focused on integrating them.  A central problem
+here is to find \emph{alignments}: pairs $(a_1,a_2)$ of identifiers from different corpora
+that describe the same concept, giving rise to
+%, a problem
+%For ontologies, this
+% problem relatively well-studied under the heading
+\emph{ontology matching}~\cite{euzenat2007ontology}.
+
+In the certification of programs and proofs, the ontology matching problem is most apparent when trying to use multiple reasoning systems together.
+For example, Wiedijk~\cite{17provers} explored a single theorem (and its proof) across 17 proof assistants implicitly generating alignments between the concepts present in the theorem's statement and proof.
+The Why3 system \cite{why3} maintains a set of translations into different reasoning systems for discharging proof obligations.
+Each translation must manually code individual alignments of elementary concepts such as integers or lists in order to fully utilize the respective system's automation potential.
+But automating the generation and use of alignments, which would be necessary to scale up such efforts, is challenging because the knowledge involves rigorous notations, definitions, and properties, which leads to very diverse corpora with complex alignment options.
+This makes it very difficult to determine whether an alignment is \emph{perfect} (we will attempt to define this notion in the next section), or to predict whether an \emph{imperfect} alignment will work just as well or not at all.
+
+
+%This problem is aggravated by the use of fundamentally different kinds of corpora.
+%Logical corpora developed in proof assistants features 
+%machine-understandable theorems and proofs.  
+%Computational corpora comprise programs that
+% implement algorithms (notably computer algebra systems) and feature executable
+% definitions and constructions.  Narrative corpora that have been developed in wikis and
+% related tools and feature human-oriented semi-formal descriptions.  
+% For each kind, there
+% are multiple large corpora, often the result of dozens of person-years of investment.
+
+
+\paragraph{Alignment Use Cases}
+Many practical services are enabled by alignments:
+
+\begin{itemize}
+\item Simultaneous browsing of multiple corpora. This is already enabled (so far for a limited
+  number of corpora) by our system presented in \autoref{sec:crosslib:alignments:system}.
+\item Imperfect alignments can be used to search for a single
+  query expression in multiple corpora at once. This has been demonstrated in the Whelp
+  search engine~\cite{AspertiGCTZ04} where Coq and Matita shared the URI syntax with the
+  basic Calculus of Constructions constants aligned, as well as by the MathWebSearch engine
+  \cite{KR:hollight:14} and a recent alignment-aware standardization of relational information (see \cite{ConKohMue:rdaml19} and \autoref{sec:ulo}).
+\item Statistical analogies
+extracted from large formal libraries combined with imperfect alignments can be used to
+create new conjectures and thus to automatically explore a logical corpus~\cite{tgckju16cicmwip}.
+This complements the more classical conjecturing and theory exploration mechanisms. % Cite Bundy, Theorema, Hipster?
+\item Automated reasoning services can make use of alignments to provide more precise
+  proof recommendations. The quality of the HOL(y) Hammer proof advice for HOL Light
+  can be improved from 30\% to 40\%
+  by using the imperfect alignments to HOL4~\cite{tgck-lpar15}.
+\item Translations between systems.
+  \cite{ckak-itp13} uses more than 70 manually discovered alignments between HOL Light and Isabelle/HOL to obtain translated theorems that talk about target system constants and types.
+  Note, that it is not necessary for the translation for the definitions of the concepts to be
+  the same. It is enough if the same properties are provable or if they yield the same computational
+  behavior. 
+ % But these definitions are usually too strict to be practical.
+ % For example, the natural number zero is defined as the empty set in set theory, while in many other foundations
+ % it is a constructor of an inductive type.
+ % Clearly, these share only some of their properties but the ones that are shared include the practically relevant ones.\footnote{Note that making this statement rigorous is non-trivial because no practical system can ever prove all intended properties of the natural numbers.} 
+ % For a more complex example,
+  Consider the real numbers: In some HOL proof assistants they are defined using Cauchy sequences,
+  while others use Dedekind cuts. The two structures share all the relevant real number
+  properties. However, they disagree with respect to irrelevant properties, e.g., in the
+  construction of the former usually a canonical Cauchy sequence for each real number is
+  introduced. Despite this minor difference, we can use such an alignment in a logical
+  translation~\cite{ckak-itp13}.
+  
+  Translations along alignments will be covered in \autoref{sec:crosslib:translate}.
+\item Refactoring of proof assistant corpora. Aligning concepts across versions of the same
+  proof corpus combined with statement normalization and consistent name hashing allowed
+  discovering 39 symbols with equivalent definitions~\cite{ckju-mcs-hh} in the Flyspeck
+  development~\cite{hales-pisigma15}.
+  
+  One such refactoring technique will be covered in \autoref{sec:crosslib:intersect}.
+\end{itemize}
+
+\paragraph{Finding Alignments}
+Even though we know that numerous alignments exist between libraries, not many alignments are known concretely or have been represented explicitly.
+Therefore, a major initial investment is necessary to obtain a large library of interface theories and alignments.
+There are three groups of alignment-finding approaches.
+
+\emph{Human-based} approaches examine libraries and manually identify alignments.
+This approach has been pursued ad hoc in various contexts.
+For example, the library translation of \cite{Obua2006} included some alignments for HOL Light and Isa\-belle/HOL, which were later expanded by Kaliszyk.
+The Why3 and FoCaLiZe systems include alignments to various theorem provers that they use as backends.
+Results from this approach will be discussed in \autoref{sec:crosslib:alignments:manually}.
+
+The remaining two classes use \emph{machine learning} methods.
+
+\emph{Logical} approaches align two concepts if they satisfy the same theorems.
+This cannot directly appeal to logical equivalence because that would require a translation between the corpora.
+Instead, they compare the theorems that are explicitly stated in the corpora. % we need more than one corpus if we want to "compare"
+The theorems should be normalized first to eliminate differences that do not affect logical equivalence.
+The quality of the results depends on how completely those theorems characterize the respective concepts.
+In well-curated libraries, this can be very high~\cite{KohMue:cicm15}. The Viewfinder presented in \autoref{sec:crosslib:vf} can be interpreted as implementing this approach.
+
+\emph{Machine learning--based} approaches are inherently based on statistical patterns and hence naturally inexact.
+The main research in this direction is carried out by Kaliszyk and others \cite{tgck-cicm14}.
+
+%We apply the human-based approach in this paper and demonstrate that it is feasible.
+%We present the largest set ever of systematically collected, human-verified alignments from multiple major proof assistants.
+%In addition to its inherent value, it will also greatly benefit the artificial intelligence approaches: firstly, it provides a dataset that can be used for evaluation and training;
+%secondly, 
+
+\paragraph{Automatic Search for Alignments}
+Finding alignments, preferably automatically, has proved extremely difficult in 
+general. There are three reasons for this:
+the conceptual differences between logical corpora found in proof assistants, 
+computational corpora containing algorithms from computer algebra systems, 
+narrative corpora that consist of semi-formal descriptions from wiki-related 
+tools; the diversity of the underlying formal languages and tools;
+and the differences between the organization of the knowledge in the corpora.
+
+While finding alignments automatically is promising for \emph{perfect alignments}, where two symbols only differ in name but are otherwise used identically, it is a different matter for \emph{imperfect} alignments.
+For example, consider binary division which yields \textsf{undefined} or \textsf{0} when the divisor is zero, versus a strict division that requires an additional proof-argument that the divisor is nonzero. %"denominator" was used incorrectly here; use "divisor" instead
+Here automation becomes much more difficult, because the imperfections often violate the conditions that an automatic approach uses to spot alignments.
+
+I conjecture that the quality of artificial intelligence approaches will be massively improved if they are applied on top of a large set of guaranteed-perfect alignments, besides their obvious use as training data.
+This is based on two observations:
+\begin{compactitem}
+ \item The more alignments we know, the easier it is to find new ones.
+Consider a typical formalization in system $S_1$ that introduces a new concept $c$ relative to some known ones.
+If perfect alignments to system $S_2$ for the known concepts have already been established, it becomes relatively easy to find the formalization of $c$ in $S_2$, and add an alignment for it.
+\item It is very difficult to get alignment-finding off-the-ground.
+Because the foundations of $S_1$ and $S_2$ are often very different, almost nothing looks particularly similar in the absence of any alignments.
+Deeper alignments will become more apparent only when alignments for fundamental concepts such as booleans, sets and numbers are established.
+\end{compactitem}
+
+%\ednote{foreshadow examples}
+%
+%Due to the size of the involved corpora, it is desirable to find alignments 
+%automatically.
+Recently, heuristic methods for automatically finding
+alignments were developed~\cite{tgck-cicm14}, targeted at integrating logical corpora, which were 
+integrated into our developments in \autoref{sec:crosslib:alignments:types}.
+%
+%including HOL Light, HOL4, and Isabelle/HOL discovering 398 pairs of isomorphic
+%concepts. We give here only a short overview of the construction. For each constant or type,
+%all the theorems that talk about it in a library have the actual constant or type abstracted.
+%This gives rise to patterns that do not mention the actual constants involved. Examples of such
+%patterns are commutativity and distributivity, with thousands of unnamed patterns. A similarity
+%score for constants in two libraries are introduced by considering the numbers of patterns they
+%share. As most similar constants or types are mapped, the abstractions are recomputed, as more
+%patterns can be shared, giving rise to an iterative process. The automatically found alignments
+%have been manually inspected to optimize the scoring functions with further 
+%evaluation of the imperfect alignments performed using automated 
+%reasoning~\cite{tgck-lpar15}.
+Independently, Deyan Ginev built a library~\cite{GinCor:nnexus:14} of about
+50,000 alignments between narrative corpora including Wikipedia, Wolfram Mathworld,
+PlanetMath and the SMGloM semantic multilingual glossary for mathematics. For this,
+the NNexus system indexes the corpora and applies clustering algorithms to discover
+concepts.
+
+\paragraph{Related Work}
+Alignments between computational corpora occur in bridges between the run time systems of programming languages.
+Alignments between logical and computational corpora are used in proof assistants with code generation such as Isabelle \cite{WLPN:TIF} and Coq \cite{coq}.
+Here functions defined in the logic are aligned with their implementations in the programming language in order to generate fast executable code from formalizations.
+
+The dominant methods for integrating logical corpora so far have focused on truth-preserving translations between the underlying knowledge representation languages.
+For example, \cite{isahol_isazf} translates from Isabelle/HOL to Isabelle/ZF.
+\cite{hol_coq} translates from HOL Light to Coq, \cite{hol_isahol} to Isabelle/HOL, and \cite{hol_nuprl} to Nuprl.
+Older versions of Matita \cite{matita} were able to read Coq compiled theory files.
+\cite{CHKMR:latinabs:11} build a library of translations between different logics.
+
+However, as mentioned in the introduction to this part, most translations are not alignment-aware, i.e., it is not guaranteed that $a_1$ will be translated to $a_2$ even if the alignment is known.
+This is because $a_1$ and $a_2$ may be subtly incompatible so that a direct translation may even lead to inconsistency or ill-typed results.
+\cite{hol_isahol} was --- to my knowledge --- the first that could be parametrized by a set of alignments. % (which were provided ad hoc).
+The OpenTheory framework \cite{opentheory} provides a number of higher-order logic concept alignments.
+In \cite{KR:qed:14}, the corpus integration problem is discussed and concluded that alignments are of utmost practical importance.
+Indeed, corpus integration can succeed with only alignment data even if no logic translation is possible.
+Conversely, logic translations contribute little to corpus integration without alignment data.
+
+%\paragraph{Contribution and Overview}
+%Our contribution is three-fold.
+%
+%First, we present a phenomenological study of alignments between proof assistant
+%corpora, as well as with mathematical corpora in Section \ref{sec:typesof}.
+%We show a number of imperfect alignments and show how this can be used to benefit
+%knowledge transfer.
+%%
+%Second, we propose a standard for storing and sharing alignments (see
+%Section~\ref{sec:standard}), we cover the central ingredient -- global identifiers based
+%on MMT URIs \cite{RK:mmt:10} -- in Section \ref{sec:uris}. Every symbol is assigned a
+%unique way to access it across corpora and across logics. 
+%The URIs are used both in the system and to give
+%several examples from logical and computational corpora in \cite{MueGauKal:alignmentsreport17}.
+%
+%%The
+%%examples focus on logical corpora, but our results carry over to other kinds of corpora as
+%%well.
+%
+%Most corpora are developed and maintained by separate, often disjoint communities.  That
+%makes it difficult for researchers to utilize alignments because no public resource exists
+%for jointly building a large collection of alignments. Therefore we have started such a
+%resource in form of a central repository as our third contribution --- it is public, and
+%we invite all researchers to contribute their alignments.  We seeded our repository with
+%the alignment sets mentioned above.  Moreover, we are hosting a web-server that allows for
+%conveniently querying for all symbols aligned with a given symbol, currently including $\approx12000$ alignments between proof assistant libraries and 22 alignments to semi-formal corpora (transitive closure not included).
+%We describe this
+%standard and infrastructure in Section~\ref{sec:standard}.
+
+% This paper is an extended version of a paper presented as work-in-progress at CICM 2016~\cite{ckmkdmfr-cicm16}. We have made the classification of alignments and format for alignments more precise, we improved the alignment browser, and gathered many more alignments across different formal proof corpora.
+
+% Some constants: Booleans:
+% \[\mathrm{T}_{\mathrm{HL}} \approx \mathrm{HOL.True}_{\mathrm{Isa}}\]
+% Naturals:
+% \[\mathrm{SUC}_{\mathrm{HL}} \approx \mathrm{Nat.Suc}_{\mathrm{Isa}}\]
+% \[\mathrm{int\_add}_{\mathrm{HL}} \approx \mathrm{Zplus}_{\mathrm{Coq}}\]
+% Conditional:
+% \[\mathrm{COND}_{\mathrm{HL}} \approx \mathrm{HOL.If}_{\mathrm{Isa}}\]
+% Function composition:
+% \[\mathrm{o}_{\mathrm{HL}} \approx \mathrm{Fun.comp}_{\mathrm{Isa}}\]
+% List reversal:
+% \[\mathrm{REVERSE}_{\mathrm{HL}} \approx \mathrm{List.rev}_{\mathrm{Isa}}\]
+% Pairing
+% \[\mathrm{``,"}_{\mathrm{HL}} \approx \mathrm{Product\_Type.Pair}_{\mathrm{Isa}}\]
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "paper-cicm2"
+%%% End:
+
+
+%  LocalWords:  ednote emph euzenat2007ontology formalizations Wiedijk organization Nuprl
+%  LocalWords:  isahol_isazf hol_coq hol_isahol hol_nuprl parametrized opentheory Deyan
+%  LocalWords:  tgck-cicm14 ckak-itp13 normalization ckju-mcs-hh hales-pisigma15 Ginev
+%  LocalWords:  tgck-lpar15 Bortin bortin06awe standardization standardization mathrm
+%  LocalWords:  mathrm mathrm mathrm Nat.Suc Zplus emphasize itemize sec:standard
+%  LocalWords:  AspertiGCTZ04 tgckju16cicmwip behavior sec:typesof sec:uris hyperref
+%  LocalWords:  sec:examples ckmkdmfr-cicm16

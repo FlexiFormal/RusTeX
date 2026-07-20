@@ -1,0 +1,18 @@
+%\newcommand{\mmtref}[3][black]{\def\mmt@temp{\@linkcolor}\def\@linkcolor{#1}\hyperref{}{mine}{#2}{#3}\def\@linkcolor{\mmt@temp}}
+
+%% \crtarget{id}{text} defines text as the target of \mmtref[...]{id}{...}
+\newcommand{\crtarget}[2]{\hyperdef{mine}{#1}{#2}}
+%% \crref[color]{id}{text} makes text a reference to id
+\newcommand{\crref}[3][black]{\hyperref{}{mine}{#2}{{\color{#1}#3}}}
+
+%% \crdec{name}{text} defines commands \declname and \name with both producing text and the latter linking to the former
+%% \declname should be used exactly once
+\newcommand{\crdec}[2]{%
+\expandafter\gdef\csname #1\endcsname{\crref[blue]{#1}{#2}}%
+\expandafter\gdef\csname decl#1\endcsname{\crtarget{#1}{#2}}%
+}
+
+\newcommand{\concdec}[2][]{%
+\expandafter\gdef\csname #2\endcsname{\crref[black]{#1}{\underline{\ifnonempty[#2]{#1}{#1}}}}%
+\expandafter\gdef\csname decl#2\endcsname{\crtarget{#1}{{\textbf{\ifnonempty[#2]{#1}{#1}}}}}%
+}

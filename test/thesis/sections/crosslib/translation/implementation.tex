@@ -1,0 +1,46 @@
+I have implemented a prototypical expression translator in the \mmt system that uses alignments, theory morphisms and programmatic tactics to translate expressions in the form of \mmt terms.
+%It currently uses $\approx400$ alignments for translation purposes (out of $\approx1400$ in total) between HOLLight, PVS, Mizar and Coq (even though there is no \omdoc import from Coq as of yet). 
+The translation mechanism is already used in the \ODK project and is exposed via the \mmt query language \cite{Rabe:qlfml12}. 
+
+Crucially, the algorithm returns partial translations when no full translation to a target library can be found. These can be used for finding new alignments automatically by the techniques described in \autoref{sec:crosslib:vf}.
+
+\paragraph{The Algorithm} is parametric in
+\begin{enumerate}
+	\item An \mmt term $t$,
+	\item A termination predicate $\cn{Fin}$ on \mmt terms indicating whether an \mmt term is finished translating. In the case of across-library translation, this predicate can e.g. check that all symbols occuring in a term are from a targeted \mmt archive or in a specific namespace.
+	\item an ordered list of individual translators $\mathcal T=\{T_1,\ldots T_n\}$,which are partial functions from \mmt terms to \mmt terms.
+\end{enumerate}
+We can obtain translators in several ways:
+\begin{itemize}
+	\item For an alignment $\expr{\cn{S_1}\ \cn{S_2}\  \cn{direction}=\text{''}\cn{both}\text{''}}$, we obtain the translator $T$ with $T(S_1)=S_2$ and $T(S_2)=S_1$. Analogously, the translator we obtain from alignments with \cn{direction} values \cn{forward} or \cn{backward} only maps $S_1$ to $S_2$ or, respectively, the other way around.
+	\item For an alignment $\expr{\cn{S_1}\ \cn{S_2}\ \cn{arguments}=\text{''}\cn{(i_1,j_1)}\ldots\cn{(i_n,j_n)}\text{''}}$, we obtain the translator $T$ that maps any term $S_1(x_1,\ldots,x_m)$ to $S_2(y_1,\ldots,y_n)$ according to the reordering from \autoref{def:crosslib:alignments:arguments}. As in the case above, $T$ also maps the reverse case depending on the \cn{direction}-key.
+	\item A theory morphism is already a partial function on \mmt terms, its defined domain being the well-formed terms over the domain theory of the morphism.
+\lstMakeShortInline[language=scala]*
+	\item A Scala object of class *AcrossLibraryTranslation*, that implements two functions:
+		\begin{itemize}
+			\item *applicable(tm: Term): Boolean* that determines its domain (should be fast regarding runtime) and
+			\item *apply(tm: Term):Term* that computes the translation.
+		\end{itemize}
+	\item As a last option, we choose definition expansion, which maps a symbol reference $S$ for a defined constant to its definiens.
+\end{itemize}
+The Algorithm $\cn{Translate}(t,\cn{Fin},\mathcal T):$*(Term,Boolean)* then reduces to a simple tree search, iteratively applying applicable translators in $\mathcal T$ to subterms of $t$ until $\cn{Fin}$ is satisfied, or return a partial translation if no full translation of $t$ can be found.
+
+\lstDeleteShortInline*
+
+This implementation is naive and potentially inefficient and should be considered prototypical, but suitably demonstrates the capabilities of the general approach.
+
+Before we cover one example in detail, \autoref{tbl:translate} lists three rather simple example translations between PVS and HOL Light. We use the Pi-types of LF to bind variables on the outside of the intended expressions. 
+
+Note that even something like the application of a function entails a translation from function application in HOL Light to function application in PVS, since they belong to their respective system dialects. Furthermore, the translation from simple function types in HOL Light to the dependent $\Pi$-type in PVS is actually done on the level of interface theories, where simple function types are defined as a special case of dependent function types (see \autoref{subsec:crosslib:interfaces}). Unlike the latter two, the first example uses only primitive symbols in both systems that are not part of any external library. Meta-variables have been left out in the third example for brevity. 
+
+Furthermore, an argument alignment was used in the third example, that switches the two (non-implicit) arguments -- namely the predicate and the list. Whereas this usually trips up automated translation processes or needs to be manually implemented, in our case this is as easy as adding (in this case) the key-value-pair \expr{arguments=``(2,3)(3,2)"} to the alignment.
+\begin{table}[ht]\centering	\footnotesize
+  \begin{tabular}{|c|c|}
+ 	\hline HOL Light & PVS \\ 
+  	\hline \textsf{\{A:holtype, P:term A$\Longrightarrow$bool, a:term A\}$\vdash$P(a)} & \textsf{\{A:tp,P:expr $\Pi_{\textsf{\_:A}}\textsf{boolean}$,a:expr A\}$\vdash$P(a)} \\ 
+  	\hline \textsf{\{T:holtype,a:term T,A:term T$\Longrightarrow$bool\}a IN A} & \textsf{\{T:tp, a:expr T, A:expr $\Pi_{\textsf{\_:T}}$boolean\}member(a,A)} \\ 
+  	\hline \textsf{FILTER (Abs x:bool. x) c :: b :: a :: NIL} & \textsf{filter (c :: b :: a :: null) ($\lambda$x : boolean. x)} \\ 
+  	\hline 
+  \end{tabular}
+  \caption{Three Expressions Translated}\label{tbl:translate}
+\end{table}

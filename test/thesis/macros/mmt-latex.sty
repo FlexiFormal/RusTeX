@@ -1,0 +1,13 @@
+\RequirePackage{currfile}
+
+% \ifnonempty{a}{b} = if (a == empty) empty else b
+\newcommand{\ifnonempty}[3][]{\def\@empty{}\def\@test{#2}\ifx\@test\@empty#1\else#3\fi}
+% \mmtfold{a}{b1,...,bn} = b1 a ... a bn
+\newcommand{\mmtfold}[2]{\let\@tmpop=\relax\@for\@I:=#2\do{\@tmpop\@I\let\@tmpop=#1}}
+
+\newcommand{\mmtvar}[2]{#1:#2}
+
+\newenvironment{mmttheory}[2][]{\begin{tabular}{lcl}\multicolumn{3}{l}{$\mathrm{theory}\;\mathit{#2}\ifnonempty{#1}{:#1}$}\\}{\end{tabular}}
+\newcommand{\mmtindent}{\;\;\;}
+\newcommand{\mmtdecl}[3][]{$\mmtindent #2$ & \ifnonempty{#3}{$:$} & $#3$ } % \ifnonempty{#1}{\\ & $=$ & $#1$}
+\newcommand{\mmtinclude}[1]{\multicolumn{3}{l}{$\mmtindent \mathrm{include}\;#1$}}

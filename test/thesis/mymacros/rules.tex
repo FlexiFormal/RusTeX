@@ -1,0 +1,12 @@
+\makeatletter
+	\newenvironment{scriptaligned}[1][c]
+	{\, \hbox\bgroup
+		\fontsize{ \sf@size}{\dimexpr \sf@size pt+1pt}\selectfont
+		$\! \aligned[#1]
+	}{ \endaligned$\egroup}
+\makeatother
+
+\newcommand{\irule}[2] { \dfrac{\begin{aligned}#1\end{aligned}}{\begin{aligned}#2\end{aligned}}}
+\newcommand{\trule}[2] {\dfrac{\begin{scriptaligned}#1\end{scriptaligned}}{\begin{scriptaligned}#2\end{scriptaligned}}}
+\newcommand{\nrule}[3] { \irule{#1}{#2}\; #3}
+\newcommand{\ntrule}[3] {\trule{#1}{#2}\;#3}

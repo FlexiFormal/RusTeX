@@ -1,0 +1,145 @@
+% \subsubsection{Sample Alignments}
+As an experiment,we hired two mathematics students at Jacobs University in Bremen -- Colin Rothgang and Yufei Liu -- to manually comb through libraries of HOL Light, PVS, Mizar and Coq to find alignments.
+Specifically, they picked the mathematical areas of numbers, sets (as well as lists), abstract algebra, calculus, combinatorics, logic, topology, and graphs as a sample.
+This produced around 900 declarations overall, from which they constructed interface theories, as presented in \autoref{sec:crosslib:translate:interfaces}. Notably neither of the two students had prior in-depth knowledge about theorem prover systems or their libraries.
+
+\begin{table}[ht]\centering\tiny
+	\begin{tabular}{|c|c|c|c|c|c|}\hline
+		Concept & PVS (Standard)& HOL Light (Standard)& Mizar (Standard) & Coq (Standard)\\\hline
+		$\mathbb N$ & \textsf{naturalnumbers?naturalnumber} & \textsf{nums?nums} & \textsf{ORDINAL1?modenot.6}& \textsf{Coq.Init.Datatypes?nat}\\
+		successor function & \textsf{naturalnumbers?succ} & \textsf{nums?SUC} & \textsf{ORDINAL1?func.1} & \textsf{Coq.Init.Nat?succ}\\
+	 	\textsf{addition} & \textsf{number\_fields?+} & \textsf{arith?ADD} & \textsf{ORDINAL2?func.10} & \textsf{Coq.Init.Nat?add}\\
+		\textsf{multiplication} & \textsf{number\_fields?*} & \textsf{arith?MULT} & \textsf{ORDINAL2?func.11}& \textsf{Coq.Init.Nat?mul} \\
+		less than & \textsf{number\_fields?$<=$} & \textsf{arith?$<=$} & \textsf{XXREAL\_0?pred.1}& \textsf{Coq.Init.Nat?leb} \\\hline
+	\end{tabular}
+	\caption{Alignments for \textsf{NaturalNumbers} (libraries in brackets)}\label{tbl:natalignments}
+\end{table}
+
+\begin{table}[ht]\centering\tiny
+	\begin{tabular}{|c|c|c|c|c|}\hline
+		Concept & PVS (NASA\footnotemark ) & HOL Light (Standard)& Mizar (Standard) &Coq (coq-topology\footnotemark)\\\hline
+		\textsf{topology} & \textsf{topology\_prelim?topology} & \textsf{topology?topology} & \textsf{PRE\_TOPC?modenot.1}& \textsf{TopologicalSpaces?TopologicalSpace} \\
+		\textsf{open} & \textsf{topology?open?} & \textsf{topology?open\_in} & \textsf{PRE\_TOPC?attr.3} & \textsf{TopologicalSpaces?open} \\
+		\textsf{closed} & \textsf{topology?closed?} & \textsf{topology?closed\_in} & \textsf{PRE\_TOPC?attr.4} & \textsf{TopologicalSpaces?closed}\\
+%		\textsf{open\_Rn} &\textsf{N/A}  & \textsf{.../topology.ml?open} & N/A& \textsf{PRE\_TOPC?modenot.1} \\
+%		\textsf{closed\_Rn} & \textsf{N/A} & \textsf{.../topology.ml?closed} & N/A& \textsf{PRE\_TOPC?modenot.1}  \\
+		\textsf{interior} & \textsf{topology?interior} & \textsf{topology?interior} & \textsf{TOPS\_1?func.1}& \textsf{InteriorsClosures?interior}   \\
+		\textsf{closure} & \textsf{topology?Cl} & \textsf{topology?closure} & \textsf{PRE\_TOPC?func.2 }& \textsf{InteriorsClosures?closure}   \\\hline
+	\end{tabular}
+	\caption{Alignments for \textsf{Topology} (libraries in brackets)}\label{tbl:topalignments}
+\end{table}
+
+For example, Tables \ref{tbl:natalignments} and~\ref{tbl:topalignments} show some of these alignments for natural numbers %from \autoref{fig:intgraph} 
+and topology. 
+
+Alignments in topology pose some additional difficulties. Firstly, HOL Light defines a topology on some \emph{subset} of the universal set of a type, whereas PVS defines it on a type directly. Thus, the alignment from HOL Light to the interface theory is unidirectional. Secondly, Mizar does not define the notion of a topology, but instead the notion of a topological space. Therefore, the students aligned all these symbols to two different symbols in an interface theory (\expr{topology} and \expr{topological\_space}) and defined \expr{topological\_space} based on \expr{topology}. 
+
+The set of all alignments they found can be inspected at \url{https://gl.mathhub.info/alignments/Public/tree/master/manual}. Many of these alignments are by now outdated, due to recent developments on \mmt, including an import for Coq (see \cite{coqmmt}) which had us rethink their \mmt URI schema, and changes in the surface syntax that require the archive of interface theories (discussed in \autoref{sec:crosslib:translate:interfaces}) to be cleaned up and partially reimplemented. However, as an experiment, it shows that finding and implementing alignments manually is surprisingly easy even with very little prior knowledge of the formal systems.
+
+%\subsubsection{Alignment Directions}
+%
+%For translation purposes, we distinguish among three kinds of alignments (which are different from the categories in \cite{MueGauKal:cacfms17}) based on the possible directions of translations between the concepts in the interface theory and the prover library.
+%\paragraph{Bidirectional Alignments} This includes perfect alignments. For example, the translation between the definitions of set union in the interface theory and PVS library is bidirectional:
+%\subparagraph{Interface}\expr{union\ :\ \{A\}\ set\ A \to set\ A \to set\ A\ \#\ 2\cup \ 3}
+%\subparagraph{PVS}\expr{union(a,\ b):\ set\ =\ {x\ |\ member(x,\ a)\ OR\ member(x,\ b)}}
+%\paragraph{Unidirectional Alignments} This includes alignments up to totality of functions, alignments up to certain arguments and alignments up to associativity. For example, in PVS the operator \expr{+} is used universally for all number fields ($\mathbb N$, $\mathbb R$, $\mathbb C$), but in the interface theory \expr{plus} is defined for each type. Thus we can only translate from the interface theory to PVS.
+%\paragraph{Other Alignments} Due to the limitation of \mmt's current implementations, there are some alignments which cannot be used at the moment but are potentially directional. For example, the \expr{>} operator in Mizar is not explicitly declared, but instead defined as the so-called \expr{antonym} of the \expr{<=} operator. It is redirected to the \expr{<=} operator whenever used: \[\expr{antonym\ a\ >\ b\ for\ a\ <=\ b;}\] However, since \mmt cannot handle alignments up to negation, this cannot be used for translation yet.
+
+% Note to Colin: please discuss with me before you change this table! You can see the errors in your data if you count the alignments in .align files (e.g. coqnat.align). Also where do HOL Light's alignments to algebra come from? I can't find them in Public/manual but you listed some numbers for that.
+% If you use a different source instead of .align files, also let me know
+% For "other alignments", I don't think it's necessary to have them in the table, because the numbers are small enough to be of any significance and we didn't well document them anyway. An explanation for their existence should suffice. (And I actually don't know where you keep the data for the "other alignments".)
+\begin{table}[ht]\centering\footnotesize
+	\begin{tabular}{|c|c|c|c|c|}
+	  \hline 
+	   Topic & HOL Light & PVS & Mizar & Coq\\
+		\hline \textsf{Algebra}& \textsf{0/0} & \textsf{18/1} & \textsf{17/0} & \textsf{14/0}\\
+		\hline \textsf{Calculus}& \textsf{15/0} & \textsf{14/0} & \textsf{16/0} & \textsf{5/15}  \\
+		\hline \textsf{Categories} & \textsf{0/0} & \textsf{0/0} & \textsf{9/1} & \textsf{5/0}\\
+		\hline \textsf{Combinatorics}& \textsf{24/0} & \textsf{15/0} & \textsf{1/0} & \textsf{1/0}  \\
+		\hline \textsf{Complex Numbers} & \textsf{9/2} & \textsf{4/6} & \textsf{7/2} & \textsf{11/2}\\
+		\hline \textsf{Graphs} & \textsf{5/5} & \textsf{17/0} & \textsf{20/0} & \textsf{7/2}\\
+		\hline \textsf{Integers}& \textsf{10/0 }& \textsf{0/0 }& \textsf{5/2} & \textsf{47/3} \\
+		\hline \textsf{Lists}& \textsf{16/0} & \textsf{9/0} & \textsf{8/0} & \textsf{36/2} \\
+		\hline \textsf{Logic}& \textsf{7/0} & \textsf{7/5} & \textsf{7/0}& \textsf{24/1} \\
+		\hline \textsf{Natural Numbers} & \textsf{19/0} & \textsf{8/10} & \textsf{9/0}& \textsf{34/1}  \\
+		\hline \textsf{Polynomials} & \textsf{4/0} & \textsf{1/0} & \textsf{7/0}& \textsf{0/0}  \\
+		\hline \textsf{Rational Numbers} & \textsf{0/14} & \textsf{2/11} & \textsf{0/10}& \textsf{14/3}  \\
+		\hline \textsf{Real Numbers}  & \textsf{13/2} & \textsf{3/10} & \textsf{7/4} & \textsf{12/2}\\
+		\hline \textsf{Relations}  & \textsf{4/0} & \textsf{16/5} & \textsf{18/3} & \textsf{1/12}\\
+		\hline \textsf{Sets}  & \textsf{23/0} & \textsf{28/0} & \textsf{18/0} & \textsf{19/0}\\
+		\hline \textsf{Topology} & \textsf{15/0} & \textsf{10/0} & \textsf{9/0}& \textsf{17/1} \\
+		\hline \textsf{Vectors} & \textsf{13/0} & \textsf{7/0} & \textsf{15/0}& \textsf{0/0} \\
+		\hline \textbf{Sum}  & \textbf{177/23} & \textbf{159/48} & \textbf{173/22}& \textbf{240/42} \\ 
+		\hline 
+	\end{tabular}
+	\caption{Number of Bidirectional/Unidirectional Alignments per Library}\label{tbl:alignmenttotal}
+\end{table}
+
+%\begin{table}[ht]\centering\footnotesize
+%	\begin{tabular}{|c|c|c|c|c|c|}
+%		\hline 
+%		%&&\multicolumn{3}{c|}{Number of \textsf{bidirectional/unidirectional/other} alignments}\\
+%		Interface Theory & Number of concepts & HOL Light & PVS & Mizar & Coq\\
+%		\hline \textsf{Algebra} & 21 & \textsf{18/0/1} & \textsf{17/0/0} & \textsf{14/0/0} & \textsf{14/0/0}\\
+%		\hline \textsf{Limits} & \textsf{17} & \textsf{6/1/0} & \textsf{13/0/2} & \textsf{10/1/4} & \textsf{5/15/0} \\
+%		\hline \textsf{Differentiation} & \textsf{4} & \textsf{2/0/0} & \textsf{3/0/0} & \textsf{4/0/0} & \textsf{0/0/0} \\
+%		\hline \textsf{Integration} & \textsf{6} & \textsf{4/0/0} & \textsf{2/0/0} & \textsf{2/0/0} & \textsf{0/0/0} \\
+%		\hline \textsf{Complex Numbers} & \textsf{11}& \textsf{8/2/0} & \textsf{8/0/0} & \textsf{8/2/0} & \textsf{11/2/0} \\
+%		\hline \textsf{Integers} & \textsf{9} & \textsf{1/7/0 }& \textsf{2/7/0} & \textsf{2/7/0} & \textsf{9/3/0} \\
+%		\hline \textsf{Natural Numbers} & \textsf{21} & \textsf{20/1/0} & \textsf{5/9/0} & \textsf{8/3/2} & \textsf{21/1/0} \\
+%		\hline \textsf{Real Numbers} & \textsf{15} & \textsf{12/2/0} & \textsf{9/5/0} & \textsf{7/4/2} & \textsf{12/2/0} \\
+%		\hline \textsf{Categories} & 10 & \textsf{0/0/0} & \textsf{0/0/0} & \textsf{9/1/0} & \textsf{5/0/0} \\
+%		\hline \textsf{Graphs} & 27 & \textsf{5/5/0} & \textsf{17/0/0} & \textsf{20/0/0} & \textsf{7/2/0}\\
+%		\hline \textsf{Lists} & \textsf{16} & \textsf{15/0/0} & \textsf{9/0/0} & \textsf{0/0/0} & \textsf{0/0/0} \\
+%		\hline \textsf{Logic} & \textsf{9} & \textsf{9/0/0} & \textsf{9/0/0} & \textsf{9/0/0} & \textsf{9/0/0} \\
+%		\hline \textsf{Sets} & 28 & \textsf{23/0/0} & \textsf{28/0/0} & \textsf{18/0/0} & \textsf{18/0/0} \\
+%		\hline \textsf{Relations} & 23 & \textsf{1/0/0} & \textsf{21/0/0} & \textsf{15/0/1} & \textsf{15/1/0} \\
+%		\hline \textsf{Functions} & 7 & \textsf{0/0/1} & \textsf{1/0/1} & \textsf{7/0/0} & \textsf{7/0/0} \\
+%		\hline \textsf{Topology} & \textsf{25} & \textsf{13/2/2} & \textsf{14/0/9} & \textsf{11/0/7} & \textsf{11/7/0} \\
+%		\hline \textsf{Vectors} & \textsf{13/0/0} & \textsf{7/0/0} & \textsf{15/0/0}& \textsf{0/0/0} & \textsf{0/0/0} \\
+%		\hline \textbf{Sum} & \textbf{185} & \textbf{144/20/4} & \textbf{182/21/12} & \textbf{144/18/16} & \textbf{144/28/0} \\ 
+%		\hline 
+%	\end{tabular}
+%	\caption{Number of bidirectional/unidirectional alignments per library}\label{tbl:alignmenttotal}
+%\end{table}
+
+%Many of the alignments are imperfect.
+%Many of the symbols here exist in HOL Light specifically for the standard topology and metric on $\mathbb R^n$, but they are defined more generally in the other systems. Also the topology in PVS defines only universal topologies, i.e. topologies on the elements of a type, whereas HOL Light allows any subsets. This makes sense, considering that PVS allows subtyping and HOL Light does not. Furthermore, Mizar does not contain the corresponding definition of topology but instead a predicate \expr{TopSpace-like} which implicitly defines the topological structure. However, these are used in exactly the same way as the topologies in HOL Light and PVS and represent the same mathematical idea (e.g. in PVS the type of the topology represents the base set contained in the topological spaces in Mizar), so they can be aligned, although in the case of the HOL Light topology the alignment is unidirectional.
+
+% \subsubsection{Causes for Imperfect Alignments}
+
+During the course of collecting alignments, Rothgang and Liu have identified the following two aspects to be the most common causes for imperfect alignments:
+\begin{itemize}
+\item \emph{Subtyping} In the PVS library, the arithmetic operations on all the number fields are defined on a common supertype \expr{numfields}. Therefore, a translation from PVS to the other two languages may not be viable. 
+\item \emph{Partiality} The result of division by zero in the libraries of HOL Light and Mizar is defined as zero; in PVS, however, the divisor must be nonzero. Therefore, certain theorems in HOL Light and Mizar involving division no longer hold in PVS, and the translation is unidirectional. % added "and" as a necessary conjunctive adverb
+\end{itemize}
+
+
+
+
+%\begin{table}[ht]\centering\footnotesize	
+%	\begin{tabular}{|c|c|c|c|}
+%		\hline Interface Theory & 1 Library & 2 Libraries & 3 Libraries & 4 Libraries\\
+%		\hline \textsf{Complex Numbers} & \textsf{0} & \textsf{2} & \textsf{8} \\
+%		\hline \textsf{Integers} & \textsf{0} & \textsf{1} & \textsf{4} \\
+%		\hline \textsf{Natural Numbers} & \textsf{5} & \textsf{5} & \textsf{11} \\
+%		\hline \textsf{Reals} & \textsf{1} & \textsf{1} & \textsf{13} \\
+%		\hline \textsf{Sets} & \textsf{0} & \textsf{15} & \textsf{13} \\
+%		\hline \textsf{Relations} & \textsf{9} & \textsf{13} & \textsf{1} \\
+%		\hline \textsf{Functions} & \textsf{5} & \textsf{1} & \textsf{1} \\
+%		\hline \textsf{Topology} & \textsf{5} & \textsf{9} & \textsf{11} \\ 
+%
+%		\hline \textsf{Limits} & \textsf{2} &\textsf{7} & \textsf{7} \\
+%		\hline \textsf{Differentiation} & \textsf{1} & \textsf{1} & \textsf{2} \\
+%		\hline \textsf{Integration} & \textsf{4} & \textsf{2} & \textsf{0} \\
+%
+%		\hline \textsf{Lists} & \textsf{6} & \textsf{9} & \textsf{0} \\
+%		\hline \textsf{Logic} & \textsf{9} & \textsf{0} & \textsf{0} \\
+%
+%		\hline \textbf{Sum} & \textbf{47} & \textbf{75} & \textbf{71} \\
+%		\hline
+%	\end{tabular}
+%	\caption{Number of concepts found in exactly one, two or three libraries}
+%	\label{tbl:intersectionConcepts}
+%\end{table}
+

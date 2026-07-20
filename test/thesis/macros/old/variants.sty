@@ -1,0 +1,30 @@
+\RequirePackage{comment}
+\RequirePackage{ifthen}
+
+\newcommand{\variant@active}{}
+
+%\variant{v}{text} produces "text" iff "v" ist the active variant
+\newcommand{\variant}[2]{%
+\ifthenelse{\equal{\variant@active}{#1}}%
+{#2}%
+{}%
+}
+
+%\declarevariant{v} declares a variant "v"
+%\begin{v}...\end{v} is included iff "v" is the active variant
+\newcommand{\declarevariant}[1]{
+ \excludecomment{#1}
+}
+
+%\setvariant{v} makes "v" the active variant
+\newcommand{\setvariant}[1]{
+ \includecomment{#1}
+ \renewcommand{\variant@active}{#1}
+}
+
+\newcommand{\declarevariantpair}[2]{
+ \expandafter\def\csname #1#2\endcsname##1##2{##1}
+ \includecomment{#1}
+ \excludecomment{#2}
+}
+

@@ -1,0 +1,38 @@
+\newcommand{\includeroot}{}
+%\newcommand{\includeroot}{C:/rabe/Program_Data/Latex/}
+\newcommand{\myuse}[1]{\input{\includeroot #1}}
+\newcommand{\myusepack}[1]{\usepackage{\includeroot #1}}
+
+%long and short version
+%\newcommand{\longv}[1]{#1}
+%\newcommand{\shortv}[1]{}
+%\newcommand{\losho}[2]{\shortv{#1}\longv{#2}}
+
+\providecommand{\omdoc}{\textsc{OMDoc}}
+\providecommand{\mathml}{\textsc{MathML}}
+\providecommand{\openmath}{\textsc{OpenMath}}
+\newcommand{\tb}{\hspace*{.5cm}}
+\newcommand{\tbiff}{\tb\miff\tb}
+\newcommand{\tbimpl}{\tb\impl\tb}
+\newcommand{\itm}{\item}
+\newcommand{\mycite}[1]{ (\cite{#1})}
+\newenvironment{tightitemize}[1][--]{\begin{list}{#1}{\setlength{\itemsep}{0pt}}}{\end{list}}
+\newcommand{\mpag}[2]{\begin{minipage}{#1}#2\end{minipage}}
+\newcommand{\mpage}[1]{\begin{minipage}{\textwidth}#1\end{minipage}}
+
+%change figure/table placement
+% General parameters, for ALL pages:
+%\renewcommand{\topfraction}{0.9}	% max fraction of floats at top
+%\renewcommand{\bottomfraction}{0.8}	% max fraction of floats at bottom
+%Parameters for TEXT pages (not float pages):
+\setcounter{topnumber}{2}
+%\setcounter{bottomnumber}{2}
+%\setcounter{totalnumber}{4}     % 2 may work better
+%\setcounter{dbltopnumber}{2}    % for 2-column pages
+%\renewcommand{\dbltopfraction}{0.9}	% fit big float above 2-col. text
+%\renewcommand{\textfraction}{0.07}	% allow minimal text w. figs
+%Parameters for FLOAT pages (not text pages):
+%\renewcommand{\floatpagefraction}{0.7} % N.B.: floatpagefraction MUST be less than topfraction !!
+%\renewcommand{\dblfloatpagefraction}{0.7}
+% remember to use [htp] or [htpb] for placement
+

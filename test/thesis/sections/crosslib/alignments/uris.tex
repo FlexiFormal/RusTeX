@@ -1,0 +1,175 @@
+An essential requirement for relating logical corpora is standardizing the identifiers so that each identifier in the corpus can be uniquely referenced.
+It is desirable to use a uniform naming schema so that the syntax and semantics of identifiers can be understood and implemented as generically as possible.
+Therefore, we use MMT URIs \cite{RK:mmt:10}, which have been specifically designed for that purpose.
+
+\subsubsection{Namespace Organization}
+
+MMT URIs standardize the syntax of the identifiers, but they still allow a lot of freedom how to assign URIs to the concepts in a specific corpus.
+This assignment is straightforward in principle --- after all we only have to make sure that every concept has a unique URI.
+However, as we will see below, the structure of a corpus can pose some subtle issues that must be addressed carefully. 
+Therefore, we quickly discuss commonly used corpus structures and how these can be used to form URIs systematically.
+
+The common structuring feature of corpora is usually a directory tree.
+The leaves of this tree are files and contain modules.
+Moreover, each corpus usually has a certain root namespace.
+However, systems differ in how they subdivide a corpus into namespaces.
+
+We distinguish the following cases:
+\begin{compactitem}
+ \item \textbf{flat} structure: All files share the same namespace regardless of their physical location in the directory tree.
+ This naming schema is most well-known from SML.
+ In this case, we can use the root namespace as the fixed namespace for all concepts in the corpus.
+ \item \textbf{directory-based} structure: The namespace of a module is formed by concatenating the root namespace with the path to the directory containing it.
+ There are two subcases regarding the treatment of the file name:
+  \begin{compactitem}
+    \item \textbf{files-as-modules}: Each file contains exactly one module, whose name is that of the file without the file name extension.
+    The name of the module may be repeated \emph{explicit}ly in the file or may be left \emph{implicit}.
+    Files as explicitly named modules is most well-known as the convention of Java.
+    \item \textbf{irrelevant file names}: The file name is irrelevant, i.e., the grouping of modules into files within the same directory is arbitrary.
+    In particular, a file can contain multiple modules.
+  \end{compactitem}
+ \item \textbf{file-based} structure: The namespace of a module is formed by concatenating the root namespace of the corpus with the path to the file containing it.
+\end{compactitem}
+
+\subsubsection{URIs for Selected Proof Assistants}
+
+Using the principles defined above, we describe the MMT URI formation principles for some important proof assistants.
+In all cases, we also assign MMT URIs for the underlying foundations in order to refer to built-in concepts.
+\medskip
+
+\textbf{PVS} \cite{pvs} uses directory-based namespaces with irrelevant file names.
+We propose the following root URIs for some important PVS-related corpora:
+\begin{compactitem}\small
+ \item the PVS foundation: \url{http://pvs.csl.sri.com/foundation}
+ \item the standard library that is shipped with PVS: \url{http://pvs.csl.sri.com/Prelude}
+ \item the NASA corpus: \url{http://shemesh.larc.nasa.gov/fm/ftp/larc/PVS-library}
+\end{compactitem}
+Within a PVS corpus, the top-level modules are theories and (co)datatype declarations.
+The only possible nesting between them is that theories may contain (co)datatype
+declarations.  Consequently, the module names have at most two segments.  If a module is a
+(co)datatype, its symbols are the constructors, testers, etc.  These are not hierarchical.
+If a module is a theory, its symbols are all declarations declared in it.  These are not
+hierarchical.  However, if a symbol name $N$ is declared multiple times in the same module
+(due to overloading), we use two-level names of the form $N/i$ where $i$ numbers all
+declarations of $N$ in that module (starting from $1$).  \medskip
+
+\textbf{Coq} \cite{coq} uses directory-based namespaces with files as implicitly named modules.
+We propose the following root URIs:
+\begin{compactitem}
+ \item the Coq foundation: \url{https://coq.inria.fr/foundation}
+ \item the standard library shipped with Coq: \url{https://coq.inria.fr/theories}
+ \item the Coq contributions: \url{https://coq.inria.fr/contribs}
+ \item the Mathematical Components corpus (including SSReflect):\\ \url{http://ssr.msr-inria.inria.fr/math-comp}
+\end{compactitem}
+Coq modules can be nested.
+Besides the module name given implicitly by the file, Coq files can contain modules and module types.
+Symbols are all declarations inside a module.
+Their names can be hierarchic due to generative functor instantiation.
+\medskip
+
+\textbf{Matita} uses the same URIs as Coq except for not allowing nested modules.
+We suggest the following root URIs:
+\begin{compactitem}
+\item the Matita foundation: \url{http://matita.cs.unibo.it/foundation}
+\item the Matita standard library: \url{http://matita.cs.unibo.it/library}
+\end{compactitem}
+\medskip
+
+\textbf{Mizar} uses a flat namespace.
+We propose the following root URIs:
+\begin{compactitem}
+ \item the Mizar foundation: \url{http://mizar.org/foundation}
+ \item the Mizar Mathematical Library (MML): \url{http://mizar.org/library}
+\end{compactitem}
+
+The Mizar modules are the articles.
+The name of a module is the name of the article without the file name extension.
+There is no nesting of modules.
+%
+The Mizar symbols are all the declarations inside an article.
+Their names are obtained through a heavily idiosyncratic naming schema that includes generating unique names by numbering the declarations of the same kind in each article.
+For example, the MMT URI of conjunction is
+\url{http://mizar.org/corpus?XBOOLEAN0?K4}
+\medskip
+
+\textbf{HOL Light} does not have an obvious MMT URI formation principle because it does not maintain all its identifiers itself --- instead it relies on the OCaml toplevel to store the assigned values.
+There are three kinds of HOL Light symbols: types, constants, and theorems; only the former two are visible to the HOL Light kernel.
+For each type or constant, we use the name visible to the HOL Light kernel.
+For each theorem, we use the OCaml binding name.
+OCaml toplevel symbols may be grouped into OCaml modules. This feature is seldom used, as it only affects theorem names: the kernel is also not aware of the OCaml module in which the definitions of constants or types are introduced.
+
+This has the effect that different HOL Light files can be incompatible with each other.
+There are two reasons for this incompatibility: First, toplevel symbols may be overwritten by others, which means that the original ones are
+no longer accessible and a formalization might fail.
+This happens for example in case of the OCaml basic output function \texttt{open\_in}
+which gets overwritten by a theorem with the same name.
+Second, the loading of a file may change the state of HOL Light kernel or packages to one that is no longer compatible
+with another file~\cite{wiedijk-types09}. For example the theories \texttt{complexnumbers.ml}
+and \texttt{complexes.ml} both introduce the type \texttt{complex} but with different
+definitions.
+
+Thus, HOL Light's names do not uniquely identify symbols.  Therefore, we use
+directory-based namespaces with files-as-modules.  For constants and types introduced by a
+module we add the prefixes \texttt{const/} and \texttt{type/} respectively.  If a file
+contains OCaml modules, we use their names to form multi-segment module names.
+Accordingly, if symbols result from OCaml structures, we form multi-segment symbol names.
+This has the effect that HOL Light URIs are formed in exactly the same way as for Coq.
+
+We propose the following root URIs:
+\begin{compactitem}
+ \item the HOL Light foundation and the library shipped with it: \\ \url{http://github.com/jrh13/hol-light}
+ \item the Formal Proof of Kepler formalization:\\
+   \url{http://github.com/flyspeck/flyspeck}
+\end{compactitem}
+
+The theorem \texttt{well\_defined\_unordered\_pair} from Flyspeck~\cite{hales-pisigma15} is for example assigned the complete
+URI: \texttt{http://github.com/flyspeck/flyspeck ? text\_formalization/packing/marchal3 ? Marchal\\\_cells\_3.well\_defined\_unordered\_pair}.
+\medskip
+
+\textbf{HOL4} internal module names correspond to names of files, however the names
+of types and constants are not associated with the modules. Furthermore, the names of
+constants and types are separate. To avoid ambiguity we use the same module names as
+for HOL Light.% We propose the following root URIs:
+
+\begin{compactitem}
+ \item the HOL4 foundation and the library shipped with it:\\
+ \url{https://hol-theorem-prover.org}
+\end{compactitem}
+\medskip
+
+\textbf{Isabelle} is a logical framework: Its distribution includes a number of object logics, and each Isabelle theory uses an object logic (or declares a new one).
+Isabelle uses files as explicitly named modules.
+However, it disregards the directory structure: The system makes sure that two modules with same name cannot be loaded in the same session even if they are stored in different directories.
+But as different object logics and different developments often declare incompatible notions, we still use directory-based namespaces to make sure all theories have unique namespaces.
+
+Isabelle allows several module mechanisms including locales and type classes
+\cite{haftmannw-types06}.  Therefore, we form nested module names by concatenating theory
+and locale/type class names. % We propose the following root URIs:
+\begin{compactitem}
+ \item Isabelle foundation and distributed libraries: \url{http://isabelle.in.tum.de/}
+ \item the Archive of Formal Proofs: \url{http://afp.sf.net/}
+ \item the TLA+ logic: \url{http://tla.msr-inria.inria.fr/}
+ seL4: https://github.com/seL4
+\end{compactitem}
+
+For example the type of streams is represented by the URI:\\
+\url{http://isabelle.in.tum.de/ ? HOL/corpus/Stream ? stream}
+
+
+For informal collections of mathematical knowledge like Wikipedia, we can usually adopt
+similar measures. We interpret Wikpedia as having a flat namespace
+\url{http://en.wikipedia.org/wiki}, obtain modules via the files-as-models regime, and use
+the anchors of editable fragments as symbol names. So for instance the statement of
+uniqueness of identity element and inverses in the Wikipedia article on groups would have
+the MMT URI
+\url{https://en.wikipedia.org/wiki?Group_(mathematics)?Uniqueness_of_identity_element_and_inverses}.
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "report"
+%%% End:
+
+%  LocalWords:  standardizing mathtt mathtt mathtt compactitem textbf emph emph medskip
+%  LocalWords:  pvs Mizar ednote formalization texttt wiedijk-types09 complexnumbers.ml
+%  LocalWords:  hales-pisigma15 haftmannw-types06 openaxiom

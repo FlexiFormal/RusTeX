@@ -1,0 +1,23 @@
+The \latin project \cite{CHKMR:latinabs:11} was a DFG funded project running from 2009 to 2012 under the principal investigators Michael Kohlhase, Florian Rabe and Till Mossakowski. Its aim has been to build a heterogeneous, highly integrated  library of formalizations of logics and related languages as well as translations between them.
+It uses \mmt (see \autoref{sec:intro:prelim:mmt}) as a framework, with the logical framework \LF (see \autoref{sec:intro:prelim:lf}) as a meta-theory for the individual logics.
+
+True to the general \mmt philosophy, all the integrated theories are built up in a modular way and include propositional, first-order, sorted
+first-order, common, higher-order, modal, description, and linear logics.  Type
+theoretical features, which can be freely combined with logical features, include the
+$\lambda$-cube, product and union types, as well as base types like booleans or natural
+numbers.  In many cases alternative formalizations are given (and related to each other),
+e.g., Curry- and Church-style typing, or Andrews and Prawitz-style higher-order logic.
+The logic \textbf{morphisms} include the relativization translations from modal,
+description, and sorted first-order logic to unsorted first-order logic,
+%the interpretation of type theory in set theory,
+the negative translation from classical to intuitionistic logic, and the translation from first to sorted first- and higher-order logic.
+
+
+\begin{figure}[ht]
+\begin{center}
+\tikzinput{img/int-latin}
+\end{center}
+\caption{A Fragment of the \latin Atlas}\label{fig:intro:latin:atlas}
+\end{figure}
+
+The left side of \autoref{fig:intro:latin:atlas} shows a fragment of the \latin atlas, focusing on first-order logic (FOL) being built on top of propositional logic (PL), its translation to HOL and ultimately resulting in the foundations of Mizar, Isabelle/HOL and ZFC, as well as translations between them. The formalization of propositional logic includes its syntax as well as its proof and model theory, as shown on the right of \autoref{fig:intro:latin:atlas}.

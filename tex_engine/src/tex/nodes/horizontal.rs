@@ -1,12 +1,12 @@
 /*! Nodes allowed in horizontal lists. */
+use crate::engine::EngineTypes;
 use crate::engine::filesystem::{File, SourceRef, SourceReference};
 use crate::engine::fontsystem::{Font, FontSystem};
-use crate::engine::EngineTypes;
 use crate::tex::characters::Character;
 use crate::tex::nodes::boxes::{HBoxInfo, TeXBox};
 use crate::tex::nodes::math::MathGroup;
 use crate::tex::nodes::vertical::VNode;
-use crate::tex::nodes::{display_do_indent, BoxTarget, Leaders, NodeTrait, NodeType, WhatsitNode};
+use crate::tex::nodes::{BoxTarget, Leaders, NodeTrait, NodeType, WhatsitNode, display_do_indent};
 use crate::tex::numerics::Skip;
 use crate::tex::numerics::TeXDimen;
 use crate::tex::tokens::token_lists::TokenList;
@@ -73,6 +73,14 @@ pub enum HNode<ET: EngineTypes> {
         /// The current font
         font: <ET::FontSystem as FontSystem>::Font,
     },
+
+    /// An `\accent` node waiting for the actual character.
+    AccentChar {
+        /// The accent character.
+        accent: ET::Char,
+        /// The current font
+        font: <ET::FontSystem as FontSystem>::Font,
+    },
     /// A custom node.
     Custom(ET::CustomNode),
 }
@@ -80,17 +88,17 @@ pub enum HNode<ET: EngineTypes> {
 impl<ET: EngineTypes> NodeTrait<ET> for HNode<ET> {
     fn display_fmt(&self, indent: usize, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            HNode::Penalty(p) => {
+            Self::Penalty(p) => {
                 display_do_indent(indent, f)?;
                 write!(f, "<penalty:{}>", p)
             }
-            HNode::Leaders(l) => l.display_fmt(indent, f),
-            HNode::Box(b) => b.display_fmt(indent, f),
-            HNode::Mark(i, _) => {
+            Self::Leaders(l) => l.display_fmt(indent, f),
+            Self::Box(b) => b.display_fmt(indent, f),
+            Self::Mark(i, _) => {
                 display_do_indent(indent, f)?;
                 write!(f, "<mark:{}>", i)
             }
-            HNode::VRule {
+            Self::VRule {
                 width,
                 height,
                 depth,
@@ -108,7 +116,7 @@ impl<ET: EngineTypes> NodeTrait<ET> for HNode<ET> {
                 }
                 write!(f, ">")
             }
-            HNode::Insert(n, ch) => {
+            Self::Insert(n, ch) => {
                 display_do_indent(indent, f)?;
                 write!(f, "<insert {}>", n)?;
                 for c in ch.iter() {
@@ -117,7 +125,7 @@ impl<ET: EngineTypes> NodeTrait<ET> for HNode<ET> {
                 display_do_indent(indent, f)?;
                 write!(f, "</insert>")
             }
-            HNode::VAdjust(ls) => {
+            Self::VAdjust(ls) => {
                 display_do_indent(indent, f)?;
                 f.write_str("<vadjust>")?;
                 for c in ls.iter() {
@@ -126,12 +134,12 @@ impl<ET: EngineTypes> NodeTrait<ET> for HNode<ET> {
                 display_do_indent(indent, f)?;
                 f.write_str("</vadjust>")
             }
-            HNode::MathGroup(mg) => mg.display_fmt(indent, f),
-            HNode::Char { char, .. } => {
+            Self::MathGroup(mg) => mg.display_fmt(indent, f),
+            Self::Char { char, .. } => {
                 char.display_fmt(f);
                 Ok(())
             }
-            HNode::Accent { accent, char, .. } => {
+            Self::Accent { accent, char, .. } => {
                 write!(
                     f,
                     "<accent accent=\"{}\" char=\"{}\" />",
@@ -139,29 +147,32 @@ impl<ET: EngineTypes> NodeTrait<ET> for HNode<ET> {
                     char.display()
                 )
             }
-            HNode::Whatsit(w) => {
+            Self::AccentChar { accent, .. } => {
+                write!(f, "<accent accent=\"{}\" />", accent.display(),)
+            }
+            Self::Whatsit(w) => {
                 display_do_indent(indent, f)?;
                 write!(f, "{:?}", w)
             }
-            HNode::HSkip(s) => write!(f, "<hskip:{}>", s),
-            HNode::HFil => write!(f, "<hfil>"),
-            HNode::HFill => write!(f, "<hfill>"),
-            HNode::HFilneg => write!(f, "<hfilneg>"),
-            HNode::Hss => write!(f, "<hss>"),
-            HNode::Space => write!(f, "<space>"),
-            HNode::HKern(d) => write!(f, "<hkern:{}>", d),
-            HNode::Custom(n) => n.display_fmt(indent, f),
+            Self::HSkip(s) => write!(f, "<hskip:{}>", s),
+            Self::HFil => write!(f, "<hfil>"),
+            Self::HFill => write!(f, "<hfill>"),
+            Self::HFilneg => write!(f, "<hfilneg>"),
+            Self::Hss => write!(f, "<hss>"),
+            Self::Space => write!(f, "<space>"),
+            Self::HKern(d) => write!(f, "<hkern:{}>", d),
+            Self::Custom(n) => n.display_fmt(indent, f),
         }
     }
     fn height(&self) -> ET::Dim {
         match self {
-            HNode::Box(b) => b.height(),
-            HNode::VRule { height, .. } => height.unwrap_or_default(),
-            HNode::Char { char, font } => font.get_ht(*char),
-            HNode::Leaders(l) => l.height(),
-            HNode::MathGroup(mg) => mg.height(),
-            HNode::Custom(n) => n.height(),
-            HNode::Accent { char, font, .. } => {
+            Self::Box(b) => b.height(),
+            Self::VRule { height, .. } => height.unwrap_or_default(),
+            Self::Char { char, font } => font.get_ht(*char),
+            Self::Leaders(l) => l.height(),
+            Self::MathGroup(mg) => mg.height(),
+            Self::Custom(n) => n.height(),
+            Self::Accent { char, font, .. } => {
                 font.get_ht(*char) // TODO
             }
             _ => ET::Dim::default(),
@@ -169,67 +180,65 @@ impl<ET: EngineTypes> NodeTrait<ET> for HNode<ET> {
     }
     fn width(&self) -> ET::Dim {
         match self {
-            HNode::Box(b) => b.width(),
-            HNode::Char { char, font } => font.get_wd(*char),
-            HNode::VRule { width, .. } => width.unwrap_or(ET::Dim::from_sp(26214)),
-            HNode::Leaders(l) => l.width(),
-            HNode::MathGroup(mg) => mg.width(),
-            HNode::Custom(n) => n.width(),
-            HNode::HKern(d) => *d,
-            HNode::HSkip(s) => s.base,
-            HNode::Accent { char, font, .. } => font.get_wd(*char),
-            HNode::Space => ET::Dim::from_sp(65536 * 5), // TODO heuristic; use spacefactor instead
+            Self::Box(b) => b.width(),
+            Self::Char { char, font } => font.get_wd(*char),
+            Self::VRule { width, .. } => width.unwrap_or(ET::Dim::from_sp(26214)),
+            Self::Leaders(l) => l.width(),
+            Self::MathGroup(mg) => mg.width(),
+            Self::Custom(n) => n.width(),
+            Self::HKern(d) => *d,
+            Self::HSkip(s) => s.base,
+            Self::Accent { char, font, .. } => font.get_wd(*char),
+            Self::Space => ET::Dim::from_sp(65536 * 5), // TODO heuristic; use spacefactor instead
             _ => ET::Dim::default(),
         }
     }
     fn depth(&self) -> ET::Dim {
         match self {
-            HNode::Box(b) => b.depth(),
-            HNode::Char { char, font } => font.get_dp(*char),
-            HNode::Accent { char, font, .. } => font.get_dp(*char),
-            HNode::VRule { depth, .. } => depth.unwrap_or_default(),
-            HNode::Leaders(l) => l.depth(),
-            HNode::MathGroup(mg) => mg.depth(),
-            HNode::Custom(n) => n.depth(),
+            Self::Box(b) => b.depth(),
+            Self::Char { char, font } => font.get_dp(*char),
+            Self::Accent { char, font, .. } => font.get_dp(*char),
+            Self::VRule { depth, .. } => depth.unwrap_or_default(),
+            Self::Leaders(l) => l.depth(),
+            Self::MathGroup(mg) => mg.depth(),
+            Self::Custom(n) => n.depth(),
             _ => ET::Dim::default(),
         }
     }
     fn nodetype(&self) -> NodeType {
         match self {
-            HNode::Penalty(_) => NodeType::Penalty,
-            HNode::VRule { .. } => NodeType::Rule,
-            HNode::Box(b) => b.nodetype(),
-            HNode::Char { .. } => NodeType::Char,
-            HNode::HKern(_) => NodeType::Kern,
-            HNode::Insert(..) => NodeType::Insertion,
-            HNode::VAdjust(_) => NodeType::Adjust,
-            HNode::MathGroup { .. } => NodeType::Math,
-            HNode::Mark(_, _) => NodeType::Mark,
-            HNode::Whatsit(_) => NodeType::WhatsIt,
-            HNode::Accent { .. } => NodeType::Char,
-            HNode::Leaders(_) => NodeType::Glue,
-            HNode::HSkip(_)
-            | HNode::Space
-            | HNode::HFil
-            | HNode::HFill
-            | HNode::HFilneg
-            | HNode::Hss => NodeType::Glue,
-            HNode::Custom(n) => n.nodetype(),
+            Self::Penalty(_) => NodeType::Penalty,
+            Self::VRule { .. } => NodeType::Rule,
+            Self::Box(b) => b.nodetype(),
+            Self::Char { .. } => NodeType::Char,
+            Self::HKern(_) => NodeType::Kern,
+            Self::Insert(..) => NodeType::Insertion,
+            Self::VAdjust(_) => NodeType::Adjust,
+            Self::MathGroup { .. } => NodeType::Math,
+            Self::Mark(_, _) => NodeType::Mark,
+            Self::Whatsit(_) => NodeType::WhatsIt,
+            Self::Accent { .. } => NodeType::Char,
+            Self::AccentChar { .. } => NodeType::Char,
+            Self::Leaders(_) => NodeType::Glue,
+            Self::HSkip(_) | Self::Space | Self::HFil | Self::HFill | Self::HFilneg | Self::Hss => {
+                NodeType::Glue
+            }
+            Self::Custom(n) => n.nodetype(),
         }
     }
     fn opaque(&self) -> bool {
         match self {
-            HNode::Mark(_, _) => true,
-            HNode::Custom(n) => n.opaque(),
+            Self::Mark(_, _) => true,
+            Self::Custom(n) => n.opaque(),
             _ => false,
         }
     }
 
     fn sourceref(&self) -> Option<(&SourceRef<ET>, &SourceRef<ET>)> {
         match self {
-            HNode::VRule { start, end, .. } => Some((start, end)),
-            HNode::Box(b) => b.sourceref(),
-            HNode::MathGroup(mg) => mg.sourceref(),
+            Self::VRule { start, end, .. } => Some((start, end)),
+            Self::Box(b) => b.sourceref(),
+            Self::MathGroup(mg) => mg.sourceref(),
             _ => None,
         }
     }

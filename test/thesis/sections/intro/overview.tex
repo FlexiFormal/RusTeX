@@ -1,0 +1,35 @@
+\section{Objectives}\label{sec:intro:objectives}
+
+The OAF and \ODK projects have a common aim, differing only in their domains of applicability -- or aspects of the tetrapod (see \autoref{ch:intro}): The integration of (libraries of) formal systems (\emph{inference}) in the former, and mathematical software and databases (\emph{computation/tabulation}) in the latter. The goal of this thesis is to outline an approach to solve this integration problem and to demonstrate its feasibility. This entails the following objectives:
+
+\begin{itemize}
+	\item[\textbf{O1}] \textbf{Represent the logical foundations, libraries and ontologies} of theorem prover systems, computer algebra systems and other sources of mathematical knowledge desired for the \ODK project \textbf{in a unifying framework}.
+	\item[\textbf{O2}] As lamented in \autoref{sec:intro:sota:lf}, the logical frameworks currently available are not sufficient to formalize the foundations and distinct primitive features of real world theorem prover systems conveniently. Consequently, we need to \textbf{develop a modular, sufficiently powerful logical framework} in order to both achieve \textbf{O1}, as well as formalize the mathematical knowledge needed in the \textbf{Math-in-the-Middle library} as conveniently as possible.
+	\item[\textbf{O3}] Having the libraries of various systems accessible from within a unifying framework, the goal is to \textbf{develop knowledge management service} on a generic level in order to systematically \textbf{integrate formal libraries}, facilitating knowledge and structure transfer and \textbf{translate expressions} between foundations and systems.
+\end{itemize}
+
+\section{Contribution and Overview}
+
+\paragraph{} In \textbf{\autoref{ch:lf}}, I present a modular logical framework (\textbf{O2}) that extends \LF by various features and is used in the remainder of this work. In particular, I explain in detail how we can use \mmt to develop such a framework and extend it by virtually arbitrary additional features via various means. Where issues arise (e.g. with advanced subtyping principles, see \autoref{sec:lf:lfx:subtp}), I discuss these and suggest solutions.
+
+Notably, unlike other fixed-foundation frameworks, we can do so without needing to express our principles in terms of a more primitive logic. Instead, we can use the conveniences of an extensive API providing all of the necessary and most common abstractions in a modern, production-ready programming language (Scala) and all the infrastructure that comes with it -- such as modern IDEs with static type checking and debugging functionality, extensive library support, etc.
+
+\paragraph{} In \textbf{\autoref{ch:import}} I demonstrate the OAF (and partially ODK) approach to integrating libraries and ontologies into the \mmt system (\textbf{O1}), using the theorem prover system \pvs (\autoref{ch:import:pvs}), the computer algebra systems \GAP and \Sage (\autoref{sec:import:cas}), and the database LMFDB (\autoref{sec:import:lmfdb}) as representative examples. The formalization of the foundational logic of \pvs in \autoref{sec:import:pvs:found} in particular requires and makes use of the logical framework presented in \autoref{ch:lf}. Since that logical framework is easily extendable -- and since PVS can be considered particularly challenging as evidenced by the fact that no earlier representations of the PVS foundation exist in other frameworks -- the approach likely scales to virtually arbitrary systems and their foundations.
+
+As a result, we have, for the first time, all symbols from both the underlying foundations and ontologies as well as the associated libraries of formal systems accessible from within the same framework. In particular, we preserve the original presentation and semantics without the need to build dedicated (and sometimes impossible or unsound) translations between foundations.
+
+\paragraph{} Finally, \textbf{\autoref{ch:crosslib}} covers knowledge management services (\textbf{O3}) that can now be implemented \emph{generically} and foundation-independently, and which are consequently available for any (pair of) systems integrated into \mmt now or in the future. In particular, I present:
+\begin{itemize}
+ 	\item a specification for \emph{alignments} and an implementation for managing them in \autoref{sec:crosslib:alignments}, as a basis for across-library services,
+ 	\item a \emph{viewfinder} for finding theory morphisms, and consequently new alignments, automatically in \autoref{sec:crosslib:vf}, 
+ 	\item a method for translating content between systems using alignments and theory morphisms in \autoref{sec:crosslib:translate}, 
+ 	\item and finally \emph{theory intersections} as a method for library refactoring in \autoref{sec:crosslib:intersect}.
+ \end{itemize}
+ 
+The last four points particularly achieve the main goals of the OAF project, and ultimately enable the intended results of (our part of) the \ODK project. The translation method in particular allows for transfering virtually arbitrary formal content between libraries and foundations, thus facilitating e.g. remote procedure calls between systems -- in other words, it allows for flexibly and fully integrating formal systems and their libraries.
+
+As such, this thesis demonstrates the feasibility of our approach to library integration in enabling \emph{proper} knowledge management \emph{beyond} individual systems and libraries \emph{within a unifying framework} and system, bringing us one step closer to a full tetrapodal system.
+ 
+ Consequently this work covers a broad spectrum, ranging from purely theoretical developments down to implementation details. 
+
+\paragraph{} Much of the content of this thesis has been published in previous papers. These are listed separately in the bibliography (\autoref{bib:mine}).

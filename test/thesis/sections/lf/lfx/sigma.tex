@@ -1,0 +1,548 @@
+In this chapter we will go over the implementation of $\sigmasym$-types in \mmt in detail, as a relatively simple example on how to extend the \mmt solver with rules in a modular fashion. The main contribution of this chapter is the adaption of the typing rules governing \sigmasym-types into the \mmt framework and their implementation, as well as a detailed explanation of our methodology for constructiong a modular meta logical framework. 
+
+\section{The Rules for $\sigmasymnolink$-Types}
+
+\hypertarget{sigmatp}{$\sigmasymnolink$-types} are the dependent variant of cartesian products $\simpleprod AB$. 
+The type $\sigmatp{x:A}{B(x)}$ is populated by pairs $\pair ab$ with $a: A$ and $b : B(a)$, hence we can consider $\simpleprod A B$ as an abbreviation for $\sigmatp{\_:A}B$, where $\_$ does not occur in $B$. The elimination forms are the two projections $\projl\cdot$ and $\projr\cdot$. $\sigmasym$-types are conveniently simple, since they fall nicely into the pattern from \autoref{remark:prelim:lf:pattern} and do not interact with $\lfpisym$-types in any significant way. 
+
+Since \sigmasym-types arise naturally as the dependent variant of Cartesian products, their history is difficult to reconstruct. To the best of my knowledge, they, along with most of the features in the subsequent chapter, were originally introduced as a consequence of the Curry-Howard correspondence (as e.g. in \cite{Martin-Loef84}), where the simple products $\simpleprod AB$ correspond to conjunctions $A\wedge B$ and dependent \sigmasym-types $\sigmatp{x:A}B(x)$ correspond to the existential quantifier $\exists x:A.\; B(x)$.
+
+
+The grammar for \sigmasym-types is given in \autoref{fig:lf:lfx:sigmagrammar}.
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+  \begin{framed}
+	      \begin{tabular}{rcl@{\quad}l}
+        $\gray{\Gamma}$ & $\gray{::=}$ & $\gray{\cdot \mid \Gamma, x[:T][:=T]}$ & \gray{contexts}\\
+	  	   $\gray T$ & $\gray{::=}$ & $\gray{x \mid \type \mid \kind }$ & \gray{variables and universes}\\
+	  	   	& $\mid$ & $\sigmatp{x:T}T \mid \pair TT \mid \projl T \mid \projr T$ & $\sigmasym$-types
+%       		    & $\mid$ & $\lfpi{x:T'}T \mid \lflambda{x:T'}T \mid T_1 T_2$ & dependent function types
+%	  & $\mid$ &  $\rectype{(x : T)^\ast} \mid \recexp{(x := T)^\ast} \mid T.x$ & record types
+      \end{tabular}
+  \end{framed}
+  \caption{Grammar for \sigmasymnolink-Types}\label{fig:lf:lfx:sigmagrammar}%\vspace*{-1em}
+\end{figure}
+
+\begin{remark}\label{rem:lf:lfx:sigma:predsub}
+$\sigmasym$-types are often used in a manner similar to predicate subtypes, most notably in Coq~\cite{coq}: When using judgments-as-types (see \autoref{sec:prelim:lf:jat}), the type $\sigmatp{x:A}{\ded\ P(x)}$ is populated by pairs $\pair ap$, where $p$ is a proof that $P(a)$ holds. If a system allows implicit conversions, this means that we can convert an $a:A$ to have type $\sigmatp{x:A}{\ded\ P(x)}$ if and only if $P(a)$ holds (thus introducing a proof obligation), and trivially any pair $p:\sigmatp{x:A}{\ded\ P(x)}$ can be converted to type $A$ by using $\projlsym$.
+\end{remark}
+
+The rules are correspondingly intuitive and given in \autoref{fig:lf:lfx:sigmarules} (adapted from \cite{hottbook}).
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+\begin{framed}
+{\small For any $U$ with $\gjudg{\judguniv U}$:}
+\begin{flushleft}
+\textbf{Formation:}
+\[
+\trule{\gjudg{\infertype AU} \quad \judg{\Gamma,x:A}{\infertype B{U'}} }{\gjudg{\infertype{\sigmatp{x:A}B}{\umax{U,U'}}}} 
+\]
+\textbf{Introduction:}
+\[
+\trule{\gjudg{\infertype aA} \quad \gjudg{\infertype bB}}{\gjudg{\infertype{\pair ab}{\sigmatp{\_:A}B}}}
+\]
+\textbf{Elimination:}
+\[
+\trule{\gjudg{\judgmatchinf p{\sigmatp{x:A}B}}}{\gjudg{\infertype{\projl p}A}}\qquad
+\trule{\gjudg{\judgmatchinf p{\sigmatp{x:A}B}}}{\gjudg{\infertype{\projr p}{B\sub x{\projl p}}}}
+\]
+\textbf{Type Checking:}
+\[
+\trule{\gjudg{\hastype{\projl p}A} \quad  \gjudg{\hastype {\projr p}{B\sub x{\projl p}}} }{ \gjudg{ \hastype p{\sigmatp{x:A}B} } }
+\]
+\textbf{Equality:}
+\[
+\trule{ \gjudg{\judgeq {\projl p}{\projl q}A} \quad \gjudg{\judgeq{\projr p}{\projr q}{B\sub x{\projl p}} } }{ \gjudg{ \judgeq pq{\sigmatp{x:A}B} } }
+\]
+\textbf{Computation:}
+\[
+\trule{\gjudg{\infertype bB}}{ \gjudg{\judgeqc {\projl{\pair ab}}a } } \qquad
+\trule{\gjudg{\infertype aA}}{ \gjudg{\judgeqc {\projr{\pair ab}}b } }
+\]
+\end{flushleft}\end{framed}%\vspace*{-.5em}
+\caption{Rules for $\sum$-Types}\label{fig:lf:lfx:sigmarules}%\vspace*{-1em}
+\end{figure}
+
+Again, we can easily show the corresponding subtyping and $\eta$-rules:
+\begin{theorem}\label{thm:lf:lfx:sigma:subtp}
+The following subtyping rule is derivable:
+\[
+	\irule{\gjudg{\subtp {A'}A}\quad\judg{\Gamma,x:A'}{\subtp {B'}B}}
+	{\gjudg{\subtp{\sigmatp{x:A'}{B'}}{\sigmatp{x:A}B}}}
+\]
+Furthermore, the $\eta$-rule (i.e. for any $p:\sigmatp{x:A}B$ we have $\pair{\projl p}{\projr p}=p$) holds.
+\end{theorem}
+\begin{proof}
+Analogous to \autoref{thm:prelim:lf:variance}
+\end{proof}
+
+
+\begin{remark}\label{rem:lf:lfx:sigma:rewriting}
+\sigmasym-Types can be naturally defined inductively, given a sufficiently strong induction principle that allows for defining polymorphic operators. In fact, this is how they are implemented in Coq.
+
+Alternatively, they can be \emph{almost} defined using \lfpisym-types in \texttt{PLF} (see \autoref{remark:lf:lfx:plf}) given a corresponding polymorphic equality $\doteq$; however,the computation rule for $\projr\cdot$ causes problems. Its formalization would be
+\[\mathtt{elim\_r}\mmttp{\lfpi{A:type}{\lfpi{B:\lfarrow A\type}{\lfpi{a:A}{\lfpi{b:B(a)}{\projr{\pair a b}\doteq b}}}}} \]
+If $\doteq$ is a polymorphic equlity with implicit type argument, this is only well-typed if both sides of the equation (i.e. $\projr{\pair a b}$ anf $b$) have the same type; however, $b$ has type $B(a)$ whereas $\projr{\pair a b}$ has by the elimination rule type $B(\projl{\pair a b})$. To equate these two types, the system needs to be able to exploit the elimination rule for $\projl\cdot$ to rewrite $\projl{\pair a b}$ as $a$, which needs a mechanism for generating computation rules from object-level equations. Such as mechanism has been implemented in \mmt, but consequently already goes beyond \LF as a logical framework.
+\end{remark}
+
+Before we look at the implementation, a couple of things should be noted:
+\begin{enumerate}
+%	\item Under the Curry-Howard correspondence, simple Cartesian products $\simpleprod AB$ correspond to conjunctions $A\wedge B$ and types $\sigmatp{x:A}B$ correspond to the existential quantifier $\exists x:A.\; B$.
+	\item Since we have two elimination forms, we have two elimination rules and two computation rules.
+	\item With $\sigmasym$-types we lose the property that every term has a unique type: any pair $\pair a{b(a)}$ with $b:B(a)$ has both type $\simpleprod A{B(a)}$ and $\sigmatp{x:A}{B(x)}$ (the former being the one that is inferred by the introduction rule). In general, neither of these two types is a subtype of the other one, so principality is lost here as well. However, a related property for sigma types is sometimes also called principality, namely that the inferred type of a term $t$ is an \emph{instance} of any other type of $t$, in the sense that if $\infertype t{\simpleprod AB}$ (note that the inferred type of a pair is always non-dependent) and $\hastype t{\sigmatp{x:A'}B'}$, then $\subtp{\simpleprod AB}{\simpleprod{A'}{B'\sub x{\projl t}}}$.
+	\item The premises of the computation rules guarantee that the pair is well-typed, to satisfy the precondition for computation rules -- if well-typedness has already been checked, the premises can be skipped.
+\end{enumerate}
+
+\begin{remark}[Currying]
+	In the presence of both \sigmasym-types and function types, it makes sense to consider \emph{currying}, i.e. the fact that we can think of a function $\lfarrow{\simpleprod AB}C$ as a function $\lfarrow A{\lfarrow BC}$ -- or in the dependent case, a function $\lfpi{p: \sigmatp{x:A}B(x)}{C(p)}$ as a function $\lfpi{x:A}{\lfpi{y:B(x)}{C(x,y)}}$ (and of course analogously $\lfarrow{C:\left(\sigmatp{x:A}{B(x)}\right)}U$ as $C:\lfpi{x:A}{\lfarrow{B(x)}U}$).
+	
+	It is debatable whether currying should be considered a judgment-level equality. If we want this to be the case, we can add two additional *ComputationRule*s (see \autoref{sec:lf:lfx:rules:computation}) that take care of $\lfpisym$-types and $\lflambdasym$-expressions with \sigmasym-type arguments.
+	
+	As mentioned in the introduction of this part, for sake of modularity we do not fix a specific rule set, but would rather implement such a rule in a separate theory to be included o excluded as appropriate for any specific use case. It should be noted however, that a currying rule has no notable disadvantages.
+\end{remark}
+
+\section{Implementing Rule Systems in \mmt}
+
+\subsection{\mmt Symbols in Scala}\label{sec:lf:lfx:sigma:symbolrefs}
+
+Before implementing the rules themselves, we create an \mmt theory that contains the symbols we need, so that we can assign them proper notations determining their syntactic usage and refer to them in the implementations of the rules. In the case of $\sigmasym$-types, this theory contains a symbol for the type constructor $\sigmasym$, the introduction form $\pair\cdot\cdot$ and the two elimination forms $\projl\cdot,\projr\cdot$. For convenience we add an additional symbol for simple products $\simpleprod AB$. The resulting theory is given in \autoref{lst:lf:lfx:sigma:symbols}.
+%\cite{mmtlfx:git}\cn{/source/Sigma.mmt})
+\begin{mmtcode}[caption={The \cn{Symbols} Theory\protect\footnotemark},label=lst:lf:lfx:sigma:symbols]
+namespace http://gl.mathhub.info/MMT/LFX/Sigma ❚
+
+theory Symbols =
+   Sigma	# Σ V1T,… . 2		prec -10000	❙
+   Product	# 1×…			prec  -9990	❙
+   Tuple	# ⟨ 1,… ⟩		prec -10000	❙
+   Projl	# πl 1			prec -900	❙
+   Projr	# πr 1			prec -900	❙
+❚
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/MMT/LFX/blob/master/source/Sigma.mmt}}
+
+Note that we specified the notations of \expr{Sigma}, \expr{Product} and \expr{Tuple} all to be flexary -- hence our rule will have to deconstruct a type $\sigmatp{x : A, y : B}C$ into the \emph{actual} type $\sigmatp{x : a}{\sigmatp{y : B}C}$, and analogously a tuple $\left\langle a, b,c\right\rangle$ into the actual term $\pair a{\pair bc}$.
+
+For convenience, we can implement helper objects in Scala, that provide *apply* and *unapply* methods to easily construct -- and pattern match against -- applications of our symbols. These can not only take care of the flexary notations, but also take care of  \expr{Product} being an abbreviation, which makes implementing our rules easier and more uniform. 
+
+
+\begin{remark}
+In Scala, if an object *Foo* has an *apply*-method it can be called by the name of the object directly; i.e. *Foo(args)* is an abbreviation for *Foo.apply(args)*. An *unapply*-method on the other hand can be used to pattern match, i.e. if we write
+\begin{center}\begin{scalacode}
+t match {
+	case Foo(args) =>
+	...
+}
+\end{scalacode}\end{center}
+then upon encountering the *case Foo(args)* during runtime, the method *Foo.unapply* will be called on *t* and returns an *Option[A]* (for arbitrary type *A*). If the result is an instance of *Some(ret)*, then in the pattern match above the case *Foo(args)* applies and *args* will be instantiated with *ret*. This makes Scala an extremely convenient language to use when wanting to handle complex terms of specific syntactic forms, as here.
+\end{remark}
+
+\begin{example}
+ The helper objects for *Product* and *Sigma* are given in \autoref{lst:lf:lfx:sigma:helpers}.
+
+\begin{scalacode}[caption=Helper Objects\protect\footnotemark,label=lst:lf:lfx:sigma:helpers,emph={Product,Sigma,LFSigmaSymbol,SigmaTypes}]
+class LFSigmaSymbol(name:String) {
+  val path = SigmaTypes.path ? name
+  val term = OMS(path)
+}
+
+object Product extends LFSigmaSymbol("Product") {
+  def apply(t1 : Term, t2 : Term) = OMA(this.term,List(t1,t2))
+  def apply(in: List[Term], out: Term) = if (in.isEmpty) out 
+  	else OMA(this.term, in ::: List(out))
+  def unapply(t : Term) : Option[(Term,Term)] = t match {
+    case OMA(this.term, hd :: tl) if tl.nonEmpty => 
+    	Some((hd, apply(tl.init, tl.last)))
+    case _ => None
+  }
+}
+object Sigma extends LFSigmaSymbol("Sigma") {
+  def apply(name : LocalName, tp : Term, body : Term) = 
+  	OMBIND(this.term, OMV(name) % tp, body)
+  def apply(con: Context, body : Term) = OMBIND(this.term, con, body)
+  def unapply(t : Term) : Option[(LocalName,Term,Term)] = t match {
+    case OMBIND(OMS(this.path), 
+    	Context(VarDecl(n,None,Some(a),None,_), rest @ _*), s) =>
+      val newScope = if (rest.isEmpty) s
+      	else apply(Context(rest:_*), s)
+      Some(n,a,newScope)
+    case OMA(Product.term,args) if args.length >= 2 =>
+      val name = OMV.anonymous
+      if (args.length > 2)
+        Some((name, args.head, OMA(Product.term, args.tail)))
+      else
+        Some((name,args.head,args.tail.head))
+    case _ => None
+  }
+}
+\end{scalacode}
+
+The class *LFSigmaSymbol* merely provides the full path of the symbol under consideration (so we only need to provide the name) and the *Term*-object used to refer to the symbol in an expression. Note, that the *unapply*-method of *Sigma* has a case for *Product.term*, making sure that any application of the *Product*-symbol pattern matches against *Sigma* as well. This means that when implementing our rules, we only ever need to check whether a term is a $\sigmasym$-type knowing that in doing so we cover the simple products as well. The analogous objects for pairs and projections are called *Tuple* and *Proj1* and *Proj2* respectively.
+\end{example}
+\footnotetext{\url{https://gl.mathhub.info/MMT/LFX/blob/master/scala/info/kwarc/mmt/LFX/Sigma/Names.scala}}
+
+\subsection{Solver Judgments}\label{sec:lf:lfx:sigma:judg}
+
+The *solver* checks a judgment $\gjudg J$ by collecting all rules included in the context $\Gamma$ that correspond to the type of the judgment (an extension of the class *Judgment*), checking which of them are applicable and trying them in order of priority. These *Judgment*s are:
+\begin{itemize} 
+	\item *Equality(stack: Stack, tm1: Term, tm2: Term, tp: Option[Term])* checks the judgment $\gjudg{\judgeq{\cn{\smaller tm1}}{\cn{\smaller tm2}}{\cn{\smaller tp}}}$ (where *stack* corresponds to the context $\Gamma$) or the untyped equality if *tp* is empty.
+	
+	The judgment is checked by iteratively simplifying both terms using *ComputationRule*s (see \autoref{sec:lf:lfx:rules:computation}) until they are syntactically equal or an *EqualityRule* (see \autoref{sec:lf:lfx:rules:equality}) is applicable.
+	\item *Typing(stack: Stack, tm: Term, tp: Term)* checks the judgment $\gjudg{\hastype{\cn{tm}}{\cn{tp}}}$ by simplifying both terms until a *CheckingRule* (see \autoref{sec:lf:lfx:rules:checking}) becomes applicable, or otherwise infers the principal type *tp2* of *tm* using *InferenceRule*s (see \autoref{sec:lf:lfx:rules:inference}) and checking $\gjudg{\subtp {\cn{tp2}}{\cn{tp}}}$.
+	\item *Subtyping(stack: Stack, tp1: Term, tp2: Term)* checks the judgment $\gjudg{\subtp{\cn{tp1}}{\cn{tp2}}}$ by first checking whether the two *Term*s are syntactically equal, if not simplifying both types until a *SubtypingRule* (see \autoref{sec:lf:lfx:rules:subtyping}) becomes applicable, and if that fails, checking *Equality(stack, tp1, tp2, None)*.
+	\item *Inhabitable(stack: Stack, wfo: Term)* and *Universe(stack: Stack, wfo: Term)* finally correspond to the judgments $\gjudg{\judginh{\cn{wfo}}}$ and $\gjudg{\judguniv{\cn{wfo}}}$, respectively. They are checked using *InhabitableRule*s and *UniverseRule*s. In the case of inhabitability, if no *InhabitableRule* is applicable to *wfo*, its type *tp* is inferred and *Universe(stack,tp)* is checked.
+\end{itemize}
+
+To implement our rules, the \mmt API provides the mentioned abstract classes for the different rule types. All of their extensions need to implement an *apply*-method with a particular signature. A *Solver* is passed on to the rule to allow for recursive checking and inference calls.
+
+The most important methods a *Solver* provides for a rule are:
+\begin{itemize}
+	\item *check(j:Judgment)* checks that the judgment *j* holds. This declares *j* to be a \emph{necessary requirement} of the current judgment: if the judgment is disproved, an error is thrown and presented to the user. 
+	\item *tryToCheckWithoutDelay(j:Judgment)* like *check*, but does not throw an error if the check fails. Instead, the state of the solver is rolled back and variables solved during the check are reverted to their unsolved state.
+	\item *inferType(tm:Term)* tries to infer the type of *tm*; returns an *Option[Term]*.
+	\item *safeSimplifyUntil[A](tm:Term)(cond: Term => Option[A])* simplifies the term *tm* until it reaches a term *t* such that *cond(t)* returns *Some(a)*. This is useful for enforcing a specific syntactic shape of a term (e.g. a $\lambda$-expression) and is therefore usually called with some *unapply*-method as argument.
+	\item Additional syntactic sugar can be imported from *info.kwarc.mmt.api.objects.Conversions._*, most notably the notation *x / t* that creates a \emph{substitution} of the variable with name *x : LocalName* and the term *t : Term*, and *t ^? s* that applies the (usual capture-avoiding) substitution *s* to *t : Term*.
+\end{itemize}
+
+\subsection{Inference Rules}\label{sec:lf:lfx:rules:inference}
+
+Formation, introduction and elimination rules are all trivial extensions of the class *InferenceRule*. They take as class argument the head symbol of the terms to which they apply (and the typing symbol used for the typing judgments) and its *apply*-method has the following signature:
+\begin{scalacode}
+def apply(solver: Solver)(tm: Term, covered: Boolean)
+	(implicit stack: Stack, history: History): Option[Term]
+\end{scalacode}
+where *tm* is the term whose type is to be inferred, and *covered* is a boolean flag that tells the rule whether the term *tm* has already been checked to be well-typed, and hence that the preconditions (see \autoref{sec:prelim:notation:judg}) are satisfied.
+
+The implicit argument *stack* contains the context in which the type of *tm* is to be inferred. *history* is an object that holds textual information on the current state of the solver -- if a check fails, the history is presented to the user as feedback.
+
+An inference rule with head $h$ is considered \emph{applicable} to a term, if the head of the term is $h$. Additionally, a rule can override
+a method *alternativeHeads:List[GlobalName]* if it should be applicable to other heads as well, as in our case with \expr{Sigma} and \expr{Product} (see \autoref{ex:lf:lfx:sigma:typing}).
+
+%\begin{scalacode}[caption={Formation Rule (\cite{mmtlfx:git}\cn{/scala/.../Sigma/Rules.scala})},label=lst:lf:lfx:sigma:form,numbers=left,emph={Sigma,Product}]
+%/** Formation: the type inference rule x:A:U|-B:U  --->  Sigma x:A.B(x) : U  **/
+%object SigmaTerm extends FormationRule(Sigma.path, OfType.path) {
+%  override def alternativeHeads: List[GlobalName] = List(Product.path)
+%  
+%  def apply(solver: Solver)(tm: Term, covered: Boolean)
+%  	(implicit stack: Stack, history: History) : Option[Term] = tm match {
+%      case Sigma(x,a,b) =>
+%        if (!covered) solver.check(Inhabitable(stack,a))
+%        val (xn,sub) = Common.pickFresh(solver, x)
+%        val aT = solver.inferType(a).getOrElse(return None)
+%        solver.inferType(b ^? sub)(stack ++ xn % a, history) flatMap {bT =>
+%          if (bT.freeVars contains xn) {
+%            // usually an error, but xn may disappear later, especially when 
+%            // unknowns in b are not solved yet
+%            None
+%          } else // Figure out which of the two universes to use
+%          if (solver.tryToCheckWithoutDelay(
+%            	Subtyping(stack,aT,bT)
+%	    ).getOrElse(false)) Some(bT)
+%          else if (solver.tryToCheckWithoutDelay(
+%            	Subtyping(stack,bT,aT)
+%	    ).getOrElse(false)) Some(aT)
+%          else None
+%        }
+%      case _ => None // should be impossible
+%    }
+%}
+%\end{scalacode}
+\begin{example}
+\autoref{lst:lf:lfx:sigma:intro} shows the Scala code for the introduction rule:
+\[
+\irule{\gjudg{\infertype aA} \quad \gjudg{\infertype bB}}{\gjudg{\infertype{\pair ab}{\sigmatp{\_:A}B}}}
+\]
+ The rule itself has as parameters the \mmt URI for the \expr{Tuple}-symbol and the symbol for the typing operator (ultimately provided by \LF). The *apply*-method
+\begin{labeling}{Line 10}
+	\item[Line 7] deconstructs the term to be a *Tuple(t1,t2)*, i.e. of the form $\pair{t_1}{t_2}$,
+	\item[Line 8] infers the type of *t1* to be *tpA* (or returns *None* if this fails),
+	\item[Line 11] infers the type of *t2* to be *tpB* (or returns *None* if this fails),
+	\item[Line 14] picks a fresh variable name *xn* not occuring in the current context and
+	\item[Line 15] returns the type of the tuple term *xn* as *Some(Sigma(xn,tpA,tpB))*, i.e. the type $\sigmatp{\cn{xn:tpA}}{\cn{tpB}}$.
+\end{labeling}
+
+%\begin{minipage}{\textwidth}
+\begin{nscalacode}[caption={Introduction Rule\protect\footnotemark },label=lst:lf:lfx:sigma:intro,emph={Sigma,Tuple}]
+/** Introduction: the type inference rule 
+  * |-t1:A, |-t2:B  --->  <t1,t2>:Sigma x:A.B **/
+object TupleTerm extends IntroductionRule(Tuple.path, OfType.path) {
+  def apply(solver: Solver)(tm: Term, covered: Boolean)
+  	(implicit stack: Stack, history: History) : Option[Term]
+    = tm match {
+      case Tuple(t1,t2) =>
+          val tpA = solver.inferType(t1)(stack, history).getOrElse(
+          	return None
+	  )
+          val tpB = solver.inferType(t2)(stack, history).getOrElse(
+          	return None
+	  )
+          val (xn,_) = Common.pickFresh(solver,"x")
+          Some(Sigma(xn,tpA,tpB))
+      case _ => None // should be impossible
+    }
+}
+\end{nscalacode}
+\end{example}
+\footnotetext{\url{https://gl.mathhub.info/MMT/LFX/blob/master/scala/info/kwarc/mmt/LFX/Sigma/Rules.scala}}
+
+\subsection{Checking Rules}\label{sec:lf:lfx:rules:checking}
+
+Similarly to inference rules, *TypingRule*s (which trivially extend *CheckingRule*) take the head symbol of the \emph{type} to which they apply as argument. They too have an overridable method *alternativeHeads:List[GlobalName]* if multiple head symbols are covered. Additionally, checking rules can \emph{shadow} other rules (by overriding the method *shadowedRules:List[Rule]*, in which case the shadowed ones are deactivated in the presence of the new rule. Furthermore, checking rules can be assigned a *priority : Int* with default value 0 to control in which order the solver attempts multiple applicable rules. The signature of their *apply*-method that needs to be implemented is
+\begin{scalacode}
+def apply(solver: Solver)(tm: Term, tp: Term)
+	(implicit stack: Stack, history: History) : Option[Boolean]
+\end{scalacode}
+Alternatively to returning a simple *Some(Boolean)* value, checking rules can also:
+\begin{enumerate}
+	\item throw *DelayJudgment(msg: String)* -- can be thrown if the result depends on an as-of-yet unsolved variable. In this case, the solver \emph{delays} the current typing judgment until either all variables have been solved or no other judgment remains to be checked.
+	\item throw *SwitchToInference* -- indicates that the solver should switch from top-down to a bottom-up approach using type inference to check this Judgment (see \autoref{sec:prelim:notation:judg}).
+	\item return *None* -- indicating that the rule has determined to not be applicable to this judgment after all. This is useful when a quick, syntactical applicability check is insufficient to determine whether this rule can be used to check the given judgment.
+\end{enumerate}
+
+\begin{example}\label{ex:lf:lfx:sigma:typing}
+\autoref{lst:lf:lfx:sigma:typing} shows the implementation of the type checking rule for $\sigmasym$-types:
+\[
+\irule{\gjudg{\hastype{\projl p}A} \quad  \gjudg{\hastype {\projr p}{B\sub x{\projl p}}} }{ \gjudg{ \hastype p{\sigmatp{x:A}B} } }
+\]
+\begin{labeling}{Line 10}
+	\item[Line 4] adds the \expr{Product} symbol to the list of heads this rule is applicable to.
+	\item[Line 8] deconstructs the type to be a *Sigma(x,tpA,tpB)*, i.e. of the form $\sigmatp{\cn{x:tpA}}{\cn{tpB}}$. Note that
+		by virtue of *Sigma*'s *unapply* method (see \autoref{lst:lf:lfx:sigma:helpers}), this takes care of applications of the
+		\expr{Product} symbol as well.
+	\item[Line 9] instructs the solver to verify the judgment that *Proj1(tm)* (i.e. $\projl{\cn{tm}}$) has type *tpA*,
+	\item[Line 10] instructs the solver to verify the judgment that *Proj2(tm)* (i.e. $\projr{\cn{tm}}$) has type 
+		*tpB ^? (x/Proj1(tm))* (i.e. $\cn{tpB}\sub x{\projl{\cn{tm}}}$). Since *Solver.check* returns *true* if and only if the checked
+		judgment can be verified (and throws an error otherwise) this line can serve as the *return* statement.
+\end{labeling}
+
+\begin{nscalacode}[caption={Type Checking Rule\protect\footnotemark}, label=lst:lf:lfx:sigma:typing,emph={Sigma,Tuple,Proj1,Proj2,Product}]
+/** type-checking: the type checking rule 
+  * pi1(t):A|-pi2(t):B(pi1(t))  --->  t : Sigma x:A.B **/
+object SigmaType extends TypingRule(Sigma.path) {
+  override def alternativeHeads:List[GlobalName] = List(Product.path)
+  
+  def apply(solver:Solver)(tm:Term, tp:Term)
+  	(implicit stack: Stack, history: History) : Option[Boolean] = tp match {
+      case Sigma(x,tpA,tpB) =>
+        solver.check(Typing(stack,Proj1(tm),tpA))
+        Some(solver.check(Typing(stack,Proj2(tm),tpB ^? (x / Proj1(tm)))))
+      case _ => None // should be impossible
+    }
+}
+\end{nscalacode}
+\end{example}
+\footnotetext{Ibid.}
+
+\subsection{Equality Rules}\label{sec:lf:lfx:rules:equality}
+
+The \mmt API provides three classes for equality rules: *TypeBasedEqualityRule*, *TermBasedEqualityRule* and *TermHeadBasedEqualityRule*.
+\begin{itemize}
+	\item *TypeBasedEqualityRule*s correspond to typed equalities and use the head symbol of the \emph{type} of two terms *tm1* and *tm2* to determine applicability. Obviously, for these rules to fire, the types of the two terms have to be known to the solver and be equal.
+	
+	They take as class parameters the head symbol of the governing type, as well as a (possibly empty) list of application-symbols, in case that the type constructor is applied using a higher-order abstract syntax. This can be used to implement equality rules for e.g. symbols from a logic or type theory which is itself implemented in a logical framework.
+	
+	Additionally, an instance of this class has to implement an *applicableToTerm*-method. This is convenient in case where the rule requires the two terms to have a specific form.
+	
+	The signatures of the methods to implement are:
+\begin{scalacode}
+def applicableToTerm(tm: Term): Boolean
+def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)
+	(implicit stack: Stack, history: History): Option[Boolean]
+\end{scalacode}
+	The *applicableToTerm*-method will be called on both terms and the rules is considered applicable if \emph{either} returns *true*.
+	
+	The *apply* should return *Some(true)* or *Some(false)* if the equality of the two terms *tm1* and *tm2* is provable or disprovable, and *None* if the solver should proceed trying other equality rules.
+	
+	\item *TermBasedEqualityRule*s are the most general equality rules. Their *apply* method takes an optional argument for the type of the two terms if known, but the solver determines applicability by calling an *applicable*-method that needs to be implemented. The signatures of the methods to implement are thus:
+\begin{scalacode}
+def applicable(tm1: Term, tm2: Term): Boolean
+def apply(check: CheckingCallback)(tm1: Term, tm2: Term, tp: Option[Term])
+	(implicit stack: Stack, history: History): Option[Boolean]
+\end{scalacode}
+	The *applicable*-method should fail quickly; preferentially it should only check whether the terms *tm1* and *tm2* have a specific syntactic form.
+	
+	The *apply*-method only takes a *CheckingCallback*, which is a superclass of *Solver* with slightly limited functionality.
+	\item *TermHeadBasedEqualityRule* finally is a simple extension of *TermBasedEqualityRule* that takes two head symbols (for *tm1* and *tm2*) as arguments and implements an *applicable* method that uses the head symbols.
+\end{itemize}
+
+\begin{example}
+	In the case of $\sigmasym$-types, we have a typed equality rule (for pairs at their $\sigmasym$-types):
+\[
+\irule{ \gjudg{\judgeq {\projl p}{\projl q}A} \quad \gjudg{\judgeq{\projr p}{\projr q}{B\sub x{\projl p}} } }{ \gjudg{ \judgeq pq{\sigmatp{x:A}B} } }
+\]
+	Hence we choose a *TypeBasedEqualityRule*, which is given in \autoref{lst:lf:lfx:sigma:equality}.
+	
+	\begin{labeling}{Line 10}
+	\item[Line 4] adds the \expr{Product} symbol to the list of heads this rule is applicable to.
+	\item[Line 5] determines that the rule is applicable to any pair of terms.
+	\item[Line 10] deconstructs the type to be a *Sigma(x,tpA,tpB)*, i.e. of the form $\sigmatp{\cn{x:tpA}}{\cn{tpB}}$.
+	\item[Line 11] checks that the projections $\projlsym$ of the two terms are equal under the type *tpA*.
+	\item[Line 12] checks that the two terms *Proj2(tm1)* and *Proj2(tm2)* are equal under the type $\cn{tpB}\sub{\cn x}{\projl{\cn{tm1}}}$ and returns the result of that check.
+\end{labeling}
+	
+	\begin{nscalacode}[caption={Equality Rule\protect\footnotemark},label=lst:lf:lfx:sigma:equality,emph={Sigma,Tuple,Proj1,Proj2,Product}]
+/** equality-checking: the rule 
+  * |- pi1(t1) = pi1(t2) : A , |- pi2(t1) = pi2(t2) : B(pi1(t)) --->  t1 = t2 : Sigma x:A. B **/
+object TupleEquality extends TypeBasedEqualityRule(Nil,Sigma.path) {
+  override def alternativeHeads:List[GlobalName] = List(Product.path)
+  override def applicableToTerm(tm: Term): Boolean = true
+  
+  def apply(solver: Solver)(tm1: Term, tm2: Term, tp: Term)
+  	(implicit stack: Stack, history: History): Option[Boolean]
+   = tp match {
+    case Sigma(x, tpA, tpB) =>
+      solver.check(Equality(stack, Proj1(tm1), Proj1(tm2), Some(tpA)))
+      Some(solver.check(Equality(stack, Proj2(tm1), Proj2(tm2), 
+      	Some(tpB ^? (x / Proj1(tm1))))))
+    case _ => None // should be impossible
+  }
+}
+\end{nscalacode}
+\end{example}
+\footnotetext{Ibid.}
+\subsection{Computation Rules}\label{sec:lf:lfx:rules:computation}
+Computation rules implement the class *ComputationRule*, which takes as class parameter the head symbol of the term to decide applicability. This is only a default implementation, though -- the governing method *def applicable(tm : Term): Boolean* can be overridden. The *apply*-method has the following signature:
+\begin{scalacode}
+def apply(check: CheckingCallback)(tm: Term, covered: Boolean)
+	(implicit stack: Stack, history: History): Simplifiability
+\end{scalacode}
+It returns an object of type *Simplifiability* that instructs the solver (or other *CheckingCallback* instance) on how to recurse into a term. The latter has by and large three possible instances:
+\begin{enumerate}
+	\item *Simplify(result: Term)*: The rule can simplify the given term to the new term *result*.
+	\item *RecurseOnly(positions: List[Int])*: This rule can \emph{not} simplify the term right now, but if the subterms at the positions given in *positions* can be, this rule might become applicable.
+	\item *Simplifiability.NoRecurse*: This rule can \emph{not} simplify the term at all (as long as the head does not change). This is equivalent to *RecurseOnly(Nil)*.
+\end{enumerate}
+The solver can use the information returned by a *ComputationRule* to strategically recurse only into those subterms that might cause a rule to become applicable, without unnecessarily simplifying subexpressions or expanding definitions.
+
+\begin{example}
+In the case of $\sigmasym$-types, we have the following computation rules:
+\[
+\irule{\gjudg{\infertype bB}}{ \gjudg{\judgeqc {\projl{\pair ab}}a } } \qquad
+\irule{\gjudg{\infertype aA}}{ \gjudg{\judgeqc {\projr{\pair ab}}b } }
+\]
+	The implementation of the first one is presented in \autoref{lst:lf:lfx:sigma:comp}. The second one is completely analogous.
+	
+	\begin{labeling}{Line 10}
+	\item[Line 5] is the intended case for the rule -- a projection $\projlsym$ applied to a pair. In that case, the rule can simplify by returning the first component of the pair *a*. 
+	\item[Line 6] To satisfy the precondition, we call *inferType(b,false)* if *tm* has not been checked to be well-typed (i.e. *covered* is *false*).
+	\item[Line 8] is the case where we have a projection $\projlsym$, but (by exclusion) no pair construct as its argument. In that case, the rule \emph{might} become applicable if we manage to simplify the first (and only) argument of the projection such that it \emph{becomes} an actual pair, so we return *RecurseOnly(List(1))* to instruct the solver accordingly.
+	\item[Line 9] is the default case, where *tm* is not a projection. By virtue of the class parameter *Proj1.path*, this case should never happen, but the general information to return (*Simplifiability.NoRecurse*) would be that this rule is never applicable to the term given, unless the head changes (to an actual projection).
+\end{labeling}
+	
+	\begin{nscalacode}[caption={Computation Rule\protect\footnotemark},label=lst:lf:lfx:sigma:comp,emph={Sigma,Tuple,Proj1,Proj2,Product}]
+/** computation: the beta-reduction rule Proj1(<a,b>) = a **/
+object Projection1Beta extends ComputationRule(Proj1.path) {
+  def apply(solver: CheckingCallback)(tm: Term, covered: Boolean)
+  	(implicit stack: Stack, history: History) = tm match {
+    case Proj1(Tuple(a,b)) => 
+    	if (!covered) solver.inferType(b,false)
+    	Simplify(a)
+    case Proj1(_) => RecurseOnly(List(1))
+    case _ => Simplifiability.NoRecurse // should be impossible
+  }
+}
+\end{nscalacode}
+\end{example}
+\footnotetext{Ibid.}
+
+\subsection{Subtyping Rules}\label{sec:lf:lfx:rules:subtyping}
+
+Finally, to implement subtyping rules \mmt offers a generic class *SubtypingRule*, and conveniently a more specific class *VarianceRule* for the case where we want to declare an operator to be covariant or contravariant in its arguments. The former needs to implement an *applicable(tp1 : Term, tp2 : Term)*-method, the latter takes a head symbol as class argument that determines the applicability of the rule. In both cases, the *apply*-method has the signature
+\begin{scalacode}
+def apply(solver: Solver)(tp1: Term, tp2: Term)
+	(implicit stack: Stack, history: History) : Option[Boolean]
+\end{scalacode}
+
+\begin{example}
+In the case of $\sigmasym$-types, we have the derivable subtyping rule given in \autoref{thm:lf:lfx:sigma:subtp}:
+\[
+	\irule{\gjudg{\subtp {A'}A}\quad\judg{\Gamma,x:A'}{\subtp {B'}B}}
+	{\gjudg{\subtp{\sigmatp{x:A'}{B'}}{\sigmatp{x:A}B}}}
+\]
+The implementation of this rule is presented in \autoref{lst:lf:lfx:sigma:subtp}.
+	
+	\begin{labeling}{Lines 10--13}
+	\item[Line 7] deconstructs both types into $\sigmasym$-types.
+	\item[Line 8] instructs the solver to check that *a1* is a subtype of *a2*.
+	\item[Line 9] picks a new variable name *xn* not occuring in the current context.
+	\item[Lines 10--13] instruct the solver to check that in the context extended by *xn:a1* (*stack ++ xn%a1*),
+		*b1 ^? (x1/OMV(xn))* is a subtype of *b2 ^? (x2/OMV(xn))* (i.e the original variable names are replaced
+		by the one introduced in Line 9).
+\end{labeling}
+	
+	\begin{nscalacode}[caption={Subtyping Rule\protect\footnotemark},label=lst:lf:lfx:sigma:subtp,emph={Sigma,Tuple,Proj1,Proj2,Product}]
+/** The variance rule 
+   * |-A1<:A2, x:A1|-B1<:B2 ---> Sigma x:A1.B1 <: Sigma x:A2.B2 **/
+object SigmaSubtype extends VarianceRule(Sigma.path) {
+  def apply(solver: Solver)(tp1: Term, tp2: Term)
+  	(implicit stack: Stack, history: History) : Option[Boolean] 
+   = (tp1,tp2) match {
+    case (Sigma(x1,a1,b1),Sigma(x2,a2,b2)) =>
+      solver.check(Subtyping(stack,a1,a2))
+      val (xn,_) = Common.pickFresh(solver,x1)
+      Some(solver.check(Subtyping(stack ++ xn%a1,
+      	b1 ^? (x1/OMV(xn)),
+      	b2 ^? (x2/OMV(xn))
+      )))
+    case _ => None // should be impossible
+  }
+}
+\end{nscalacode}
+\end{example}
+\footnotetext{Ibid.}
+
+After implementing the rules in Scala, we can import them into an \mmt theory. Including the latter into any theory will then activate those rules. It makes sense to declare the symbols and rules in separate theories, so we can reuse the same symbols with different sets of typing rules, as in \autoref{lst:lf:lfx:sigma:rulesth}. Ultimately, we implement four theories in total: for the symbols (\expr{Symbols}), the rules (\expr{Rules}), a theory that combines symbols and rules in the context of the basic typing rules (see \autoref{fig:prelim:lf:genrules}) from \LF (\expr{TypedSigma}), and finally one that adds symbols and rules on top of the full \LF theory with dependent function types (\expr{LFSigma}). We will roughly follow this naming convention throught this part; the various theories for e.g. the symbols are disambiguated by the namespaces (in this case \url{http://gl.mathhub.info/MMT/LFX/Sigma}).
+
+\begin{mmtcode}[caption=The \cn{Rules} Theory\protect\footnotemark,label=lst:lf:lfx:sigma:rulesth]
+import rules scala://Sigma.LFX.mmt.kwarc.info❚
+
+theory Rules =
+  rule rules?SigmaTerm 		❙
+  rule rules?TupleTerm 		❙
+  rule rules?Projection1Term	❙
+  rule rules?Projection2Term	❙
+  rule rules?SigmaType 		❙
+  rule rules?TupleEquality 	❙
+  rule rules?Projection1Beta	❙
+  rule rules?Projection2Beta	❙
+  rule rules?SigmaSubtype	❙
+❚
+
+theory TypedSigma : ur:?TermsTypesKinds =
+  include ?Symbols 	❙
+  include ?Rules 	❙
+❚
+   
+theory LFSigma =
+  include ?TypedSigma 		❙
+  include ur:?LF		❙
+❚
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/MMT/LFX/blob/master/source/Sigma.mmt}}
+
+The \cn{import} statement in the first line of \autoref{lst:lf:lfx:sigma:rulesth} introduces an abbreviation for the namespace \url{scala://Sigma.LFX.mmt.kwarc.info}, which by virtue of the \url{scala}-scheme determines the fully qualified class path of the scala objects referenced by the subsequently declared rule constants.
+
+\section{Using $\sigmasymnolink$-Types}
+
+The theory in \autoref{lst:lf:lfx:sigma:test} from the Math-in-the-Middle library serves as an example; it uses \sigmasym-types to implement the product of two vector spaces, by defining the corresponding operations on the product space -- since the latter is a natural occurence of Cartesian products in mathematics, \sigmasym-types are naturally ideal for formalizing products of spaces (analogous e.g. product topologies, categories etc.). In fact, thanks to \sigmasym-types,the definitions for the universes, operations, units and inverses here conforms quite naturally to the usual informal presentation of product spaces. 
+
+\begin{mmtcode}[caption={Product Spaces using Sigma Types\protect\footnotemark},label=lst:lf:lfx:sigma:test]
+theory Productspace : base:?Logic =
+	include ?Vectorspace ❙
+	include  base:?ProductTypes ❙
+	
+	product_universe : {F : field} vectorspace F ⟶ vectorspace F ⟶ type ❘
+		= [F,v1,v2] v1.universe × v2.universe ❘ # 2 x_ 1 3❙
+	product_op : {F : field, v1: vectorspace F, v2: vectorspace F} 
+	  (v1 x_ F v2) ⟶ (v1 x_ F v2) ⟶ (v1 x_ F v2) ❘
+		= [F,v1,v2] [a,b] ⟨ ((v1.op) (πl a) (πl b)), ((v2.op) (πr a) (πr b))⟩ ❘ # 2 xop_ 1 3 ❙
+	product_unit : {F : field, v1 : vectorspace F, v2 : vectorspace F} v1 x_ F v2 ❘
+		= [F,v1,v2] ⟨ (v1.unit), (v2.unit) ⟩ ❘ # product_unit 1 2 3 ❙
+	product_inverse : {F : field, v1 : vectorspace F, v2 : vectorspace F}
+	  (v1 x_ F v2) ⟶ (v1 x_ F v2) ❘
+		= [F,v1,v2] [x] ⟨ (v1.inverse) πl x, (v2.inverse) πr x ⟩ ❘ # product_inverse 1 2 3 ❙
+	product_scalarmult : {F : field, v1: vectorspace F, v2: vectorspace F} 
+	  F.universe ⟶ (v1 x_ F v2) ⟶ (v1 x_ F v2) ❘
+		= [F,v1,v2][α,v] ⟨ ((v1.scalarmult) α (πl v)), ((v2.scalarmult) α (πr v)) ⟩ ❘ 
+		# product_scalarmult 1 2 3 ❙
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/MitM/smglom/blob/master/source/algebra/modulsvectors.mmt}}

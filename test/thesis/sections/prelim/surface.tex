@@ -1,0 +1,27 @@
+\lstMakeShortInline[language=mmt]*
+
+By and large, I will show relevant examples in \mmt surface syntax directly whenever it is informative to do so. In this section I will consequently briefly introduce the structural syntax for \mmt and the relevant notations for symbols provided by \LF. An in-depth tutorial on using the \mmt surface language to formalize mathematical content is available online.\footnote{\url{https://gl.mathhub.info/Tutorials/Mathematicians/blob/master/tutorial/mmt-math-tutorial.pdf}} 
+
+Especially noteworthy is \mmt's usage of highly non-standard delimiters, namely higher unicode symbols. This is in order to allow for all standard delimiters used by other systems to be used in notations when implementing the foundations of these. A structural environment is delimited according to the level on which it is implemented (see \autoref{fig:prelim:mmt:grammar}): Modules are delimited with the symbol *❚*, declarations with *❙* and objects with *❘*. The colors correspond to the ones used in the available \mmt IDEs (jEdit and IntelliJ IDEA).
+
+\paragraph{} A theory named \cn T with meta-theory \cn M is given with the syntax *theory T : M = *$<content>$*❚*. If no namespace is provided, \mmt will either take one provided by the meta information of the containing archive, or use a default namespace. A local namespace can be provided beforehand using the *namespace* command. Using the latter, the following will establish an empty theory with full URI \cn{http://mathhub.info/example?T}:
+
+\begin{mmtcode}
+namespace http://mathhub.info/example ❚
+theory T = ❚
+\end{mmtcode}
+
+The theory providing \LF has URI \cn{http://cds.omdoc.org/urtheories?LF}; however, \mmt provides the default CURIE abbreviation \cn{ur} for its namespace - hence to create a new theory with \LF as meta-theory, we can write *theory T : ur:?LF = ❚*.
+
+A constant is declared by giving its name, followed by its \emph{components} separated by the object delimiter *❘* in arbitrary order. A \emph{component} is either a type (starting with \cn:), a definiens (starting with \cn=) or a notation (starting with \cn\#), and is delimited with the declaration delimiter *❙* -- e.g. a constant \cn c with type \cn T and definiens \cn t can be given either as *c : T ❘ = t ❙* or *c = t ❘ : T ❙*. Includes are given with *include ?T ❙*
+
+A notation is provided as a sequence of tokens and \emph{argument markers} followed by a precedence. Argument markers are either a number literal $n$ (denoting the $n$th argument of the constant), or \cn{V1} denoting a variable to be bound by the constant. If $V1$ is followed by a \cn T, the system expects the variables provided in an application to be typed, infering their types if none are provided by a user. If an argument marker is followed by a token $s$ followed by ellipses $\ldots$, the system recognizes that a \emph{sequence} of arguments is expected, the elements of which are delimited by $s$. Precedences are given as \cn{prec\ n} for some (positive or negative) integer \cn n -- the higher the precedence, the stronger the notation binds. We will examine the notations provided by \LF as an example:
+
+Dependent function type $\lfpi{x:A,y:B}C$ are written as *{x:A,y:B}C* -- a notational practice inspired by the Twelf system. Consequently, the notation for the symbol \cn{Pi} representing dependent function types has two argument markers: The first one being a comma-separated list of typed variables (represented as \cn{V1T,}$\ldots$) and the second one being a regular argument. Consequently, the theory \cn{?LF} declares \cn{Pi} as *Pi # { V1T,… } 2 prec -10000❙*. It is given a deliberately extremely low precedence, since dependent function types most commonly occur on the outside of a term. Analogously, lambda is given the notation *[ V1T,… ] 2 prec -10000*.
+
+Simple function types have the notation *# 1⟶… prec  -9990*. Finally, as usual in lambda calculi, function application has the notation *# 1%w… prec -10*, where \cn{\%w} represents arbitrary whitespace.
+
+\paragraph{} The syntax for views is rather analogous to theories. As a module, it is delimited with the module delimiter *❚*. A view named \cn v with domain \cn{T1} and codomain \cn{T2} is given via *view v : ?T1 -> ?T2 = *$<content>$*❚*. Assignments are considered declarations and use $=$ as its symbol; i.e. an assignment $c\mmtass t$ is given as *c=t*.
+
+
+\lstDeleteShortInline*

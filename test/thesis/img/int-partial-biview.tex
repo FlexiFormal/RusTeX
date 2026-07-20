@@ -1,0 +1,20 @@
+\documentclass{standalone}
+\usepackage{tikz,stex,amstext,amssymb}
+\usetikzlibrary{shapes,arrows,mmt}
+\begin{document}
+\begin{tikzpicture}[xscale=1.5]
+  \node[thy,inner sep=.5cm,fill=lightgray] (s1) at (0,0) {};
+  \node[thy,inner sep=.3cm,fill=gray] (t1) at (0,0) {};
+  \node at (t1.north west) {$S$};
+  \node at (t1) {$D$};
+  \node[thy,inner sep=.5cm,fill=lightgray] (s2) at (2,0) {};
+  \node[thy,inner sep=.3cm,fill=gray] (t2) at (2,0) {};
+  \node at (t2.north west) {$T$};
+  \node at (t2) {$C$};
+  \draw[view] (t1) to[out=10,in=170] node[above] {$\sigma$} (t2);
+\end{tikzpicture}
+\end{document}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

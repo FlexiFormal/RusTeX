@@ -1,0 +1,90 @@
+\begin{disclaimer*}
+	The contents of this chapter have been previously published as \cite{MueRabKoh:tat18} and \cite{MueRabKoh:tatreport18} with coauthors Florian Rabe and Michael Kohlhase. Regarding individual contributions, both the research and the original writing have been done in close collaboration, hence a strict seperation of contributions among the authors is impossible in retrospect. The writing has been revised for this thesis.
+	
+	Additionally, the implementation and formulation of the rules for record types are my contribution, under supervision (and with help) by Florian Rabe.
+\end{disclaimer*}
+
+In the area of formal systems like type theories, logics, and specification and programming languages, various language features have been studied that allow for inheritance and modularity, e.g., theories, classes, contexts, and records.
+They all share the motivation of grouping a list of declarations into a new entity such as in $R=\rectype{x_1:A_1,\ldots,x_n:A_n}$.
+The basic intuition behind it is that $R$ behaves like a product type whose values are of the form $\recexp{x_1:A_1:=a_1, \ldots, x_n:A_n:=a_n}$.
+Such constructs are indispensable already for elementary applications such as defining
+the algebraic structure of Semilattices (as in \autoref{fig:rec:semi1}), which we will use as a running example.
+
+\begin{figure}[ht]\centering\small%\vspace*{-1em}
+\begin{framed}
+$\mathtt{Semilattice} = \left\{
+  \begin{array}{ll}
+    U &:\; \type \\
+    \wedge &:\; \lfarrow U{\lfarrow UU} \\
+    \mathtt{assoc} &:\; \ded \forall x,y,z:U.\; (x \wedge y) \wedge z \doteq x \wedge (y \wedge z) \\
+    \mathtt{commutative} &:\;\ldots \\
+    \mathtt{idempotent} &:\;\ldots
+  \end{array}
+  \right\}$
+\end{framed}%\vspace*{-.5em}
+\caption{A Grouping of Declarations for Semilattices }\label{fig:rec:semi1}%\vspace{-1em}
+\end{figure}
+
+\begin{figure}[ht]\centering%{r}{8.1cm}%\vspace*{-2em}
+\begin{tabular}{|l||c|c|}\hline
+       & \multicolumn{2}{c|}{Name of feature}\\
+System & stratified & integrated \\\hline\hline
+ML     & signature/module & record\\
+C++    & class     & class, struct\\
+Java   & class     & class\\
+Idris \cite{idris} & module       & record \\\hline
+Coq \cite{coq}    & module    & record \\
+HOL Light \cite{hollight} & ML signatures & records \\
+Isabelle \cite{isabellemanual} & theory, locale & record \\
+Mizar \cite{mizar}  & article   & structure\\
+PVS \cite{pvs}   & theory    & record \\
+OBJ \cite{obj}   & theory    & \\
+FoCaLiZe \cite{focalize} & species & record \\\hline
+\end{tabular}
+\caption{Stratified and Integrated Groupings in Various Systems}\label{fig:rec:systems1}
+%\vspace{-2em}
+\end{figure}
+Many systems support \defemph{stratified grouping} (where the language is divided into a lower
+level for the base language and a higher level that introduces the grouping constructs) or
+\defemph{integrated grouping} (where the grouping construct is one out of many type-forming
+operations without distinguished ontological status), or both.
+The names of the grouping constructs vary between systems, and we will call them \textbf{theories} and \textbf{records} in this chapter.
+An overview of some representative examples is given in \autoref{fig:rec:systems1}. 
+
+The two approaches have different advantages.
+Stratified grouping permits a separation of concerns between the core language and the module system.
+It also captures high-level structure well in a way that is easy to manage and discover in large libraries, closely related to the advantages of the little theories approach \cite{littletheories}.
+But integrated grouping allows applying base language operations (such as quantification or tactics) to the grouping constructs.
+For this reason, the (relatively simple) stratified Coq module system is disregarded in favor of records in major developments such as \cite{MathComponents:base}.
+
+Allowing both features can lead to a duplication of work where the same hierarchy is formalized once using theories and once using records.
+A compromise solution is common in object-oriented programming languages, where classes behave very much like stratified grouping but are at the same time normal types of the type system.
+We call this \textbf{internalizing} the higher level features.
+While combining advantages of stratified and integrated grouping, internalizing is a very heavyweight type system feature: stratified grouping does not change the type system at all, and integrated grouping can be easily added to or removed from a type system, but internalization adds a very complex type system feature from the get-go.
+It has not been applied much to logics and similar formal systems: the only example we are aware of is the FoCaLiZe \cite{focalize} system.%\ednote{find better focalize reference}
+A much weaker form of internalization is used in OBJ and related systems based on stratified grouping: here theories may be used as (and only as) the types of parameters of parametric theories.
+Most similarly to our approach, OCaml's first-class modules internalize the theory (called \emph{module type} in OCaml) $M$ as the type $\mathtt{module}\,M$; contrary to both OO-languages and our approach, this kind of internalization is in addition and unrelated to integrated grouping.
+
+In any case, because theories usually allow for advanced declarations like imports, definitions, and notations, as well as extra-logical declarations, systematically internalizing theories requires a correspondingly expressive integrated grouping construct.
+Records with defined fields are comparatively rare; e.g., present in \cite{luo:manifestfields} and OO-languages.
+Similarly, imports between record types and/or record terms are featured only sporadically, e.g., in Nuprl \cite{nuprl}, maybe even as an afterthought only.
+
+Finally, note a related trade-off that is orthogonal to our development: even after choosing either a theory or a record to define grouping, many systems still offer a choice whether a declaration becomes a parameter or a field.
+See \cite{spitters_classes} for a discussion.
+
+% discuss universe hieracrchies, limitations of two universes (category theory)
+
+\paragraph{}%Contribution}
+This chapter presents the first formal system that systematically internalizes theories into record types\footnote{originally published as~\cite{MueRabKoh:tat18}; for an extended report see~\cite{MueRabKoh:tatreport18}.}.
+The central idea is to use an operator $\modelsofF$ that turns the theory $T$ into the type $\modelsof T$, which behaves like a record type.
+We take special care not to naively compute this record type, which would not scale well to the common situations where theories with hundreds of declarations or more are used.
+Instead, we introduce record types that allow for defined fields and merging so that $\modelsof T$ preserves the structure of $T$.
+
+This approach combines the advantages of stratified and integrated grouping in a lightweight language feature that is orthogonal to and can be easily combined with other foundational language features.
+Concretely, it is realized as a module in the \mmt framework.
+By combining our new modules with existing ones, we obtain many formal systems with internalized theories.
+In particular, our typing rules conform to the abstractions of \mmt so that \mmt's type reconstruction \cite{rabe:recon:17} is immediately applicable to our features.
+% We showcase the potential in a case study based on this implementation, and which is interesting in its own right: A formal library of elementary mathematical concepts that systematically utilizes $\modelsof\cdot$ throughout for algebraic structures, topological spaces etc.
+
+% our advantages:
+%   explicit models-of to control expressivity, better control on foundational issues?

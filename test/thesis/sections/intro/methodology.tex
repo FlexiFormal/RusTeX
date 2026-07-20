@@ -1,0 +1,179 @@
+
+\subsection{Preliminary Work Plan}
+	My work will be roughly divided into the following three work areas; the first two being theoretical research,
+	the last one being case studies to evaluate the former two:
+	
+	\begin{tabular}{|c|c|c|p{12cm}|c|}\hline
+		\multirow{5}{*}{\textbf{WA1}} &\multicolumn{4}{l|}{\textbf{Extending LF} (and \mmt) with} \\\cline{3-4}
+			&\quad& \textbf{WP1.1} & subtypes, & \quad\\\cline{3-4}
+			&\quad& \textbf{WP1.2} & record types and &\quad \\\cline{3-4}
+			&\quad& \textbf{WP1.3} & inductive types. &\quad \\\cline{3-4}
+			& \multicolumn{4}{l|}{(See Section \ref{sec:extendingLF})}\\\hline
+		\multirow{4}{*}{\textbf{WA2}} &\multicolumn{4}{l|}{Investigating methods for} \\\cline{3-4}
+			&\quad& \textbf{WP2.1} & \textbf{refactoring} libraries and the theories contained therein, 
+											and & \quad\\\cline{3-4}
+			&\quad& \textbf{WP2.2} & \textbf{integrating} formal libraries with each other. &\quad\\\cline{3-4}
+			& \multicolumn{4}{l|}{(See Section \ref{sec:WPBC})}\\\hline
+		\multirow{4}{*}{\textbf{WA3}} &\multicolumn{4}{p{12cm}|}{\textbf{Evaluating} the above methods
+			as to their usefulness and effectiveness by} \\\cline{3-4}
+			&\quad& \textbf{WP3.1} & \textbf{making PVS accessible to \mmt}; the imported PVS
+				library will serve as a case study for \textbf{WA1} (See Section \ref{sec:integrating}), 
+				and &\quad\\\cline{3-4}
+			&\quad& \textbf{WP3.2} & Evaluating the methods from \textbf{WA2}, using the integrated
+			libraries (PVS, TPS, HOLLight, Mizar, TPTP) as a case study (See Section \ref{sec:eval}).
+			 &\quad\\\cline{3-4} &  \multicolumn{4}{l|}{\quad}\\\hline
+	\end{tabular}
+	
+%	\begin{tabular}{|c|p{13cm}|}\hline
+%		WP \textbf A & \textbf{Extending LF} (and \mmt) with record types, subtypes and inductive types. See Section \ref{sec:extendingLF}.
+%			\\\hline
+%		WP \textbf B & Investigate methods for \textbf{refactoring theories} automatically. See Section \ref{sec:WPBC}.\\\hline
+%		WP \textbf C & Investigate methods for \textbf{integrating libraries} with each other. See Section \ref{sec:WPBC}.\\\hline
+%		WP \textbf D & \textbf{Making PVS accessible to \mmt.} 
+%			The imported PVS library will serve as a case study for the other work packages, particularly
+%			WP \textbf A. See Section \ref{sec:integrating}\\\hline
+%		WP \textbf E & \textbf{Evaluating} the above methods as to their usefulness and effectiveness, using
+%		the integrated libraries (PVS, HOLLight, Mizar, TPTP) as a case study. See Section \ref{sec:eval} \\\hline
+%	\end{tabular}
+
+\subsection{\textbf{WA1}: Extending LF}\label{sec:extendingLF}
+As mentioned before, LF is based on the dependently typed $\lambda$-calculus. While this provides powerful type constructors that allow for efficiently specifying particularly classic ``textbook logics'', when it comes to certain features which are used in ``real-world'' logics, such as the foundations of modern proof assistants, our experience has shown that LF is not powerful enough to model these elegantly.
+
+In practice, it turns out that for these kind of type constructors to be nicely specifiable in a logical framework, the same feature has to already exist on the level of the logical framework itself.
+I therefore want to try to extend LF by providing type constructors and checking rules for these kinds of features. Implementing those in \mmt will furthermore necessitate extending its available data structures and abstract syntax by additional term constructors, to accomodate i.e. record field assignments or pattern matching on inductive types (which are basically \emph{constant declarations} on the \emph{object level}, which \omdoc/\mmt currently doesn't allow).
+
+One such extension of LF (by finite sequences) and the associated problems in implementing them conveniently (necessitating features such as ellipses, lengths, concatenations, foldings etc.) has been described in~\cite{Horozal:afddl14}.
+
+It should be noted, that in extending LF by features such as \emph{predicate subtyping}, we will necessarily lose decidability. However, this will mostly just introduce certain proof obligations for typing judgements, which have to be discharged by the user. Furthermore, since any formal library we want to import that makes use of these features will have the same problem, the necessary typing judgements are \emph{ideally} already present in that library (to which extent will have to be seen). I therefore do not consider this to be a serious obstacle to our goals.
+
+\subsubsection{\textbf{WP1.1}: Subtypes}
+Consider as an example a judgement such as $A<B$ (``$A$ is a subtype of $B$'') in some logic (such as the type theory used by PVS). Since LF itself doesn't support subtyping, the kind ``type'' in this case has to be ``pulled down'' to a lower level, e.g. by declaring a new type $tp$, which serves as the (LF-)type of all ``lower-level types'', so we can declare both $A$ and $B$ to be of type $tp$, declare $<$ to be of type $tp\to tp\to type$ and introduce a judgment $AsubtpB: A < B$ (this is basically a \emph{relativization}). But now declaring an element $a:A$ is impossible in LF, since $A$ is not a type, but an element of type $tp$! So we have to introduce a new type $term$ and a new declaration $\$$ of type $term\to tp\to type$, and finally declare $a:term$ and
+$a\_type: a\$A$ to provide the information, that $a$ has the (lower-level) type $A$.
+
+However, LF now can not do proper type checking on the lower-level types, since now all typed objects have the same LF-type $term$. Furthermore, if we wanted to declare a function of type $f:B\to C$, we would have to declare that as having LF-type $term\to term$, losing the typing-information of $f$ and making it difficult to distinguish between a well-defined expression such as $f(b)$ (where $b$ has type $B$) and $f(q)$ for some term $q$ on which $f$ \emph{should be} undefined.
+Furthermore, correctly type checking a valid expression such as $f(a)$ needs to make use of the information, that $a$ is an element of type $B$, even though it has been declared to be of type $A$ (since $A$ is a subtype of $B$).
+
+One way of implementing this directly in LF is of course to always carry the lower-level typing judgements as \emph{additional arguments} in functions, i.e. $f$ really has type $\Pi_{b:term}(b\$B)\to term$ and we introduce an additional declaration $f\_type:\Pi_{b:term,p:b\$B}f(b,p)\$C$, but this gets messy very quickly (obfuscating the actual mathematical content) and introduces a lot of overhead, since we ``ma\-nu\-al\-ly'' have to carry all the declared \emph{and inferred} (through subtyping) low-level typing judgements everywhere they might have to be used. Furthermore, we would have to take care of \emph{proof irrelevance}, so that $f(b,p)=f(b,q)$ for every two proofs $p,q:b\$B$.
+
+Alternatively, one could introduce an injective \emph{type casting} function $AsubtpB:A\to B$ for every declaration $A<B$, allowing us to use LF-types directly. However, that would force us not just to keep track of any such declaration and ``manually'' appending the corresponding function(s) whenever we want to use an element of type $A$ as an element of type $B$, but also to declare every property some $a:A$ might have again for all possible type casts such as $AsubtpB(a)$, again introducing a lot of overhead just to make sure that typecasted elements behave as needed. 
+
+\paragraph{} A potential solution to this problem might result from \emph{intersection types}\cite{Pfenning92} or \emph{refinement types} \cite{Pfenning93}, although it is questionable, whether they are powerful enough to allow for specifying e.g. predicate subtyping efficiently. For a discussion of subtyping in higher-order logic, see e.g. \cite{Kohlhase:amosho94}.
+
+\subsubsection{\textbf{WP1.2}:  Record Types}
+An element of a record type is in principle a list of \emph{key-value} pairs. If we ignore the keys, a record type is just a finite product, and the associated elements are tuples of corresponding values; however in ignoring the keys, we lose exactly the thing that makes record types valuable.
+
+Consider as an example the record type $\{|\textsf{name:String, age:Int}|\}$. Obviously, that can be modeled as the type $\textsf{String}\times\textsf{Int}$, however, in that case an element $(\textsf{``Steve''},25)$ would also be an element of the record type $\{|\textsf{cityname:String, population:Int}|\}$, which the intended semantics of record types should not allow for. Furthermore, an element of the type $A\times B\times C$ is not also an element of type $A\times B$, whereas the record type $\{|\textsf{a:A, b:B, c:C} |\}$ should be a subtype of 
+$\{|\textsf{a:A, b:B} |\}$, since an element of the former instantiates all the required record fields of the latter, namely \textsf{a} and \textsf{b}.
+
+\paragraph{}Specifying record types wih the intended semantics in \omdoc/\mmt is however inconvenient, since a definition of a record type like $\textsf{Person}:=\{|\textsf{name:String, age:Int}|\}$ introduces two new typed symbols, \textsf{name} and \textsf{age}. These are functionally declarations, but on the \emph{object level}, which the current \omdoc/\mmt language does not allow for. The only current way to solve this is to model record types as theories $T$ and elements of a record type as \mmt structures, that import $T$ while providing the desired definitions for the symbols (i.e. record fields) specified in $T$. Unfortunately, this introduces a lot of undesired overhead, not just in specifying the types, but also because we are not able to use theories like types; i.e. a declaration like
+\textsf{Steve:Person}, having an anonymous element of type $T$ within a term or binding a variable of that type are now impossible.
+
+\subsubsection{\textbf{WP1.3}: Inductive Types}
+Similar problems arise with inductive types. In principle, type constructors such as $W$-types (see e.g. \cite{hottbook}) can be used to specify inductive types. They are based on viewing inductive types as the \emph{freely generated} types over some signature, of which only the arities matter. For example, the natural numbers are freely generated by two construction cases: $0:\mathbb N$ (with arity $0$) and the successor function $S:\mathbb N\to\mathbb N$ (with arity $1$). Using $W$-types, the type $\mathbb N$ could thus be defined as $\mathbb N :=W_{x:2}(0,1)$.
+
+$W$-types are easy to specify and implement in any sufficient language; but as with record types, we lose the information that the first element of the inductive definition is (supposed to be) called $0$ and the second is called $S$. We can define $0$ and $S$ using the $W$-type for $\mathbb N$, but that results in definitions like
+\[S:= \lambda x_{\mathbb N}.sup(\top,\lambda y_{Unit}.x)\]
+and
+\[ plus:=\lambda n_{\mathbb N}. rec\left( \lambda a_{Bool}.\lambda u_{\beta(a)\to\mathbb N}.\lambda g_{\beta(a)\to\mathbb N}.((\lambda x_{Unit}.n)+(\lambda x_{Unit}.sup(\top,\lambda y_{Unit}.g(x))))(a)\right),\]
+which are difficult to read and even more difficult to write, contrary to the ease of definitions like
+\[plus:= \lambda n.\lambda x.\; x\; match\; [case\; 0 => n;\;case\; S(m)=> S(n+m)].\]
+However, that would necessitate having the two cases $0$ and $S$ being intrinsically linked to the definition of the type $\mathbb N$, which -- as with record types -- calls for having additional declarations (of $0$ and $S$) on the object level, namely in the definition of $\mathbb N$.
+
+\subsubsection{A Potential Solution to the Problems With Record and Inductive Types}
+As we have seen, the problems with specifying both record types and inductive types can be solved, if we are allowed to have declarations on the object level. One possible solution is therefore to extend the \omdoc/\mmt language by a new term type (preliminarily called) \textsf{OML} which wraps around a declaration. To do so, the exact semantics of these terms will have to be worked out and the \mmt system will have to be extended to allow for them.
+
+\subsubsection{Preliminary Results}
+So far, I have extended LF by coproducts, $\Sigma$-types, finite types (using coproducts, the empty type and the Unit type) and $W$-types and specified the corresponding inference and computation rules in a new \mmt plugin. I do not expect them to be useful for \textbf{WP3.1}--\textbf{WP3.3}, however doing so has increased the depth of my understanding of the necessary \mmt API methods. Furthermore, they might provide interesting toy examples for evaluating the resulting methods from \textbf{WA2} (e.g. by translating inductive types in some library to the corresponding $W$-types).
+
+\subsection{\textbf{WA2}: Refactoring and Integrating Libraries}\label{sec:WPBC}
+
+As a second (and main) goal, I will look for useful refactoring methods of theories, such as \emph{theory intersections} (see Section \ref{sec:ti}), to increase modularity, expose heterogeneity and ultimately investigate possible methods to efficiently identify overlap between and move knowledge across libraries.
+
+The specific techniques to close in on that goal are very much an open question. Consequently, it is difficult to predict, what kind of difficulties I might encounter in doing so, what kind of results can be expected and what amount of work this will take.
+
+Methods that might be useful in refactoring theories are theory intersections and methods for finding (partial) theory morphisms (see Section \ref{sec:viewfinder}). Apart from improving and extending those, I want to look into the concept of \textbf{interface theories and logics}~\cite{KohRabSac:fvip11}: Assume, we are given e.g. a theory of real numbers implemented in some logic using some construction principle. We know, that the real numbers can be (up to cardinality and isomorphisms) uniquely described as the theory of topologically complete ordered archimedian fields -- ergo, to state the necessary axioms, second-order predicate logic is sufficient. Moreover, any theory that \emph{uses} the real numbers will (most likely) only use their second-order properties. We would therefore benefit from finding a way to seperate the concrete implementation of real numbers in our original logic from the \emph{``actual''} theory of real numbers, which we would call the \emph{interface theory} of the reals (of which our starting theory is just an extension), and the intricate construction principles used from the \emph{interface logic}, that is actually used in asserting the relevant axioms, namely second-order predicate logic.
+
+Implementing methods to (if possible) automatically find and extract interface theories (and refactor them to use the corresponding interface logic) could help identifying the heterogeneous part of a theory and enable \textbf{aligning} libraries by matching equivalent theories in different libraries automatically. Due to its modular nature, the LATIN library can provide the corrseponding interface logics.
+
+
+\subparagraph{} Another potentially useful concept for translating content across libraries are \emph{declaration patterns}~\cite{Horozal:afddl14}, that -- if consistently used in the import method for some library -- might make it easier to match equi\-va\-lent theories using different foundations.
+
+\subsubsection{Preliminary Results}\label{sec:prelim}
+So far, I have developed the following two methods, that might be useful for refactoring and aligning libraries:
+
+\paragraph{Viewfinder}\label{sec:viewfinder}
+The Viewfinder is an \mmt method that tries to find useful partial morphisms between two theories. It has been tested on the \textsf{LATIN} library with experimental success, resulting in 20 -- 3000 (depending on the configuration) morphisms on approximately 75000 pairs of theories. Since the \textsf{LATIN} library is modular by design, the low number of found theory morphisms is not too suprising; on inspection, most the found morphisms seem to be between theories that are similar-but-not-equal by design, such as Curry-Howard morphisms or morphisms between Church-style and Curry-style type theories, where the corresponding theories deliberately do not share a common inclusion theory for historical and semantic reasons. Its algorithm is similar to a method described in~\cite{Normann:phd}.
+
+It takes as arguments two \mmt theories $S,T$, flattens them with respect to their theory inclusions and computes a datatype for every constant $c\in S\cup T$, consisting of two objects: An integer hash of the term structure of the type $A$ of $c$ and a list of constants (considered as \emph{variables}) occuring in $A$. A check, whether two constants $c$ and $d$ are (superficially) compatible now reduces to an equality check on the integer hashes of $c$ and $d$. To match $c$ to $d$, the Viewfinder only needs to iterate on the respective lists of variables occuring in their types.
+
+By choosing which constants are pulled into the integer hash of the term structure and which are considered variables, the user has some degree of control over which constants should remain fixed and which are allowed to be mapped to some other constant in the resulting morphisms.
+
+Furthermore, by only trying to match those constants whose list of variables has some minimal length (given as a parameter), 
+the user can trade the number of morphisms found for a relative increase of efficiency -- the larger the minimal length, the smaller the number of morphisms and the faster the algorithm. Also, a certain minimal length avoids ``meaningless'' morphisms, that do not preserve at least some of the properties of a constant $c$ (provided by respective axioms with some minimal number of occuring constants containing $c$).
+
+\paragraph{Theory Intersections}\label{sec:ti}
+By theory intersection we mean, given a partial theory morphism $\sigma$ between two theories $S,T$ (as in 
+Figure \ref{fig-intersect} on the left),  extracting a common subtheory $N$, of which both $S$ and $T$ can be thought of as extensions (as in Figure \ref{fig-intersect} on the right, where $N$ is isomorphic to the theories $C,D$, $\rho_1,\rho_2$ are \mmt structures and $S',T'$ are the refactored versions of $S$ and $T$). e.g. the theory intersection between $(\mathbb Z,+,\cdot,<)$ and $(\mathbb Q,+,\cdot,<)$ along the obvious morphism would yield something like the theory of linearly ordered integral domain rings. 
+
+
+\begin{figure}[ht]\centering
+\begin{tabular}{|c|c|}\hline
+		 	\tikzinput{img/partial-biview}
+& 
+			\tikzinput{img/unary-thi}\\\hline
+\end{tabular}
+			\caption{Theory Intersections}\label{fig-intersect}
+\end{figure}
+
+This allows for refactoring a given library in a modular way according to the little theories approach.
+
+The theory intersection method takes as parameters two theories $S,T$, a name of the intersection theory and a list of tuples consisting of some constant in $S$, some constant in $T$, a name for the corresponding constant in the intersection and (optionally) a notation. The list of tuples can be computed from either a single morphism $S\to T$ or a pair of \emph{compatible} morphisms ${\sigma:S\to T}$, ${\delta:T\to S}$, where $\sigma$ and $\delta$ are considered compatible if for all $c\in S,d\in T$ we have $\delta(\sigma(c))=c$ and $\sigma(\delta(d))=d$, whenever these are well-defined.
+
+Using the Viewfinder, the theory intersection method can in theory be automated and run over a whole library without any user input, provided we accept generated names for the resulting theories (the names for the constants in the intersection theory can be taken from one of the input theories).
+
+\paragraph{}I have integrated both the Viewfinder and the theory intersection method in the \mmt plugin for jEdit as part of a new refactoring panel. An annotated video demonstration of the refactoring panel and its components can be found online \cite{YTInters}.
+
+\subsection{\textbf{WA3}: Evaluation}
+
+\subsubsection{\textbf{WP3.1}: Making PVS Accessible to \mmt}\label{sec:integrating}\label{sec:PVS}
+
+My goal is to write an \mmt plugin to allow for importing PVS libraries into the \mmt system, using the extended LF from \textbf{WA1} as a logical framework.
+Doing so will entail three things:
+\begin{enumerate}
+	\item Writing an \mmt plugin that allows for importing .xml files generated by PVS
+		 into the \mmt API (this has already been implemented, mostly by Florian Rabe with minor corrections 
+		 by me) and translating these into \mmt theories,
+	\item writing an \mmt theory that provides the underlying foundational logic of PVS and
+	\item extending and improving the \mmt language and -api, as well as LF, to provide syntactical constructors 
+		for the specific peculiarities of PVS (see \textbf{WA1}).
+\end{enumerate}
+
+\paragraph{} PVS \cite{pvs} is a specification language integrated with support tools and a theorem prover. It is based on an extension of higher-order logic and is under active development at the Computer Science Laboratory of SRI International in Menlo Park, California. There exists a large library of mathematical theories for PVS, maintained by NASA's Langley Formal Methods Team~\cite{PVSlibraries:on}, providing a particular incentive to integrate PVS into the OAF project. In addition, Sam Owre at SRI has provided us with an XML exporter for PVS\footnote{without proofs, which we deliberately do not include at this stage. Adding proofs to the goals presented in this proposal would add further major difficulties.}, which makes reading library content into the \mmt API a lot more convenient.
+
+PVS has a very powerful (in general undecidable) type system and a rich language with many pri\-mi\-tives, to make formalizing theorems and proofs as easy as possibly. In contrast, \mmt is designed to be as flexible as possible, and consequently has very few primitives to allow the user to define them as needed. This will make the translation process from PVS to \mmt possibly difficult, at the very least non-trivial. PVS offers e.g. record types,
+predicate subtyping, inductive and coinductive types, parametric theories etc., all of which will have to be specified in (or translated using) the corresponding \mmt theory. As such, PVS can serve as a suitable case study for the extended version of LF from \textbf{WA1}.
+
+\subparagraph{} The goal is to have the resulting import method run over the whole NASA library without errors and type checking correctly; both internally to the \mmt API as well as after exporting its contents (at least) into the \mmt language.
+
+\subsubsection{\textbf{WP3.2}: Evaluating the methods from \textbf{WA2}}\label{sec:eval}
+
+\textbf{WA2} is the most difficult part of my PhD; both with respect to the subject matter as well as in evaluating the results. Since this is very much an open problem, it is difficult to foresee what is feasible and what is not, as well as which specific challenges will occur.
+	
+	Preliminarily, I will consider this part of my PhD a success, if we will be able to automatically identify at least some of the basic domains of mathematical discourse (booleans, natural numbers, rationals, reals,...) in two or more different library formats. The theory refactoring methods can furthermore be evaluated on the basis of resulting size reductions of theories, increase of the number of theories (as a measure of increased modularity) and inclusion relations and whether the input and output theory graphs are equal after flattening (with respect to theory inclusions and \mmt structures). 
+	
+	The PVS NASA library as well as the Mizar, TPS and HOLLight libraries, which have already been integrated into \mmt, will serve as a basis for this assessment.
+	
+\subsection{Preliminary Schedule}
+
+The projected scheduling of these work areas (going forward) is visualized in Figure \ref{fig:timeline}.
+
+\begin{figure}[ht]\centering
+	\tikzinput{img/timeline}
+	\caption{Preliminary Schedule}\label{fig:timeline}
+\end{figure}
+
+\paragraph{} My initial focus will be on work area \textbf{WA1} and the corresponding case study 
+\textbf{WP3.1}. In the process, I will furthermore (in collaboration with Florian Rabe) attempt to write a generic tutorial on how to do the same for arbitrary formal systems. We hope that this will ultimately enable other people outside of our research group to import libraries in e.g. their own theorem prover system into \mmt. This might increase the number of available libraries faster than if someone intimately familiar with \mmt is needed.
+The current status of this tutorial can be found in the \mmt repository\footnote{\url{https://github.com/KWARC/MMT/tree/stable/doc/introduction/tutorial}}.
+
+

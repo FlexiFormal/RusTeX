@@ -1,0 +1,34 @@
+\setbeamercolor{block title}{bg=blue!30}
+\setbeamercolor{block body}{bg=blue!10}
+\setbeamertemplate{blocks}[rounded]
+\setbeamercolor{title}{bg=blue!20}
+
+
+% customize header and footer
+%\setbeamertemplate{headline}{}
+%\setbeamertemplate{headline}{\begin{beamercolorbox}{title}\scriptsize\insertnavigation{\textwidth}\end{beamercolorbox}}
+\setbeamercolor{headline}{bg=blue!10,fg=black}
+\setbeamertemplate{headline}{\begin{beamercolorbox}{headline}\small\hfill\insertsection \hfill\insertframenumber\end{beamercolorbox}}
+\setbeamertemplate{footline}{}
+\setbeamertemplate{navigation symbols}{}
+
+\newenvironment{blockitems}[1]{\begin{block}{#1}\begin{itemize}\small}{\end{itemize}\end{block}}
+\newenvironment{blockenum}[1]{\begin{block}{#1}\begin{enumerate}\small}{\end{enumerate}\end{block}}
+
+% line end comment
+\newcommand{\lec}[2][blue]{\strut\hfil\strut\null\nobreak\hfill\hbox{{\color{#1}#2}}\par}
+\newcommand{\glec}[1]{\strut\hfil\strut\null\nobreak\hfill\hbox{{\color{gray}#1}}\par}
+
+% make slides appear in toc
+\let\basics@beamer@frametitle\frametitle
+\renewcommand{\frametitle}[1]{\basics@beamer@frametitle{#1}\subsection{#1}}
+
+\newcommand{\highlight}[2]{{\color{#1}#2}}
+\newcommand{\hlA}[1]{\highlight{red}{#1}}
+\newcommand{\hlB}[1]{\highlight{purple}{#1}}
+\definecolor{olive}{rgb}{0,0.4,0}
+\newcommand{\hlC}[1]{\highlight{olive}{#1}}
+\newcommand{\hlD}[1]{\highlight{gray}{#1}}
+\newcommand{\hlE}[1]{\highlight{blue}{#1}}
+
+\renewcommand{\mmt}{MMT}

@@ -1,0 +1,462 @@
+\documentclass[a4paper,11pt]{book}
+% windows / miktex
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+
+\input{mymacros/main}
+\usepackage[hide]{ed}
+\input{mymacros/myed}
+\input{mymacros/systems}
+\input{mymacros/environments}
+\input{mymacros/listings}
+\input{mymacros/ref}
+\input{mymacros/rules}
+\input{macros}
+
+\usepackage[style=alphabetic,hyperref=auto,defernumbers=true,backend=bibtex,firstinits=true,maxbibnames=9,maxcitenames=3,isbn=false]{biblatex}
+\addbibresource{biblio}
+
+\DeclareBibliographyCategory{mine}
+\DeclareBibliographyCategory{online}
+\DeclareBibliographyCategory{systems}
+
+\begin{document}
+
+%%%%%%%%%% Title page %%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\setlength{\baselineskip}{1.5em}
+
+\newcommand{\titel}{Mathematical Knowledge Management Across Formal Libraries}
+\newcommand{\titelde}{Mathematisches Wissensmanagement Über Formale Bibliotheksgrenzen Hinaus }
+\newcommand{\myname}{Dennis Müller}
+\newcommand{\advisor}{Prof. Dr. Michael Kohlhase}
+\newcommand{\HRule}{\vspace{-0.3cm}\rule{.8\linewidth}{0.5mm}}
+
+\begin{titlepage}
+%\selectlanguage{ngerman}
+%\includegraphics[height=0.04\textheight]{img/fau}\\[1cm]
+\begin{center}
+
+%\Large
+%\textsc{ FAU Erlangen-Nürnberg } \\
+%\large
+%\textsc{ Fakultät für Mathematik und Physik } \\
+%\textsc{ Mathematisches Institut } \\[6cm]
+
+{\huge
+\textbf{\textsc{\titel}}} \\[.2cm] \HRule \\[.2cm]
+{\huge
+\textbf{\textsc{\titelde}}}\\[1cm]
+Der Technischen Fakultät der Friedrich-Alexander-Universität Erlangen-Nürnberg zur Erlangung des Doktorgrades\\
+{\Large\textsc{Doktor-Ingenieur}}\\[8mm]
+vorgelegt von \\
+\Large
+\textbf{\textsc{\myname}} \\
+aus\\ Garmisch-Partenkirchen
+%\today
+
+\vspace*{1.5cm}
+
+% \Large Advisor\\ \advisor
+
+%\vspace*{6cm}
+
+\vfill
+%\includegraphics[height=0.18\textheight]{img/kwarc}
+%\begin{tabular}{lcr}
+%\begin{figure}[!htb]
+%\minipage{0.5\textwidth}\hfill\endminipage\hfill 
+%\minipage{0.5\textwidth}\hfill\includegraphics[height=0.05\textheight]{img/fau}\endminipage
+%\end{figure}
+%\end{tabular}
+
+\end{center}
+\newcommand{\secondpage}{
+\pagebreak
+
+\thispagestyle{empty}
+\ 
+
+\vfill
+
+\begin{center} Als Dissertation genehmigt von der Technischen Fakultät der Friedrich-Alexander-Universität Erlangen-Nürnberg\end{center}\bigskip
+
+\begin{tabular}{ll}
+Tag der mündlichen Prüfung: & 18.10.2019 \\
+ & \\
+Vorsitzender der Promotionsorgans: & Prof. Dr.-Ing. Andreas Paul Fröba \\
+Gutachter: & Prof. Dr. Michael Kohlhase \\
+ & assoz. Prof. Dr. Claudio Sacerdoti Coen
+\end{tabular}
+}
+
+\secondpage
+
+\end{titlepage}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\input{sections/abstract}
+
+\cleardoublepage
+
+\input{dedic}
+
+\newpage\tableofcontents\tableofednotes%\newpage\ifshowednotes {\listofmyed \newpage}\fi
+
+%\newpage
+
+
+%------------------------------------------------------------------------------------------------------------------------------
+\newpage
+\thispagestyle{empty}
+\begin{disclaimer*}
+	PhD students are in many universities -- among them Jacobs University Bremen, where I started my PhD -- given a choice between submitting a \emph{cumulative} dissertation or a \emph{monography}.
+	The former simply consists of previous publications by the student and a summary, whereas the latter is a self-contained document.
+	
+	I deliberately decided against the first option, because even though that would have been a lot less work, I thought it a worthy endeavour to present my research as a
+	coherent, unifying document that bundles the results, both of existing publications and previously unpublished research, in the context of an overarching narrative
+	suggestive of a bigger picture, research goals beyond the individual publications and an implied direction for future work.\medskip
+	
+	Consequently however, a non-negligible fraction of the writing and many of the results in this thesis have been adapted, and sometimes taken verbatim, from previously published papers I coauthored. The reason being that in writing a paper, one is already forced to think deeply about how to present the subject manner in a coherent and precise manner. Additionally, these papers have been written in close collaboration with much more experienced authors than me, so without a contextual reason to adapt our collaborative writing to the context of this thesis, any attempt of mine to improve on them would be futile and guaranteed to result in an unnecessarily less well-suited presentation; primarily to the detriment of the reader.
+	
+	This applies mainly to selected
+	\begin{itemize}
+		\item introductory paragraphs,
+		\item state-of-the-art descriptions,
+		\item descriptions of systems not developed at KWARC,
+		\item detailled formal descriptions of algorithms or rule systems that were previously published, and
+		\item work done by collaborators outside of our work group.
+	\end{itemize}
+	
+	All chapters describing previously published work are prefaced with a disclaimer such as this one, describing (if possible) which parts have been adapted from which publications with which coauthors, and explicitly describing my personal contributions for evaluation.
+	
+	All of those publications are listed in a separate section of the bibliography (\autoref{bib:mine}).
+\end{disclaimer*}
+
+\part{Introduction}
+
+\chapter{Motivation}\label{ch:intro}
+\input{sections/intro/intro}
+
+\chapter{State of the Art}\label{sec:intro:sota}
+\input{sections/intro/sota}
+
+%\section{Methodology}\label{sec:methodology}
+%\input{sections/intro/methodology}
+
+\chapter{Context and Contribution}\label{sec:intro:objectives}
+
+This thesis is part of two ongoing research projects - OAF (Open Archive of Formalizations)\footnote{Funded by DFG grant KO 2428/13-1} and ODK (\ODK)\footnote{Funded by EU Horizon 2020 grant 676541}. The goals of OAF in particular largely coincide with the objectives of this thesis, specifically regarding applications for theorem prover libraries; ODK entails work packages extending the same goals to other formal systems, such as computer algebra systems and mathematical databases. Our approach to realizing these projects largely make use of the Math-in-the-Middle architecture (MitM).
+
+Before we describe the precise objectives and contribution of this work, we will go over the above and related projects, as to establish the necessary context.
+
+
+\section{\latin}\label{sec:intro:prelim:latin}
+\input{sections/prelim/latin}
+
+\input{sections/intro/oaf}
+\section{\ODK}\label{sec:intro:prelim:odk}
+\input{sections/prelim/odk1}
+\input{sections/prelim/odk2}
+
+\section{The Math-in-the-Middle Approach and Library}\label{sec:lf:mitm}
+\input{sections/lf/mitm/mitm}
+\input{sections/intro/overview}
+
+\chapter{Preliminaries}\label{ch:intro:prelim}
+
+Throughout this thesis we will use the \mmt language and system as a meta-logical framework. \mmt is a highly flexible system and API using the foundation-independent \omdoc language for its backend. Within \mmt, we can implement almost arbitrary logical frameworks; most prominently, it comes with an implementation of \LF which we extend and use throughout this thesis.
+
+\begin{disclaimer*}
+	The text of the this chapter has been assembled and adapted from various previously published papers by (primarily) Florian Rabe, Michael Kohlhase and myself (all of which are referenced in this thesis), since they have emerged as the most suitable, concise introductions to the concepts described herein. The exposition has been thoroughly reworked for a uniform representation, but some text fragments of the original might remain. Original publications are cited where adequate.
+\end{disclaimer*}
+
+
+\section{\ommt}\label{sec:intro:prelim:mmt}
+\input{sections/prelim/mmt}
+
+%\input{sections/lf/implicit/mmt}
+
+\subsection{\mmt Syntax}\label{sec:prelim:notation}
+\input{sections/prelim/mmtsyntax}
+
+
+\input{sections/prelim/judgments}
+
+\section{Typing Rules and \LF}\label{sec:intro:prelim:lf}
+\input{sections/prelim/lf}
+
+\section{\mmt/\LF Surface Syntax}\label{sec:intro:prelim:syntax}
+\input{sections/prelim/surface}
+
+%\subsection{OAF}\label{sec:intro:prelim:oaf}
+
+%---------------------------------------------------------------------------------------------------------
+
+\part{Modular Design of Logical Frameworks}\label{ch:lf}
+
+\input{sections/import/pvs/pvs}
+\input{sections/lf/intro}
+
+%\chapter{Preliminaries}
+
+
+\lstMakeShortInline[language=scala]*
+
+\chapter{Implementing Rules in \mmt (e.g. $\sigmasymnolink$-Types)}\label{sec:lf:lfx:sigma}
+\input{sections/lf/lfx/sigma}
+
+\chapter{LFX}\label{sec:lf:lfx}
+\input{sections/lf/lfx/intro}
+
+\section{Coproducts}\label{sec:lf:lfx:coprod}
+\input{sections/lf/lfx/coprod}
+
+\section{Finite Types}\label{sec:lf:lfx:finite}
+\input{sections/lf/lfx/finite}
+
+\section{\wtypesym-Types}\label{sec:lf:lfx:wtypes}
+\input{sections/lf/lfx/wtypes}
+
+\section{Cumulative Universe Hierarchies}\label{sec:lf:lfx:hierarchy}
+\input{sections/lf/lfx/hierarchy}
+
+\section{A Logical Framework Based on Homotopy Type Theory}\label{sec:lf:lfx:hott}
+\input{sections/lf/lfx/hott}
+
+\chapter{Subtyping}\label{sec:lf:lfx:subtp}
+\input{sections/lf/lfx/subtyping}
+
+
+\lstDeleteShortInline*
+
+\chapter{Record Types and Models}\label{sec:lf:records}
+\input{sections/lf/records/intro}
+%\subsection{Preliminaries and Related Work}
+\section{Groupings in Formal Languages}
+\input{sections/lf/records/relwork}
+\section{Record Types with Defined Fields}\label{sec:lf:records:def}
+\input{sections/lf/records/records}
+\section{Internalizing Theories}
+\input{sections/lf/records/modelsof}
+\section{Implementation}
+\input{sections/lf/records/impl}
+
+%\chapter{Module-Level Extensions}
+%\section{Preliminaries}
+%\section{Theory Expressions}\label{sec:lf:expr}\ednote{TODO}
+%\section{Implicit Morphisms}\label{sec:lf:implicit}\ednote{TODO}
+%\input{sections/lf/implicit/intro}
+%\input{sections/lf/implicit/include}
+%\input{sections/lf/implicit/implicit}
+%\input{sections/lf/implicit/appl}
+%\input{sections/lf/implicit/complex}
+%\input{sections/lf/implicit/conc}
+
+
+\chapter{Conclusion and Additional Features}\label{sec:lf:lfx:conc}
+\input{sections/lf/lfx/conc}
+
+%---------------------------------------------------------------------------------------------------------
+
+\part{Translating Mathematical Libraries into a Universal Format}\label{ch:import}
+
+\input{sections/import/intro}
+
+\chapter{Integrating Theorem Prover Libraries - \pvs}\label{ch:import:pvs}
+
+\begin{disclaimer*}
+	The contents of this chapter have been published in \cite{KohMueOwr:mpagsiuf17} with coauthors Michael Kohlhase, Sam Owre and Florian Rabe.
+	
+	Both the writing as well as the theoretical results were developed in close collaboration between the authors, hence it is impossible to precisely assign authorship to individual authors. My contribution with regards to these can be assumed to be minor, although the writing has been reworked for this thesis.
+	
+	The implementations (as described below) of the PVS-to-\omdoc translation, the formalization of the PVS foundation and the implementation of the logical framework used therein are my contribution.
+\end{disclaimer*}
+
+\section{Introduction and Preliminaries}\label{sec:intro:prelim:pvs}
+\input{sections/prelim/pvs}
+
+\section{Formalizing Foundations}\label{sec:import:pvs:found}
+\input{sections/import/pvs/formalize}
+
+\section{Importing Libraries}\label{sec:import:pvs:import}
+\input{sections/import/pvs/pvsinmmt}
+
+%\section{Importing PVS}\label{sec:import:pvs}
+
+\chapter{Integrating External Databases (LMFDB)}\label{sec:import:lmfdb}
+
+\input{sections/import/ontologies/intro}
+\input{sections/import/ontologies/presenting-lmfdb}
+
+\chapter{Integrating Generic Ontologies}\label{sec:import:cas}
+\input{sections/import/ontologies/gap-sage}
+\input{sections/import/ontologies/casimport}
+
+\chapter{Conclusion}\label{sec:import:conc}
+\input{sections/import/conc}
+\section{Enabled Applications}\label{sec:import:pvs:appl}
+\input{sections/import/pvs/appl}
+
+% LMFDB, Tetrapod?
+% dynamic stuff
+
+%---------------------------------------------------------------------------------------------------------
+
+\part{Cross-Library Knowledge Management}\label{ch:crosslib} % Library Integration? Nur ``Knowledge Management''?
+\input{sections/crosslib/intro}
+
+\chapter{Alignments}\label{sec:crosslib:alignments}
+\input{sections/crosslib/alignments/intro}
+
+\section{Types of Alignments}\label{sec:crosslib:alignments:types}
+\input{sections/crosslib/alignments/typesof}
+
+% \section{Global Identifiers}\label{sec:crosslib:alignments:uris}
+% \input{sections/crosslib/alignments/uris}
+
+\section{Examples of Alignments}\label{sec:crosslib:alignments:examples}
+\input{sections/crosslib/alignments/examples}
+
+\section{A Standard Syntax for Alignments}
+\input{sections/crosslib/alignments/standard}
+
+\section{Implementation}\label{sec:crosslib:alignments:system}
+\input{sections/crosslib/alignments/system}
+
+\section{Manually Curated Alignments}\label{sec:crosslib:alignments:manually}
+\input{sections/crosslib/translation/alignments}
+
+
+\chapter{Alignment-based Translations Using Interface Theories}\label{sec:crosslib:translate}
+\input{sections/crosslib/translation/intro}
+
+%\section{Preliminaries} \input{sections/crosslib/translation/mmt}
+
+\section{Interface Theories}\label{sec:crosslib:translate:interfaces}
+\input{sections/crosslib/translation/interfaces}
+%\input{sections/crosslib/translation/appendix}
+
+% \section{Translating Declarations}
+
+\section{Implementation}\label{sec:crosslib:translate:impl}
+\input{sections/crosslib/translation/implementation}
+
+\section{Example}\label{sec:crosslib:translate:ex}
+\input{sections/crosslib/translation/example}
+
+\chapter{Viewfinding}\label{sec:crosslib:vf}
+\input{sections/crosslib/viewfinder/intro}
+
+%\subsection{Preliminaries}\label{sec:crosslib:vf:prelim}
+%\input{sections/crosslib/viewfinder/prelim}
+
+\section{The Viewfinder Algorithm}
+\input{sections/crosslib/viewfinder/viewfinder}
+
+\section{Implementation}\label{sec:crosslib:vf:impl}
+\input{sections/crosslib/viewfinder/impl}
+
+\section{Cross-Library Viewfinding}\label{sec:crosslib:vf:cross}
+\input{sections/crosslib/viewfinder/usecase}
+
+\section{Applications for Viewfinding}
+\input{sections/crosslib/viewfinder/applications}
+
+\chapter{Refactoring and Theory Discovery via Theory Intersections}\label{sec:crosslib:intersect}
+\input{sections/crosslib/intersections/intro}
+
+\section{Theory Intersection by Example}
+\input{sections/crosslib/intersections/example}
+
+\section{Reducing Partial Morphisms to Renamings}
+\input{sections/crosslib/intersections/renamings}
+
+\section{Implementation}
+\input{sections/crosslib/intersections/impl}
+
+%---------------------------------------------------------------------------------------------------------
+\part{Conclusion and Future Work}
+\input{sections/conc}
+
+
+%\section{Conclusion}
+
+% \chapter{Future Work}
+
+%\cite{MueRabKoh:tatreport18}
+%\cite{KohMue:cicm15}
+%\cite{MRLR:alignments:17}
+%\cite{coqmmt}
+%\cite{MueKohRab:aftmkm18}
+%\cite{MueGauKal:cacfms17}
+%\cite{KKMR:alignments:16}
+%\cite{MueRabKoh:tat18}
+%\cite{RupKohMue:fitgv17}
+%\cite{KalKohMue:alfms16}
+%\cite{KohKopMue:mmrdftg17}
+%\cite{KopKohTab:mpdrmm18}
+%\cite{KohMueOwr:mpagsiuf17}
+%\cite{DehKohKon:iop16}
+%\cite{MueGauKal:alignmentsreport17}
+%\cite{YTInters}
+%\cite{RabMue:WADT18}
+%\cite{ODK:interop:17}
+%\cite{MueRab:rpfsm}
+%\cite{RocKohMue:frsmgmmo16}
+%\cite{ConKohMue:rdaml19}
+%
+%-------------------
+
+% Tetrapod again?
+
+%\section{Appendix}
+
+
+
+%		Bibliographie
+%\newpage
+%\let\section=\subsection
+% \renewcommand\refname{5.2\quad Literaturverzeichnis}
+%\bibliography{ma.bib}
+%\bibliographystyle{alpha}
+% \addcontentsline{toc}{subsection}{\protect\numberline{5.2}{Literaturverzeichnis}}
+%\thispagestyle{empty}
+
+\input{bibs}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+
+%\newpage
+%\thispagestyle{empty}
+%\section*{Selbstständigkeitserklärung}
+%
+%\vspace{1cm}
+%
+%Hiermit erkläre ich, dass ich diese Arbeit selbständig verfasst habe, keine
+%anderen als die angegebenen Quellen/Hilfsmittel verwendet habe und alle
+%Stellen, die wörtlich oder sinngemäß aus ver\-öf\-fent\-lichten Schriften entnommen
+%wurden, als solche kenntlich gemacht habe. Darüber hinaus erkläre ich, dass
+%diese Abschlussarbeit nicht, auch nicht auszugsweise, bereits für eine andere
+%Prüfung angefertigt wurde.
+%
+%\vspace{2cm}
+%
+%\noindent
+%Datum: \hspace{5cm} Unterschrift:
+
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

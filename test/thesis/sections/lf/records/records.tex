@@ -1,0 +1,561 @@
+\hypertarget{records}{We now introduce record types as an additional module of our framework. % by extending the grammar and the rules.
+The basic intuition is that $\rectype{\Gamma}$ and $\recexp{\Gamma}$ construct record types and terms.}
+We call a context \textbf{fully typed} resp. \textbf{defined} if all fields have a type resp. a definition.
+In $\rectype{\Gamma}$, $\Gamma$ must be fully typed and may additionally contain defined fields.
+In $\recexp{\Gamma}$, $\Gamma$ must be fully defined; the types are optional and usually omitted in practice.
+
+Because we frequently need fully defined contexts, we introduce a notational convention for them: a context denoted by a \emph{lower} case letters like $\gamma$ is always fully defined.
+In contrast, a context denoted by an \emph{upper} case letter like $\Gamma$ may have any number of types or definitions.
+
+%\subsection{Records}
+
+We extend our grammar as in \autoref{fig:recgrammar}.
+
+\begin{figure}[ht]\centering%\vspace*{-1em}
+  \begin{framed}
+    \begin{tabular}{rcl@{\quad}l}	  
+      \gray{$\Gamma$} & \gray{$::=$} & \gray{$\cdot \mid \Gamma, x[:T][:=T]$} &\\
+      \gray{$T$} & \gray{$::=$} & \gray{$x \mid \type \mid \kind $} &\\
+                     % & \gray{$\mid$} & \gray{$\prod_{x:T'}T \mid \lambda x:T'. T \mid T_1 T_2$} &\\
+                      & $\mid$ &  $\rectype\Gamma \mid \recexp{\Gamma} \mid \recproj Tx$ & record types, terms, projections
+    \end{tabular}
+  \end{framed}%\vspace*{-.5em}
+  \caption{Grammar for Records}\label{fig:recgrammar}\vspace*{-1em}
+\end{figure}
+
+\begin{remark}[Field Names and Substitution in Records]
+Note that we use the same identifiers for variables in contexts and fields in records.
+This allows reusing results about contexts when reasoning about and implementing records.
+In particular, it immediately makes our records dependent, i.e., both in a record type and --- maybe surprisingly --- in a record term every variable $x$ may occur in subsequent fields.
+In some sense, this makes $x$ bound in those fields.
+However, record types are critically different from $\sigmasym$-types: we must be able to use $x$ in record projections, i.e., $x$ can \emph{not} be subject to $\alpha$-renaming.
+
+As a consequence, capture-avoiding substitution is not always possible.
+This is a well-known problem that is usually remedied by allowing every record to declare a name for itself (e.g., the keyword $\mathtt{this}$ in many object-oriented languages), which is used to disambiguate between record fields and a variable in the surrounding context (or fields in a surrounding record).
+We gloss over this complication here and simply make substitution a partial function.
+\end{remark}
+
+Before stating the rules, we introduce a few critical auxiliary definition:
+
+\begin{definition}[Substituting in a Record]\label{def:recsub1}\rm
+We extend substitution $t \sub x{t'}$ to records:
+    \begin{itemize}
+    \item 
+      $\rectype{x_1:T_1,\ldots,x_n:T_n}\sub yt\\\strut\qquad
+        = \left\{\begin{array}{l}
+                 \rectype{x_1:T_1\sub yt,\ldots,x_{i-1}:T_{i-1}\sub yt,x_i:T_i,\ldots, x_n:T_n} \text{if $y=x_i$}\\
+                 \rectype{x_1:(T_1\sub yt),\ldots,x_n:(T_n \sub yt)}  \text{else}
+               \end{array}
+        \right.$ \\if none of the $x_i$ are free in $t$. Otherwise the substitution is undefined.
+      \item 
+        $\recexp{x_1:=t_1,\ldots,x_n:=t_n}\sub yt=
+        \left\{\begin{array}{l}
+                 \recexp{x_1:=t_1,\ldots,x_n:=t_n}\text{if $y\in\{x_1,\ldots,x_n\}$}\\
+                 \recexp{x_1:=(t_1 \sub yt),\ldots,x_n:=(t_n \sub yt)} \text{else}
+               \end{array}
+       \right.$ \\if none of the $x_i$ are free in $t$. Otherwise the substitution is undefined.
+      \item $(\recproj rx) \sub yt=\recproj{(r\sub yt)}x$.
+      \end{itemize}
+\end{definition}
+
+\begin{definition}[Substituting with a Record]\label{def:recsub2}\rm
+We write $t \sub r\Delta$ for the result of substituting any occurrence of a variable $x$ declared in $\Delta$ with $\recproj rx$
+
+In the special case where $r=\recexp{\delta}$, we simply write $t[\delta]$ for $t\sub{\recexp{\delta}}\delta$, i.e., we have $t[x_1:=t_1,\ldots,x_n:=t_n]=t\sub{x_n}{t_n}\ldots\sub{x_1}{t_1}$.
+\end{definition}
+
+% % % % % % % % % % % % % % %
+
+\begin{figure}[hbt]\centering
+\begin{framed}\flushleft
+\textbf{Formation:}
+\[
+	\nrule{\wfctx{\Gamma,\Delta} \quad \quad \Delta\text{ fully typed} \quad \umax\Delta\in\{\type,\kind\}}
+		{\gjudg{\infertype{\rectype\Delta}{\umax\Delta} }}{}
+\]
+%where $\max \Delta$ is the maximal universe of all undefined fields in $\Delta$
+%\[
+%	\nrule{\gjudg{\judgeq R{\rectype{\Delta_1}}U} \quad \wfctx{\Gamma,\Delta_1+\Delta_2} \quad 
+%		\max(\Delta_1+\Delta_2)\in\{\type,\kind\}}
+%		{\gjudg{\infertype{\rectype{R \uplus \Delta_2}}{\max (\Delta_1+\Delta_2)}}}{\mathcal R_{F2}}
+%\]
+
+%\textbf{Type Elaboration:}
+%\[
+%	\nrule{\gjudg{\judgeq{R_1}{\rectype{[S_1\uplus]\Delta_1}}U_1} \quad \gjudg{\judgeq{R_2}{\rectype{[S_2\uplus]\Delta_2}}U_2} }
+%		{\gjudg{\judgeq{R_1\uplus R_2}{\rectype{\mathtt{fl}(R_1)+\mathtt{fl}(R_2)}}{\max (\mathtt{fl}(R_1)+\mathtt{fl}(R_2))}}}
+%		{\mathcal R_\uplus}
+%\]
+
+\textbf{Introduction:}
+%\[
+%	\nrule{\wfctx{\Gamma,\delta} \quad \delta\text{ fully defined}}
+%		{\gjudg{\infertype{\recexp\delta}{\rectype\delta}}}{\mathcal R_{I1}}
+%\] 
+\[
+	\irule{\wfctx{\Gamma,\Delta} \quad \delta\text{ fully defined}  \quad \Delta \text{ like $\delta$ but with all missing types inferred}}
+ 		{\gjudg{\infertype{\recexp \delta}{\rectype{\Delta}}}}%{\mathcal R_{I}}
+ \]
+
+\textbf{Elimination:}
+\[
+	\irule{\gjudg{\infertype r{\rectype{\Delta_1,x:T[:=t],\Delta_2}}}}
+		{\gjudg{\infertype{\recproj rx}{T \sub r{\Delta_1}}}}%{\mathcal R_E}
+\]
+
+\textbf{Type checking:}
+ \[
+ 	\irule{
+ 	\overbrace{\gjudg{\hastype{\recproj rx}{T\sub r\Delta}}}^\text{For $x:T[:=t]\in \Delta$ } \quad
+ 		\overbrace{\gjudg{\judgeq{\recproj rx}{t\sub r\Delta}{T\sub r\Delta}}}^\text{additionally for $x:T:=t\in \Delta$ }\quad
+ 	  \gjudg{\infertype rR}}
+		{\gjudg{\hastype r\rectype{\Delta}}}%{\mathcal R_T}
+\]
+
+\textbf{Equality checking (extensionality):}
+\[
+	\irule{
+		\overbrace{\gjudg{\judgeq{\recproj{r_1}x}{\recproj{r_2}x}{T\sub{r_1}\Delta}}}^\text{For every $(x:T)\in\Delta$}}
+		{\gjudg{\judgeq{r_1}{r_2}{\rectype\Delta}}}%{\mathcal R_{Ext}}
+\]
+
+\textbf{Computation:}
+\[
+	\irule{\delta=(\delta_1,x[:T]:=t,\delta_2) \quad \gjudg{\infertype{\recexp{\delta}}{R}}}
+		{\gjudg{\judgeqc{\recproj{\recexp{\delta}}x}{t[\delta_1]}}}%{\mathcal R_{C1}}
+\quad
+\irule{\gjudg{\infertype r\rectype{\Delta_1,x:T:=t,\Delta_2}}}
+		{\gjudg{\judgeqc{\recproj rx}{t\sub r{\Delta_1}}} }%{\mathcal R_{C2}}
+\]
+\end{framed}%\vspace*{-.5em}
+\caption{Rules for Records}\label{fig:rec:rules}%\vspace*{-1.em}
+\end{figure}
+
+Our rules for records are given in \autoref{fig:rec:rules}.
+%Their roles are systematically similar to the rules for functions: three inference rules for the three constructors followed by a type and an equality checking rule for record types and the (in this case: two) computation rules.
+We remark on a few subtleties below.
+\begin{itemize}
+\item The formation rule is partial in the sense that not every context defines a record type or kind.
+This is because the universe of a record type must be as high as the universe of any undefined field to avoid inconsistencies.
+% For example, $\max(a:\cn{nat})=\type$, $\max(a:\type)=\kind$ and $\max(a:\kind)$ is not defined.
+If the presence of a hierarchy of universes (see \autoref{sec:lf:lfx:hierarchy}), we can turn every context into a record type.
+
+\item The introduction rule infers the principal type of every record term.
+Because we allow record types with defined fields, this is the singleton type containing only that record term.
+This may seem awkward but does not present a problem in practice, where type checking is preferred over type inference anyway.
+%In fact, it can make type inference more efficient because implementations may reuse the pointer to $\delta$ when synthesizing $\rectype{\Delta}$.
+
+\item The elimination rule is straightforward, but it is worth noting that it is entirely parallel to the second computation rule.\footnote{Note that it does not matter how the fields of the record are split into $\Delta_1$ and $\Delta_2$ as long as $\Delta_1$ contains all fields that the declaration of $x$ depends on.}
+
+\item The type checking rule has a surprising premise that $r$ must already be well-typed (against some type $R$).
+Semantically, this assumption is necessary because we only check the presence of the fields required by $\rectype{\Delta}$ --- without the extra assumption, typing errors in any additional fields that $r$ might have could go undetected.
+In practice, we implement the rule with an optimization: If $r$ is a variable or a function application, we can efficiently infer some type for it.
+Otherwise, if $r=\recexp{\delta}$, some fields of $\delta$ have already been checked by the first premise, and we only need to check the remaining fields.
+The order of premises matters in this case: we want to first use type checking for all fields for which $\rectype{\Delta}$ provides an expected type before resorting to type inference on the remaining fields.
+
+\item In the equality checking rule, note that we only have to check equality at undefined fields --- the other fields are guaranteed to be equal by the assumption that $r_1$ and $r_2$ have type $\rectype{\Delta}$.
+
+\item Like the type checking rule, the first computation rule needs	the premise that $r$ is well-typed to avoid reducing an ill-typed into a well-typed term.
+In practice, our framework implements computation with a boolean flag that tracks whether the term to be simplified can be assumed to be well-typed or not; in the former case, this assumption can be skipped.
+
+\item The second computation rule looks up the definition of a field in the type of the record.
+Both computation rules can be seen uniformly as definition lookup rules --- in the first case the definition is given in the record, in the second case in its type.
+\end{itemize}
+
+\begin{remark}[Horizontal Subtyping and Equality]\label{remark:lf:lfx:records:horizontal}
+As mentioned in \autoref{remark:prelim:mmt:horizontalsubtp}, \mmt's equality judgment could alternatively be formulated as an untyped equality $\judgequt t{t'}$. For our presentation of record types, however, the use of typed equality is critical.
+
+For example, consider record values $r_1=\recexp{a:=1,b:=1}$ and $r_2=\recexp{a:=1,b:=2}$ as well as record types $R=\rectype{a:nat}$ and $S=\rectype{a:nat,b:nat}$. Due to \emph{horizontal subtyping}\footnote{Also called \emph{structural subtyping}; e.g., $\rectype{x:T,y:S}$ is a subtype of $\rectype{x:T}$. In contrast, e.g. the straightforward covariance rule for record types is called \emph{vertical} subtyping.}, we have $\subtp S R$ and thus both $\hastype{r_i}{S}$ and $\hastype{r_i}{R}$.
+This has the advantage that the function $S\to R$ that throws away the field $b$ becomes the identity operation.
+%For example, we can use the operation $(\lambda x:S.x):(S\to R)$ to convert from $S$ to $R$ instead of having to write a function $\lambda x:S.\recexp{a:=x.a}$ that throws away the field $b$.
+Now our equality at record types behaves accordingly and checks only for the equality of those fields required by the type.
+Thus, $\judgeq{r_1}{r_2}{R}$ is true whereas $\judgeq{r_1}{r_2}{S}$ is false, i.e., the equality of two terms may depend on the type at which they are compared.
+While seemingly dangerous, this makes sense intuitively: $r_1$ can be replaced with $r_2$ in any context that expects an object of type $R$ because in such a context the field $b$, where $r_1$ and $r_2$ differ, is inaccessible.
+
+Of course, this treatment of equality precludes downcasts: an operation that casts the equal terms $r_1:R$ and $r_2:R$ into the corresponding unequal terms of type $S$ would be inconsistent.
+But such downcasts are still possible (and valuable) at the meta-level.
+For example, a tactic $GroupSimp(G,x)$ that simplifies terms $x$ in a group $G$ can check if $G$ is commutative and in that case apply more simplification operations.
+
+We will sometimes omit a type in the formal presentation of rules if convenient. The implementation in \mmt allows for equality rules to have an \emph{optional} argument for the type at which they operate, hence both typed an untyped equalities can be treated by the system.
+\end{remark}
+
+\begin{example}
+  \autoref{fig:semilattices1} shows a record type of \defemph{Semilattices} (actually,
+  this is a $\kind$ because it contains a $\type$ field) analogous to the grouping in \autoref{fig:rec:semi1} (using
+  the usual encoding of axioms via judgments-as-types and higher-order abstract syntax for
+  first-order logic).
+
+%\begin{figure}[ht]%\centering
+\begin{framed}
+$\mathtt{Semilattice} := \leftrectype{\begin{array}{lll}
+	U &&:\; \type \\
+	\wedge &&:\; U \to U \to U \\
+	\mathtt{assoc} &&:\; \ded \forall x,y,z:U.\; (x \wedge y) \wedge z \doteq x \wedge (y \wedge z) \\
+	\mathtt{commutative} &&:\;\ldots \\
+	\mathtt{idempotent} &&:\;\ldots \\
+\end{array}}
+\begin{array}{lll}
+	U &&:\; \type \\
+	\wedge &&:\; \lfarrow U{\lfarrow UU} \\
+	\mathtt{assoc} &&:\; \ded \forall x,y,z:U.\; (x \wedge y) \wedge z \doteq x \wedge (y \wedge z) \\
+	\mathtt{commutative} &&:\;\ldots \\
+	\mathtt{idempotent} &&:\;\ldots \\
+\end{array}
+\rightrectype{\begin{array}{lll}
+	U &&:\; \type \\
+	\wedge &&:\; U \to U \to U \\
+	\mathtt{assoc} &&:\; \ded \forall x,y,z:U.\; (x \wedge y) \wedge z \doteq x \wedge (y \wedge z) \\
+	\mathtt{commutative} &&:\;\ldots \\
+	\mathtt{idempotent} &&:\;\ldots \\
+\end{array}}$
+\end{framed}%\vspace*{-.5em}
+\captionof{figure}{The (Record-)Kind of Semilattices }\label{fig:semilattices1}%\vspace*{-1em}
+%\end{figure}
+
+Then, given a record $r : \mathtt{Semilattice}$, we can form the record projection $\recproj r\wedge$, which has type $\lfarrow{\recproj rU}{\lfarrow{\recproj rU}{\recproj rU}}$ and $\recproj r{\mathtt{assoc}}$ yields a proof that $\recproj r\wedge$ is associative.
+The intersection on sets forms a semilattice so (assuming we have proofs $\cap-\mathtt{assoc}$, $\cap\mathtt{-comm}$, $\cap\mathtt{-idem}$ with the corresponding types) we can give an instance of that type as
+\[\csl : \mathtt{Semilattice} := \recexp{ U := \mathtt{Set}, \wedge := \cap, \mathtt{assoc} := \cap\mathtt{-assoc}, \ldots}\] 
+
+%If we only care about the external perspective\ednote{stratified? I'm unclear with the terminology here}, we can define the usual order of a semilattice as:
+%\[
+%\mathtt{order} : \prod_{r : \mathtt{Semilattice}}r.U \to r.U \to \mathtt{bool} 
+%	:= \lambda r: \mathtt{Semilattice}.\; \lambda x,y:r.U.\;x \doteq x\wedge y
+%\]
+%However, if we want to model more complex structures as record types, these definitions
+%are not available \emph{within} the record type.\ednote{Use terminology from intro}
+
+\end{example}
+
+%As mentioned previously, record types naturally introduce a subtyping principle:
+%\begin{definition}\rm\label{def:subtp}
+%  \begin{enumerate}
+%  \item Let $\gjudg{\hastype{T_1,T_2}U}$. Then $T_1$ is \textbf{a subtype of} $T_2$ in $\Gamma$ (in symbols: $\gjudg{\subtp{T_1}{T_2}}$) iff $\judg{\Gamma,x:T_1}{\hastype x{T_2}}$.
+%  \item For $A=\{x_i :T_i \mid i\in I\}$ and $B=\{x_i :T_i \mid i\in J\}$ we let $\gjudg{A\dot\subseteq B}$ iff for every $x:T\in A$:
+%    \begin{itemize}
+%    \item $x:T\in B$ or
+%    \item $x:T'\in B$ and $\gjudg{\subtp{T'}T}$
+%    \end{itemize}
+%  \end{enumerate}
+%\end{definition}
+%
+%Furthermore, given the rules presented in this section, the following properties are easy to verify (proofs straight-forward and omitted for brevity):
+%
+%\begin{theorem}\label{thm:subtp}
+%  \begin{enumerate}
+%  \item \emph{Weakening, exchange, substitution} and \emph{subject reduction} hold for the dependently typed lambda calculus and are preserved when adding the rules for records.
+%  \item All judgments are \emph{decidable}.
+%  \item The following subtyping rule is admissible:	
+%    \[ \nrule{\gjudg{\hastype{\rectype{x_i :T_i}_{i\in I},\rectype{x_i :T_i}_{i\in J}}U}\quad 
+%	  	\gjudg{\{x_i :T_i \mid i\in I\} \dot\subseteq \{x_i :T_i \mid i\in J\}}}
+%		{\gjudg{\subtp{\rectype{x_i :T_i}_{i\in J}}{\rectype{x_i :T_i}_{i\in I}}}}{\mathcal R'_{<:}} 
+%    \]
+%  \item \textbf{($\eta$-Rule)} For any well-formed record $r=\recexp{\ell_i:=t_i}_{1\leq i\leq n}:R$ we have 
+%    \[\gjudg{\judgeq r{\recexp{x_i:=r.x_i}_{1\leq i\leq n}}R}.\]
+%\end{enumerate}
+%\end{theorem}
+
+\begin{theorem}[Principal Types]\label{thm:lf:records:principal}
+Our inference rules (in plain \LF) infer a principal type for each well-typed normal term.
+\end{theorem}
+\begin{proof}
+	Let $\Gamma$ be a fixed well-typed context. We need to show that for any normal expression $t$ the inferred type is the most specific one, meaning if $\gjudg{\infertype tT}$, then for any $T'$ with $\gjudg{\hastype t{T'}}$ we have $\gjudg{\subtp T{T'}}$.
+	
+	If the only type checking rule applicable to a term $t$ is an inference rule, then the only way for $t$ to check against a type $T'$ which is not the inferred type $T$ is by first inferring $T$ and then checking $\gjudg{\subtp T{T'}}$, so in these cases the claim follows by default.
+	
+	By induction on the grammar:
+	\begin{labeling}{$t=\lambda x:A.t'$}
+		\item[$t=x$] and $x:T\in\Gamma$, then $\gjudg{\infertype tT}$, which is principal by default.
+		\item[$t=\type$] then $\gjudg{\infertype t\kind}$, which is principal by default.
+		\item[$t=\kind$] is untyped.
+		\item[$t=\prod_{x:A}B$] then $\gjudg{\infertype tU}$, where $U\in\{\kind,\type\}$, both of which are principal by default.
+		\item[$t=\lambda x:A.t'$] then for some $B:U$ we have $\judg{\Gamma,x:A}{\infertype {t'}B}$, which is principal by default.
+		
+		\item[$t=f a$] then $\gjudg{\infertype t{B[x/a]}}$, where $\gjudg{\infertype f{\prod_{x:A}B}}$ $\gjudg{\infertype a{A'}}$ are both principal types and for well-typedness $\gjudg{\subtp{A'}A}$ needs to hold. Since $t$ is normal, $f$ does not simplify to a lambda-expression and  $B[x/a]$ is principal by default.
+		
+		\item[$t=\rectype\Delta$] then $\gjudg{\infertype tU}$, where $U\in\{\kind,\type\}$, both of which are unique and hence principal.
+		\item[$t=\recexp\delta$] then $\gjudg{\infertype r{\rectype \Delta}}$, wheren $\Delta$ contains the exact same variables, but with all types inferred (and by induction hypothesis principal). For $t$ to check against a type, it has to have the form $\rectype{\Delta'}$, hence we need to show that if $\gjudg{\hastype t{\rectype{\Delta'}}}$, then $\judg{\Gamma,r:\rectype\Delta}{\hastype r{\rectype{\Delta'}}}$.
+		
+		Consider the type checking rule for records in \autoref{fig:rec:rules} and let $x:T[:=d]\in\Delta'$. Since $\gjudg{\hastype t{\rectype{\Delta'}}}$, we have $\gjudg{\hastype{\recproj rx}T}$ (and if $x$ is defined in $\Delta'$ also $\gjudg{\judgeq{\recproj tx}dT}$) and since $\Delta$ is inferred from $t$ we have $x:T':=d$ in $\Delta$, where by hypothesis $T'$ is the principal type of $d$ and hence $\gjudg{\subtp{T'}T}$.
+		
+		As a result, $\judg{\Gamma,r:\rectype\Delta}{\infertype{\recproj rx}{T'}}$, therefore $\judg{\Gamma,r:\rectype\Delta}{\hastype{\recproj rx}T}$ and $\judg{\Gamma,r:\rectype\Delta}{\judgeq{\recproj rx}dT}$ and hence 
+		$\judg{\Gamma,r:\rectype\Delta}{\hastype r{\rectype{\Delta'}}}$, which makes $\rectype\Delta$ the principal type of $t$.
+		
+		\item[$t=\recproj rx$] Since $t$ is normal, we have $\gjudg{\infertype{\recproj rx}T\sub r{\Delta_1}}$ for some $\gjudg{\infertype r{\rectype{\Delta_1,x:T,\Delta_2}}}$. Since the latter is by hypothesis the principal type of $r$, for $t$ to typecheck against some $T'$ it needs to be the case that $r$ type checks against some $R=\rectype{\Delta_1',x:T',\Delta_2'}$ and $\gjudg{\subtp T{T'}}$ holds by the principal type of $r$.
+	\end{labeling}
+\end{proof}
+
+In analogy to function types, we can derive the subtyping properties of record types.
+We introduce context subsumption and then combine horizontal and vertical subtyping in a single statement.
+
+\begin{definition}[Context Subsumption]\label{def:subsume}\rm
+\hypertarget{subsume}{For two fully typed contexts $\Delta_i$ we write $\gjudg{\subsume{\Delta_1}{\Delta_2}}$ iff for every declaration $x:T[:=t]$ in $\Delta_1$ there is a declaration $x:T'[:=t']$ in $\Delta_2$ such that}
+  \begin{compactitem}
+  \item $\gjudg{\subtp{T'}T}$ and
+  \item if $t$ is present, then so is $t'$ and $\gjudg{\judgeq{t}{t'}{T}}$
+  \end{compactitem}
+\end{definition}
+\ednote{annoyingly, the subtyping/equality judgments need a different context: $\Delta_1^x\oplus\Delta_2^x$ where $^x$ means "the prefix up until and excluding $x$".}
+%It seems we need to use $\oplus$ already and make this definition mutually recursive with a proof that subsumption implies that $\subsume{\Delta_1}{\Delta_2}$ implies that $\Delta_1^x\oplus\Delta_2^x$ is defined\\DM: I think the ``excluding $x$'' part is obvious to any reader, and the ``up until''-part is relatively benign, since fields in a record[type] can't depend on latter fields.}
+
+Intuitively, $\subsume{\Delta_1}{\Delta_2}$ means that everything of $\Delta_1$ is also in $\Delta_2$.
+That yields:
+
+\begin{theorem}[Record Subtyping]\label{thm:recsub}
+The following rule is derivable:
+
+	\[ \irule{
+	    %\gjudg{\hastype{\rectype{\Delta_1}}U}\quad 
+    	%\gjudg{\hastype{\rectype{\Delta_2}}U}\quad 
+			\gjudg{\subsume{\Delta_1}{\Delta_2}}}
+			{\gjudg{\subtp{\rectype{\Delta_2}}{\rectype{\Delta_1}}}}%{\mathcal R_{<:}} 
+		\]
+\end{theorem}
+\begin{proof}
+	Assume $\gjudg{\subsume{\Delta_1}{\Delta_2}}$. We need to show $\judg{\Gamma,r:\rectype{\Delta_2}}{\hastype r{\rectype{\Delta_1}}}$. By the type checking rule in \autoref{fig:rec:rules}, for any $x:T[:=t]\in\Delta_1$, we need to show that $\judg{\Gamma,r:\rectype{\Delta_2}}{\hastype{\recproj rx}T}$ (and if applicable $\judg{\Gamma,r:\rectype{\Delta_2}}{\judgeq{\recproj rx}tT}$).
+	
+	By definition of $\subsume{\Delta_1}{\Delta_2}$, since $x:T[:=t]\in\Delta_1$, we have $x:T'[:=t]\in\Delta_2$ and $\gjudg{\subtp{T'}T}$, and if $x$ is defined in $\Delta_1$ the required equality holds as well, so the type checking rule proves $\judg{\Gamma,r:\rectype{\Delta_2}}{\hastype r{\rectype{\Delta_1}}}$ and the claim follows.
+\end{proof}
+
+%
+%
+%
+%The intuition being, that if a record type $\rectype{\Delta}$ has a defined field $\ell_k:T_k:=t_k$, an instance $r$ of that type need not have that field defined again in the record itself. Hence $\mathcal R'_T$ only checks for the undefined fields in $\rectype\Delta$, but by $\mathcal R_E$ the projection $r.\ell_k$ is still well-formed and by $\mathcal R'_{C2}$ simplifies to the definition $t_k$ given in $\rectype\Delta$. 
+%
+%Since all judgments regarding records reduce to judgments in basic LF, adding those rules preserves the validity of weakening, exchange, substitution and subject reduction. Notably, $\mathcal R'_{C2}$ breaks decidability, since checking the conclusion requires finding \emph{some} record type $\rectype{\Delta_{T[D]}}$ with a defined field $\ell_k:T_k$ (in an implementation, the premise would be restricted to explicitly declared record types in the current context, of course).
+%\ednote{mention problems if multiple records with the same field/type but different definitions exist}
+%
+
+%
+%However this leads to problems if we assume the usual definition for subtyping and want extensionality of types (i.e. $\Gamma\vdash T_1<:T_2$ and $\Gamma\vdash T_2<:T_1$ implies $\Gamma\vdash T_1=T_2 : U$) and transitivity of subtyping to hold:
+
+%
+%By definition, reflexivity, transitivity and antisymmetry for subtyping follow immediately. Now the following subtyping rule becomes admissible:
+%
+%\begin{thm}
+%	The following subtyping rule is admissible:	
+%	\[ \dfrac{\Gamma\vdash \rectype{\Delta_1},\rectype{\Delta_2}:U\quad \Delta_2\subseteq \Delta_1}{\Gamma\vdash \rectype{\Delta_1} <: \rectype{\Delta_2}}\quad\mathcal R_{<:}
+%	\]
+%\end{thm}
+%\begin{proof}
+%	Follows immediately from $\mathcal R'_T$, since if $\Gamma\vdash r:\Delta_1$, then all projections $r.\ell$ for $\ell\in\Delta_2$ are well-formed and have the right types to infer $\Gamma\vdash r:\Delta_2$.
+%\end{proof}
+%
+%\begin{thm}
+%	Given the rules in Figure \ref{fig:naiverules}, all records types are equal.
+%\end{thm}
+%\begin{proof}
+%	We'll show that every record type $\rectype\Delta$ is equal to the empty record type $\rectype\emptyset$ inductively over the length of $\Delta$. The case $\Delta=\emptyset$ is trivial, so let $\Delta=\Delta';x:T$ (wlog $x$ undefined in $\Delta$) and assume $\rectype{\Delta'}=\rectype\emptyset$. 
+%	
+%	By $\mathcal R_{<:}$ we have $\rectype\Delta<:\rectype\emptyset=\rectype{\Delta'}$. Conversely, let $r:\rectype{\Delta'}$, $t:T$ and consider $\rectype{\Delta''}=\rectype{\Delta';x:T:=t}$. By $\mathcal R'_T$ we have $r:\rectype{\Delta''}$ and hence $\rectype{\Delta'}<:\rectype{\Delta''}$. But since for any $r:\rectype{\Delta''}$ the projection $r.x$ is (by $\mathcal R'_{C2}$) well-formed, equal to $t$ and hence has type $T$, we also get $r:\rectype\Delta$, hence $\rectype{\Delta''}<:\rectype{\Delta}$ and by transitivity $\rectype{\Delta'}<:\rectype\Delta$.\qed
+%\end{proof}
+%
+%Technically, the above proof is not as devastating on an implementation level, since for $r.x$ to be a well-formed expression, the projection has to be explicitly checked in the context of $r:\rectype{\Delta''}$, which is not the inferable type from $\mathcal R_I$. However, it's still unsatisfying on a theoretical level and prevents the explicit implementation of admissible subtyping rules that are desirable for efficiency.
+%
+%To fix the above problem, we'll adapt $\mathcal R'_I, \mathcal R'_T, \mathcal R'_{C1}$ and $\mathcal R'_{C2}$ and allow for records and record types to have a designated field $\self$, as in Figure \ref{fig:recrules}: 
+%\begin{itemize}
+%\item In a record type $T$, a field $\self : R$ is purely for convenience reasons and signifies that $T$ extends $R$ by the explicitly declared fields in $T$ (in particular $T<:R$ is enforced). Consequently, we consider $\rectype{\self : \rectype{\Delta_1};\Delta_2}$ to be a mere abbreviation for $\rectype{\Delta_1;\Delta_2}$, where $\Delta_1,\Delta_2$ need to be compatible in the sense that if $\Delta'$ is the subcontext of all variables in $\Delta_2$ occurring in $\Delta_1$, then $\Delta'\subseteq\Delta_1$ needs to hold.
+%\item In a record $r$, a field $\self : R$ serves as a type annotation by ``importing'' all defined fields in the record type $R$ and introducing the obligation to implement all non-defined fields. Consequently, if the record $r$ in the above proof does not explicitly have the field $\self : \rectype{\Delta''}$, it does not typecheck against $\rectype{\Delta''}$, hence the subtyping judgment $\rectype{\Delta'}<:\rectype{\Delta''}$ does not hold.
+%\end{itemize}
+%
+%\begin{figure}]
+%\fbox{\begin{minipage}{\textwidth}
+%
+%\textbf{Introduction (Type Inference):}
+%\\ Let $\Delta'$ be $\Delta$ restricted to the variables not defined in $\Delta_{T[D]}$.
+%
+%\[\dfrac{\Gamma;\Delta\vdash\cdot \quad \self\notin\Delta}
+%{\Gamma\vdash\recexp{\Delta_D} \overset{\rightsquigarrow}{:} \rectype{\Delta_T}}\quad\mathcal R_{I1} 
+%\qquad
+%\dfrac{\Gamma;\self : \rectype{\Delta_{T[D]}} ;\Delta'\vdash\cdot}
+%{\Gamma\vdash\recexp{\self : \Delta_{T[D]};\Delta'} \overset{\rightsquigarrow}{:} \rectype{\Delta_{T[D]} } }\quad\mathcal R_{I2}
+%\]
+%
+%\textbf{Typing:}
+%\[
+%\dfrac{\Gamma\vdash\rectype{\Delta_{T[D]}}:U \quad\overbrace{\Gamma\vdash r.\ell_i:T_i[r]}^\text{For $\ell_i\in Dec\left(\Delta_{T[D]}\right)$ } \quad \overbrace{\Gamma\vdash r.\ell_i=t_i[r]:T_i}^\text{For $\ell_i\notin Dec\left(\Delta_{T[D]}\right)$} }
+%{\Gamma\vdash r : \rectype{\Delta_{T[D]}}} \quad \mathcal R_T
+%\]
+%
+%\textbf{Computation:} \\ For $r:=\recexp{\Delta_D}$:
+%\[\dfrac{\Gamma\vdash r:\rectype{\Delta_T} \quad \ell_k\in \Delta_D }
+%{\Gamma\vdash r.\ell_k=t_k\,[r]:T_k\,[r]}\quad\mathcal R_{C1}\]
+%For $r:=\recexp{\self : \Delta_{T[D]}; R'}$:
+%\[\dfrac{\Gamma\vdash\rectype R:U \quad \Gamma\vdash r:\rectype R \quad \ell_k\text{ defined in }\Delta_{T[D]} \quad \ell_k\notin R' }
+%{\Gamma\vdash r.\ell_k=t_k\,[r]:T_k\,[r]}\quad\mathcal R_{C2}\]
+%
+%\end{minipage}}
+%\caption{The updated rules for records}
+%\label{fig:recrules}
+%\end{figure}
+%
+% Given the new rules, decidability is preserved since all premises either require arbitrary record types ($\mathcal R_{C2}$, where the first two premises are only necessary to guarantee well-formedness of $r$) where we can always fall back to the inferable ones, or types uniquely inferable from the conclusions ($\mathcal R_{C1}$, $\mathcal R_T$).
+%
+%Furthermore, $\mathcal R_{<:}$ remains admissible. Given our definition of $\subseteq$ on contexts, we can give more specific rules (for efficiency reasons):
+%
+%\begin{thm}
+%	The following rules are admissible:
+%	\[
+%	\dfrac{\Gamma;\Delta_1\vdash t:A\quad\Gamma;\Delta_1;x:A:=t;\Delta_2\vdash\cdot}
+%	{\Gamma\vdash\rectype{\Delta_1;x:A:=t;\Delta_2} <: \rectype{\Delta_1;x:A;\Delta_2}} \quad \mathcal R_{<:D}
+%	\]
+%	
+%	\[
+%	\dfrac{\Gamma;\Delta\vdash \cdot \quad \Gamma\vdash A:U}
+%	{\Gamma\vdash\rectype{\Delta;x:A} <: \rectype{\Delta}} \quad \mathcal R_{<:+}
+%	\]
+%	
+%	
+%	\[
+%	\dfrac{\Gamma;\Delta_1\vdash A <: A'\quad\Gamma;\Delta_1;x:A;\Delta_2\vdash\cdot}
+%	{\Gamma\vdash\rectype{\Delta_1;x:A;\Delta_2} <: \rectype{\Delta_1;x:A';\Delta_2}} \quad \mathcal R_{<:<:}
+%	\]
+%\end{thm}
+%
+%In the presence of subtyping, uniqueness of types is naturally lost. However, we can show the existence of \emph{principal types}, which are sufficient in most implementation-related situations:
+%
+%\begin{thm}
+%	Every well-typed term $t$ has a \defemph{principal type} $T$ in the sense that $\Gamma\vdash t:T$ and whenever $\Gamma\vdash t:T'$, then also $\Gamma\vdash T<:T'$.
+%
+%	Furthermore, the principal type of a record term is exactly the type inferred by rule $\mathcal R_I$.
+%\end{thm}
+%\begin{proof} \ednote{update proof}
+%	Keep in mind that subtyping only ever occurs due to records. We proceed by induction on $t$: 
+%	
+%	\begin{itemize}	
+%		\item The cases $t\in\{s,\type,\kind,v\}$ are trivial.
+%		\item If $t=\prod_{v:t_1}t_2$, then the type of $t$ is either $\type$ or $\kind$ and hence unique.
+%		\item If $t=\lambda v:t_1.t_2$ and $\Gamma\vdash t:T$, then by induction hypothesis $t_2$ has a principal type $T_2$ and $T$ has the form $\prod_{v:t'_1}T_2'$. We claim the principal type of $t$ is $\prod_{v:t_1}T_2$: 
+%				
+%			By variance we need to show $\Gamma\vdash t_1'<:t_1$ and $\Gamma\vdash T_2 <: T_2'$. The former follows immediately from $\Gamma\vdash t:T$. For the latter, since $t:T$, it needs to be the case that $\Gamma,v:t_1\vdash t_2:T_2'$, hence the claim follows by principality of $T_2$. 
+%				
+%		\item If $t=t_1 t_2$, then $t_1$ has a principal type of the form $\prod_{v:A}B$ and hence $t$ has the unique type $B$.
+%		\item If $t=\recexp{\ell_i:=t_i}_{i\in I}$ is a record, then clearly $\Gamma\vdash t:T_t=:\rectype{\ell_i:T_i}_{i\in I}$. For any other record type $T=\rectype{\ell_i:T'_i}_{i\in I'}$ with $\Gamma\vdash t:T$, by $\mathcal R_T$ (and $\mathcal R_C$) we have $I'\subseteq I$, and since eliminating fields in record types leads to (either incomparable types or) supertypes, we can wlog assume $I=I'$. By $\mathcal R_T$ we have $\Gamma\vdash t_i:T_i$ and $\Gamma\vdash t_i:T'_i$ for all $i\in I$. By induction hypothesis the $T_i$ are all principle, hence $\Gamma\vdash T_i<:T'_i$ and hence $\Gamma\vdash T_t <: T$.
+%	\end{itemize}
+%\end{proof}
+
+\paragraph{Merging Records}\label{sec:merging}
+
+We introduce an advanced operation on records, which proves critical for both convenience and performance:
+Theories can easily become very large containing hundreds or even thousands of declarations.
+If we want to treat theories as record types, we need to be able to build big records from smaller ones without exploding them into long lists.
+Therefore, we introduce an explicit merge operator $\recmergesym$ on both record types and terms.
+
+\hypertarget{merge}{In the grammar, this is a single production for terms:}
+\[T ::= \recmerge TT\]
+The intended meaning of $\recmergesym$ is given by the following definition:
+\begin{definition}[Merging Contexts]\label{def:recmerge}\rm
+Given a context $\Delta$ and a (not necessarily well-typed) context $E$, we define a partial function $\contmerge\Delta E$ as follows:
+    \begin{compactitem}
+    \item $\contmerge\cdot E \;=\; E$
+    \item If $\Delta=d,\Delta_0$ where $d$ is a single declaration for a variable $x$:
+     \begin{compactitem}
+      \item if $x$ is not declared in $E$:
+        $\contmerge{(d,\Delta_0)}E \;=\; d,\;(\contmerge{\Delta_0} E)$
+      \item if $E\;=\;E_0,e,E_1$ where $e$ is a single declaration for a variable $x$:
+       \begin{compactitem}
+        \item if a variable in $E_0$ is also declared in $\Delta_0$: $\contmerge\Delta E$ is undefined,
+        \item if $d$ and $e$ have unequal types or unequal definitions: $\contmerge\Delta E$ is undefined\footnotemark,
+        \item otherwise, $\contmerge{(d,\Delta_0)}{(E_0,e,E_1)}=E_0,m,(\Delta_0,E_1)$ where $m$ arises by merging $d$ and $e$.
+       \end{compactitem}
+     \end{compactitem}
+    \end{compactitem}
+\end{definition}
+\footnotetext{It is possible and important in practice to also define $\contmerge\Delta E$ when the types/definitions in $d$ and $e$ are provably equal.
+We omit that here for simplicity.}
+Note that $\contmergesym$ is an asymmetric operator: While $\Delta$ must be well-typed (relative to some ambient context), $E$ may refer to the names of $\Delta$ and is therefore not necessarily well-typed on its own.
+
+%To fortify our intuition, we prove:
+%\begin{theorem}\label{thm:merge}
+%Given fixed $\Gamma$, if $\Delta\oplus E$ is defined, then $\wfctx{\Gamma,\Delta\oplus E}$ and $\gjudg{\subsume{\Delta}{\Delta\oplus E}}$.
+%%		\[
+%%			\irule{\gjudg{\subtp R{R_1}} \quad \gjudg{\subtp R{R_2}} \quad \gjudg{\hastype{R_1+R_2}U}}{\gjudg{\subtp R{R_1+R_2}}}
+%%		\]
+%\end{theorem}
+%\begin{proof}
+%	See appendix.
+%\end{proof}
+
+We do not define the semantics of $\recmergesym$ via inference and checking rules.
+Instead, we give equality rules that directly expand $\recmergesym$ into $\contmergesym$ when possible:
+
+\[
+	\nrule{\wfctx{\Gamma,(\contmerge{\Delta_1}{\Delta_2})}}
+		{\gjudg{\judgeqc{\recmerge{\rectype{\Delta_1}}{\rectype{\Delta_2}}}{\rectype{\contmerge{\Delta_1}{\Delta_2}}}{}}}
+		{}
+\quad
+	\nrule{\wfctx{\Gamma,(\contmerge{\delta_1}{\delta_2})}}
+		{\gjudg{\judgeqc{\recmerge{\recexp{\delta_1}}{\recexp{\delta_2}}}{\recexp{\contmerge{\delta_1}{\delta_2}}}{}}}
+		{}
+\]\[ %\quad
+	\nrule{\wfctx{\Gamma,(\contmerge\Delta\delta)}}
+		{\gjudg{\judgeqc{\recmerge{\rectype{\Delta}}{\recexp{\delta}}}{\recexp{\contmerge\Delta\delta}}{}}}
+		{}
+\]
+In implementations some straightforward optimizations are needed to verify the premises of these rules efficiently; we omit that here for simplicity.
+For example, merges of well-typed records with disjoint field names are always well-typed, but e.g., $\recmerge{\rectype{x:nat}}{\rectype{x:bool}}$ is not well-typed even though both arguments are.
+
+In practice, we want to avoid using the computation rules for $\recmergesym$ whenever possible.
+Therefore, we prove admissible rules (i.e., rules that can be added without changing the set of derivable judgments) that we use preferentially:
+\begin{theorem}\label{thm:plusrules}
+\begin{itemize}
+	\item If $R_1$, $R_2$, and $\recmerge{R_1}{R_2}$ are well-typed record types, then $\recmerge{R_1}{R_2}$ is the greatest lower bound with respect to subtyping of $R_1$ and $R_2$.
+In particular, $\gjudg{\hastype r{\recmerge{R_1}{R_2}}}$ iff $\gjudg{\hastype r{R_1}}$ and $\gjudg{\hastype r{R_2}}$
+
+	\item If $\gjudg{\hastype{r_i}{R_i}}$ and $\recmerge{r_1}{r_2}$ is well-typed, then $\gjudg{\hastype{\recmerge{r_1}{r_2}}{\recmerge{R_1}{R_2}}}$
+	\end{itemize}
+\end{theorem}
+\begin{proof}
+	\begin{itemize}
+		\item If $R_1=\rectype{\Delta_1}$ and $R_2=\rectype{\Delta_2}$ are well-typed record types, then
+			$\judgeqc{\recmerge{R_1}{R_2}}{\rectype{\contmerge{\Delta_1}{\Delta_2}}}$. By definition of $\contmergesym$, any $r:\recmerge{R_1}{R_2}$ hence has all fields defined that are required by both $\rectype{\Delta_1}$ and $\rectype{\Delta_2}$ and the other way around.
+		\item By the rules for $\recmergesym$, for $r_1=\recexp{\delta_1}$ and $\recexp{\delta_2}$ we get $\recmerge{r_1}{r_2}=\recexp{\contmerge{\delta_1}{\delta_2}}$ and if $R_1=\rectype{\Delta_1}$ and $R_2=\rectype{\Delta_2}$, then (since $\gjudg{\hastype{r_i}{R_i}}$)  we have $\subsume{\Delta_1}{\delta_1}$ and $\subsume{\Delta_2}{\delta_2}$.
+		
+		As can easily be verified, it follows that $\subsume{\contmerge{\Delta_1}{\Delta_2}}{\contmerge{\delta_1}{\delta_2}}$, and hence $\infertype{\recexp{\contmerge{\delta_1}{\delta_2}}}{\rectype{\contmerge{\delta_1}{\delta_2}}}<:\rectype{\contmerge{\Delta_1}{\Delta_2}}=\recmerge{R_1}{R_2}$.
+	\end{itemize}
+\end{proof}
+
+Inspecting the type checking rule in \autoref{fig:rec:rules}, we see that a record $r$ of type $\rectype\Delta$ must repeat all defined fields of $\Delta$.
+This makes sense conceptually but would be a major inconvenience in practice.
+The merging operator solves this problem elegantly as we see in the following example:
+
+\begin{example} 
+  Continuing our running example, we can now define a type of semilattices \emph{with order} (and all associated axioms) as in \autoref{fig:semi2}.
+%\begin{figure}[ht]\centering
+\begin{framed}
+$\mathtt{SemilatticeOrder} := \mathtt{Semilattice} \recmergesym \leftrectype{\begin{array}{lll}
+%	\gray U &&\gray:\; \gray\type \\
+%	\gray \wedge &&\gray:\; \gray{U \to U \to U} \\
+%	\gray{\mathtt{assoc}} &&\gray:\; \gray{\vdash \forall x,y,z:U.\; (x \wedge y) \wedge z \doteq x \wedge (y \wedge z)} \\
+%	\gray{\mathtt{commutative}} &&\gray:\;\gray\ldots \\
+%	\gray{\mathtt{idempotent}} &&\gray:\;\gray\ldots \\
+          \leq &&:\; \lfarrow U{ \lfarrow UU} := \lflambda{x,y:U}{x \doteq x\wedge y}\\
+           \mathtt{refl} &&:\; \vdash \forall a:U.\; a \leq a := \text{(proof)}\\
+           \ldots \\
+ \end{array}} 
+ \begin{array}{lll}
+%	\gray U &&\gray:\; \gray\type \\
+%	\gray \wedge &&\gray:\; \gray{U \to U \to U} \\
+%	\gray{\mathtt{assoc}} &&\gray:\; \gray{\vdash \forall x,y,z:U.\; (x \wedge y) \wedge z \doteq x \wedge (y \wedge z)} \\
+%	\gray{\mathtt{commutative}} &&\gray:\;\gray\ldots \\
+%	\gray{\mathtt{idempotent}} &&\gray:\;\gray\ldots \\
+          \leq &&:\; \lfarrow U{ \lfarrow UU} := \lflambda{x,y:U}{x \doteq x\wedge y}\\
+           \mathtt{refl} &&:\; \ded \forall a:U.\; a \leq a := \text{(proof)}\\
+           \ldots \\
+ \end{array}
+                        \rightrectype{\begin{array}{lll}
+%	\gray U &&\gray:\; \gray\type \\
+%	\gray \wedge &&\gray:\; \gray{U \to U \to U} \\
+%	\gray{\mathtt{assoc}} &&\gray:\; \gray{\vdash \forall x,y,z:U.\; (x \wedge y) \wedge z \doteq x \wedge (y \wedge z)} \\
+%	\gray{\mathtt{commutative}} &&\gray:\;\gray\ldots \\
+%	\gray{\mathtt{idempotent}} &&\gray:\;\gray\ldots \\
+          \leq &&:\; \lfarrow U{ \lfarrow UU} := \lflambda{x,y:U}{x \doteq x\wedge y}\\
+           \mathtt{refl} &&:\; \vdash \forall a:U.\; a \leq a := \text{(proof)}\\
+           \ldots \\
+ \end{array}}$\\
+$\cslo  :=  \recmerge{\mathtt{SemilatticeOrder}}\csl$
+\end{framed}%\vspace*{-.5em}
+\captionof{figure}{Running Example}\label{fig:semi2}%\vspace*{-1em}
+%\end{figure}
+
+Now the explicit merging in the type $\mathtt{SemilatticeOrder}$ allows the projection $\recproj\cslo\leq$, which is equal to $\lambda x,y:(\recproj\cslo U)\;.\;(x \doteq x (\recproj\cslo\wedge) y)$ and $\recproj\cslo{\mathtt{refl}}$ yields a proof that this order is reflexive -- without needing to define the order or prove the axiom anew for the specific instance $\csl$.
+\end{example}

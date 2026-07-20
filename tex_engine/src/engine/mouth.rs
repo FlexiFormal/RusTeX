@@ -2,7 +2,7 @@
    a file or by returning the [`Token`]s expanded by a macro
 */
 
-use crate::commands::primitives::{PrimitiveIdentifier, PRIMITIVES};
+use crate::commands::primitives::{PRIMITIVES, PrimitiveIdentifier};
 use crate::engine::filesystem::SourceReference;
 use crate::engine::filesystem::{File, FileLineSource};
 use crate::engine::mouth::strings::{InputTokenizer, MouthState};
@@ -12,9 +12,9 @@ use crate::engine::{EngineAux, EngineReferences, EngineTypes};
 use crate::prelude::{CommandCode, TokenList};
 use crate::tex::catcodes::CategoryCodeScheme;
 use crate::tex::characters::StringLineSource;
+use crate::tex::tokens::Token;
 use crate::tex::tokens::control_sequences::CSName;
 use crate::tex::tokens::token_lists::MacroExpansion;
-use crate::tex::tokens::Token;
 use crate::utils::errors::{InvalidCharacter, RecoverableError, TeXError, TeXResult};
 
 pub mod strings;
@@ -45,6 +45,7 @@ pub trait Mouth<ET: EngineTypes> {
     fn push_exp(&mut self, exp: &TokenList<ET::Token>);
     /// Push a [`Vec`] of [`Token`]s to the [`Mouth`]. This is occasionally useful for things like `\write`.
     fn push_vec(&mut self, exp: Vec<ET::Token>);
+    fn get_vec(&mut self) -> Vec<ET::Token>;
     /// Push a slice of [`Token`]s to the [`Mouth`], assumed to be in reverse order (i.e. the first
     /// token to return is the last one in the slice).
     fn push_slice_rev(&mut self, exp: &[ET::Token]);
@@ -142,7 +143,7 @@ pub trait Mouth<ET: EngineTypes> {
                         ingroups -= 1;
                     }
                     CommandCode::Primitive if t.is_primitive() == Some(PRIMITIVES.noexpand) => {
-                        return Ok(None)
+                        return Ok(None);
                     }
                     _ => (),
                 }
@@ -167,12 +168,14 @@ pub trait Mouth<ET: EngineTypes> {
 }
 
 enum TokenSource<T: Token, F: File<Char = T::Char>> {
-    String(InputTokenizer<T::Char, StringLineSource<T::Char>>),
-    File(InputTokenizer<T::Char, F::LineSource>, F::SourceRefID),
+    String(Box<InputTokenizer<T::Char, StringLineSource<T::Char>>>),
+    File(Box<(InputTokenizer<T::Char, F::LineSource>, F::SourceRefID)>),
     Vec(Vec<T>),
 }
 
-/// The default implementation of [`Mouth`]. Well optimized to be fast, but at the cost of not keeping track
+/// The default implementation of [`Mouth`].
+///
+/// Well optimized to be fast, but at the cost of not keeping track
 /// of "the depth of current macro expansions" - I found that to be an acceptable loss, since afaict, the only thing that
 /// is done with that information
 /// is to print a corresponding number of `.`s if `\tracingcommands` is set. By omitting that and just concatenating
@@ -194,6 +197,9 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
             vecs: vec![],
         }
     }
+    fn get_vec(&mut self) -> Vec<<ET as EngineTypes>::Token> {
+        self.vecs.pop().unwrap_or_default()
+    }
 
     fn finish(&mut self) {
         for s in self.inputs.drain(..) {
@@ -209,7 +215,8 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
         &self,
     ) -> impl Iterator<Item = SourceReference<<ET::File as File>::SourceRefID>> + '_ {
         self.inputs.iter().rev().filter_map(|s| {
-            if let TokenSource::File(f, id) = s {
+            if let TokenSource::File(fid) = s {
+                let (f, id) = &**fid;
                 Some(SourceReference {
                     file: *id,
                     line: f.line(),
@@ -223,7 +230,8 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
 
     fn current_sourceref(&self) -> SourceReference<<ET::File as File>::SourceRefID> {
         for s in self.inputs.iter().rev() {
-            if let TokenSource::File(f, id) = s {
+            if let TokenSource::File(fid) = s {
+                let (f, id) = &**fid;
                 return SourceReference {
                     file: *id,
                     line: f.line(),
@@ -238,7 +246,8 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
     }
     fn update_start_ref(&mut self) {
         match self.inputs.last() {
-            Some(TokenSource::File(f, id)) => {
+            Some(TokenSource::File(fid)) => {
+                let (f, id) = &**fid;
                 let rf = SourceReference {
                     file: *id,
                     line: f.line(),
@@ -282,11 +291,13 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
         state: &ET::State,
     ) -> Result<(), InvalidCharacter<ET::Char>> {
         for (i, s) in self.inputs.iter().enumerate().rev() {
-            if let TokenSource::File(f, _) = s {
+            if let TokenSource::File(fid) = s {
+                let (f, _) = &**fid;
                 aux.outputs.file_close(f.source.path().display());
-                let TokenSource::File(mut r, _) = self.inputs.remove(i) else {
+                let TokenSource::File(mut fid) = self.inputs.remove(i) else {
                     unreachable!()
                 };
+                let (r, _) = &mut *fid;
                 self.start_ref.pop();
                 if r.state != MouthState::NewLine {
                     let mut ret = Vec::new();
@@ -311,7 +322,8 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
 
     fn line_number(&self) -> usize {
         for s in self.inputs.iter().rev() {
-            if let TokenSource::File(s, _) = s {
+            if let TokenSource::File(sid) = s {
+                let (s, _) = &**sid;
                 return s.line();
             }
         }
@@ -335,16 +347,21 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
         self.with_list(|v| v.extend(exp.0.iter().rev().cloned()));
     }
 
-    fn push_vec(&mut self, exp: Vec<ET::Token>) {
-        self.with_list(|v| v.extend(exp.into_iter().rev()));
+    fn push_vec(&mut self, mut exp: Vec<ET::Token>) {
+        if !exp.is_empty() {
+            self.with_list(|v| v.extend(exp.drain(..).rev()));
+        }
+        self.vecs.push(exp);
     }
     fn push_slice_rev(&mut self, exp: &[ET::Token]) {
-        self.with_list(|v| v.extend(exp.iter().cloned()));
+        if !exp.is_empty() {
+            self.with_list(|v| v.extend(exp.iter().cloned()));
+        }
     }
 
     fn push_string(&mut self, s: StringLineSource<ET::Char>) {
         self.inputs
-            .push(TokenSource::String(InputTokenizer::new(s)));
+            .push(TokenSource::String(Box::new(InputTokenizer::new(s))));
     }
 
     fn requeue(&mut self, t: ET::Token) {
@@ -364,7 +381,7 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
             column: 0,
         };
         self.inputs
-            .push(TokenSource::File(InputTokenizer::new(s), id));
+            .push(TokenSource::File(Box::new((InputTokenizer::new(s), id))));
         self.start_ref.push(rf);
     }
 
@@ -399,7 +416,8 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
                         }
                     }
                 }
-                TokenSource::File(s, _) => {
+                TokenSource::File(fid) => {
+                    let (s, _) = &mut **fid;
                     let cc: &CategoryCodeScheme<ET::Char> = state.get_catcode_scheme();
                     let endline: Option<ET::Char> = state.get_endline_char();
                     let par = state.get_par_token();
@@ -463,7 +481,8 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
                         }
                     }
                 }
-                Some(TokenSource::File(s, _)) => {
+                Some(TokenSource::File(fid)) => {
+                    let (s, _) = &mut **fid;
                     let cc = state.get_catcode_scheme();
                     let endline = state.get_endline_char();
                     let par = state.get_par_token();
@@ -502,7 +521,8 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
                 //TokenSource::TokenList(s) => s.preview(int,cc,esc,&mut str),
                 TokenSource::String(s) => s.preview(&mut 1000, &mut str).unwrap(),
                 //TokenSource::Expansion(s) => s.preview(int,cc,esc,&mut str),
-                TokenSource::File(s, _) => {
+                TokenSource::File(sid) => {
+                    let (s, _) = &**sid;
                     s.preview(&mut 1000, &mut str).unwrap();
                     break;
                 }
@@ -543,7 +563,7 @@ impl<ET: EngineTypes> DefaultMouth<ET> {
                 .into_iter()
                 .map(|s| match s {
                     TokenSource::String(s) => TokenSource::String(s),
-                    TokenSource::File(s, id) => TokenSource::File(s, id),
+                    TokenSource::File(sid) => TokenSource::File(sid),
                     TokenSource::Vec(v) => {
                         TokenSource::Vec(v.into_iter().map(&mut token).collect())
                     }
@@ -591,7 +611,8 @@ impl<ET: EngineTypes> DefaultMouth<ET> {
     }
     fn end_file(&mut self, aux: &mut EngineAux<ET>, state: &ET::State) -> ET::Token {
         match self.inputs.pop() {
-            Some(TokenSource::File(f, _)) => {
+            Some(TokenSource::File(fid)) => {
+                let (f, _) = &*fid;
                 self.start_ref.pop();
                 aux.outputs.file_close(f.source.path().display());
             }

@@ -1,0 +1,21 @@
+\documentclass{standalone}
+\usepackage{tikz,stex,amstext,amssymb}
+\usetikzlibrary{shapes,arrows,mmt}
+\begin{document}
+\begin{tikzpicture}[xscale=1]
+  \node[thy,inner sep=.3cm,fill=white] (t2) at (3,0) {$c_\delta:=\delta(c)$,...};
+  \node (t2n) at (t2.north west) {$T'$};
+  \node[thy,inner sep=.3cm,fill=white] (t1) at (3,-2) {...};
+  \node (t1n) at (t1.north west) {$T$};
+  \node[thy,inner sep=.3cm,fill=white] (s1) at (0,-2) {$c$,...};
+  \node (s1n) at (s1.north west) {$S$};
+  
+  \draw[view] (s1) -- node[above] {$\delta_1$} (t2);
+  \draw[view] (s1) -- node[below] {$\delta$} (t1);
+  \draw[include] (t1) --  (t2);
+\end{tikzpicture}
+\end{document}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

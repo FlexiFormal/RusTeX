@@ -1,0 +1,64 @@
+\textbf{\omdoc} \cite{Kohlhase:old13} is a representation language developed by Michael Kohlhase, that extends \openmath and \mathml and allows for providing general definitions of the syntax of both mathematical objects as well as mathematical documents. They make use of \emph{content dictionaries}, which introduce primitive notions and their semantics. In particular, it can represent exports of formal system libraries and their documentation.
+
+In the last ten years, (chiefly) Florian Rabe redeveloped the fragment of \omdoc pertaining to formal knowledge resulting in the \textbf{\ommt
+language}~\cite{RK:mmt:10,HKR:extending:12,rabe:howto:14}.
+\ommt greatly extends the expressivity, clarifies the representational primitives, and formally defines the semantics of this \omdoc fragment. It is designed to be foundation-independent and introduces several concepts to maximize modularity and to abstract from and mediate between different
+foundations, to reuse concepts, tools, and formalizations.
+
+More concretely, the \ommt language \emph{integrates successful representational paradigms}
+\begin{compactitem}
+\item the logics-as-theories representation from logical frameworks,
+\item theories and the reuse along theory morphisms from the heterogeneous method,
+\item the Curry-Howard correspondence from type theoretical foundations,
+\item URIs as globally unique logical identifiers from \openmath,
+\item the standardized XML-based interchange syntax of \omdoc,
+\end{compactitem}
+and makes them available in a single, coherent representational system for the first time.
+The combination of these features is based on a small set of carefully chosen, orthogonal primitives in order to obtain a simple and extensible language design.
+
+\ommt offers vey few primitives, which have turned out to be sufficient for most practical settings (a more detailed grammar is given in \autoref{sec:prelim:notation}). These are 
+\begin{enumerate}
+	\item \emph{constants} with optional types and definitions,
+	\item types and definitions of constants are \emph{objects}, which are syntax trees with binding, using 		
+		previously defined constants as leaves,
+	\item \emph{theories}, which are lists of constant declarations and
+	\item \emph{theory morphisms}, that map declarations in a domain theory to expressions
+		built up from declarations in a target theory.
+\end{enumerate}
+Using these primitives, logical frameworks, logics and theories \emph{within} some logic are all uniformly represented as \mmt theories, rendering all of those equally accessible, reusable and extendable. Constants, functions, symbols, theorems, axioms, proof rules etc. are all represented as constant declarations, and all terms which are built up from those are represented as objects.
+
+\emph{Theory morphisms} represent truth-preserving maps between theories. Examples include theory inclusions, translations/isomorphisms between (sub)theories and models/instantiations (by mapping axioms to theorems that hold within a model), as well as a particular theory inclusion called \emph{meta-theory}, that relates a theory on some meta level to a theory on a higher level on which it depends. This includes the relation between some low level theory (such as the theory of groups) to its underlying foundation (such as first-order logic), and the latter's relation to the logical framework used to define it (e.g. \LF). \medskip
+
+All of this naturally gives us the notion of a \emph{theory graph}, which relates theories (represented as nodes) via vertices representing theory morphisms (as in \autoref{fig:intro:mmt:meta}), being right at the design core of the \ommt language.
+
+\begin{figure}
+\begin{center}
+\tikzinput{img/int-meta-thygraph}
+\caption{A Theory Graph with Meta-Theories and Theory Morphisms in \mmt}\label{fig:intro:mmt:meta}
+\end{center}
+\end{figure}
+
+Given this modular approach of \ommt, heterogeneity is made explicit in the sense, that even though foundations are present via meta-theories, only those aspects of the foundation that are used in the definition of a theory $T$ are present in the theory itself, making it easy to abstract from the foundation and reuse the theory. \medskip
+
+\paragraph{} The \ommt language is used by the \textbf{\mmt system}~\cite{RK:mmt:10}, which provides a powerful API to work with documents and libraries in the \ommt language, including a terminal to execute \mmt specific commands, a web server to display information about \mmt libraries (such as their theory graphs) and plugins for the text editors/IDEs jEdit and IntelliJ IDEA, that can be used to create, type check and compile documents into the \ommt language. The API is heavily customizable via plugins to e.g. add foundation specific type checking rules and import and translate documents from different formal systems. \medskip
+
+All of this puts \mmt on a new meta level, which can be seen as the next step in a \textbf{progression towards more abstract formalisms} as indicated in the table below.
+In conventional mathematics (first column), domain knowledge is expressed directly in ad hoc notation.
+Logic (second column) provided a formal syntax and semantics for this notation.
+Logical frameworks (third column) provided a formal meta-logic in which to define this syntax and semantics.
+Now \mmt (fourth column) adds a meta-meta-level, at which we can design even the logical frameworks flexibly.
+(This \underline{m}eta-\underline{m}eta-level gives rise to the name \mmt with the last letter representing both the underlying \underline{t}heory and the practical \underline{t}ool.)
+That makes \mmt very robust against future language developments: We can, e.g., develop \LF+X without any change to the \mmt infrastructure and can easily migrate all results obtained within \LF.
+
+\begin{center}\small
+\begin{tabular}{|l|l|p{2.8cm}|p{3cm}|}
+\hline
+Mathematics      & Logic            & Meta-Logic       & Foundation-Independence \\
+\hline
+                 &                  &                  & {\mmt}\\
+                 &                  & logical framework & logical framework\\
+                 & logic            & logic            & logic\\
+domain knowledge & domain knowledge & domain knowledge & domain knowledge \\
+\hline
+\end{tabular}
+\end{center}

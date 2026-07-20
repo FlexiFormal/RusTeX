@@ -1,0 +1,22 @@
+\documentclass{standalone}
+\usepackage{tikz,stex,amstext,amssymb}
+\usetikzlibrary{shapes,arrows,mmt}
+\begin{document}
+\begin{tikzpicture}[xscale=1]
+  \node[thy,inner sep=.5cm,fill=lightgray] (s1) at (0,0) {};
+  \node[thy,inner sep=.3cm,fill=white] (t1) at (0,0) {};
+  \node at (t1.north west) {$S'$};
+  \node[thy,inner sep=.5cm,fill=lightgray] (s2) at (3,0) {};
+  \node[thy,inner sep=.3cm,fill=white] (t2) at (3,0) {};
+  \node at (t2.north west) {$T'$};
+  \node[thy,inner sep=.3cm,fill=gray] (t4) at (1.5,-1) {};
+  \node at (t4) {$N$};
+  \draw[struct] (t4) -- node[below] {\footnotesize$\rho_2$}  (s2);
+  \draw[struct] (t4) -- node[below] {\footnotesize$\rho_1$}  (s1);
+  %\draw[view] (s1) -- node[above] {$\sigma$}  (s2);
+\end{tikzpicture}
+\end{document}
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

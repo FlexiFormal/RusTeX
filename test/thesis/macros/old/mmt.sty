@@ -1,0 +1,354 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% setting the appearance of listings
+\lstdefinelanguage{MMT}[]{XML}%
+  {morekeywords={omdoc,catalogue,loc,ignore,with,ref,omgroup,adt,sortdef,insort,constructor,
+                 recognizer,argument,destructor,omlet,private,code,input,output,effect,data,
+                 metadata,extradata,proof,proofobject,metacomment,derive,conclude,hypothesis,
+                 method,premise,presentation,use,omstyle,xslt,style,element,attribute,text,
+                 value-of,recurse,exercise,hint,solution,mc,choice,answer,CMP,omtext,object,
+                 commonname,type,FMP,assumption,conclusion,axiom,definition,requation,pattern,
+                 value,measure,ordering,assertion,alternative,example,theory,
+                 narrative,tableofcontents,authorindex,content,pcontext,pc,
+                 map,separator,operator,lbrack,rbrack,
+                 OMS,OMV,OMI,OMB,OMSTR,OMF,OMA,OMBIND,OMBVAR,OME,OMATTR,OMATP,OMOBJ,
+                 om:OMS,om:OMV,om:OMI,om:OMB,om:OMSTR,om:OMF,om:OMA,om:OMBIND,om:OMBVAR,
+                 om:OME,om:OMATTR,om:OMATP,
+                 dc:contributor,dc:creator,dc:title,dc:subject,dc:description,dc:publisher,dc:type,
+                 dc:format,dc:source,dc:language,dc:relation,dc:rights,dc:date,dc:identifier,
+                 % now the new stuff
+                 constant,view,structure,maps,metamorphism,conass,strass},
+   sensitive=true}
+
+\lstset{float=htb,columns=flexible,frame=none,language=MMT,basicstyle=\scriptsize,
+  mathescape,breaklines,showstringspaces=false,
+  indexstyle=\indextt,indexstyle=[1]\indexelement,indexstyle=[2]\indexattribute}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%statements and other notation related to the grammar
+\newcommand{\bnfas}{::=} %bebecomes in BNF
+\newcommand{\bnfalt}{\;\|\;} %alternative in BNF
+\newcommand{\bnfbracket}[1]{[#1]} %brackets in BNF
+%\newcommand{\terminal}[1]{#1} %terminal symbols
+\newcommand{\TG}{\Lambda} %the symbol used for a library
+\newcommand{\TGv}{\TG'} %a primed version to be safe against evolving notation
+\newcommand{\TGo}{\TG} %another variant used with foundations
+\newcommand{\emptydb}{\cdot} %empty library
+\newcommand{\emptytheo}{\cdot} %emtpy theory body
+\newcommand{\emptygraph}{\cdot} %emtpy theory graph
+\providecommand{\emptycon}{\cdot} %empty context
+\newcommand{\dotdot}{..} %access to meta-level
+\newcommand{\dirup}{..} %access to super-level
+%\newcommand{\dot}{.} %a forbidden character
+\newcommand{\undef}{{\bot}} %the symbol used for undefined terms
+\newcommand{\hid}{{\top}} %the symbol used for hiding declared in the theory omdoc
+\newcommand{\key}{{\op{key}}} %the symbol for keys declared in the theory omdoc
+\newcommand{\oma}[1]{{@}(#1)} %OMA
+\newcommand{\ombind}[3]{{\beta}(#1,#2,#3)} %OMBIND without condition
+\newcommand{\ombindc}[4]{{\beta}(#1,#2,#3,#4)} %OMBIND with condition
+\newcommand{\omattr}[3]{{\alpha}(#1,#2\mapsto#3)} %OMATTR OMATP #2 #3 /OMATP #1 /OMATTR
+\newcommand{\ma}[2]{{#1}^{#2}} %applying a morphism to a term
+\newcommand{\mmtident}[1]{\op{id}_{#1}} %the identity morphism
+\providecommand{\Var}{\op{Var}} %the set of variables
+\renewcommand{\yps}{x} % variables
+
+\newcommand{\docdecl}[2]{#1\,:=\,\left\{#2\right\}} %document declaration
+\newcommand{\thdeclm}[3]{#1\,\stackrel{#2}{:=}\,\left\{#3\right\}} %theory declaration with meta-theory
+\newcommand{\vwdeclm}[5]{#1\,:\,#2\arr#3\,\stackrel{#4}{:=}\,\left\{#5\right\}} %view declaration with meta-morphism
+\newcommand{\vwdef}[4]{#1\,:\,#2\arr#3:=\,#4} %view declaration with meta-morphism
+\newcommand{\impddm}[4]{#1\,:\,#2\,\stackrel{#3}{:=}\,{\left\{#4\right\}}} %structure declaration with meta-morphism
+\newcommand{\thdecl}[2]{\thdeclm{#1}{}{#2}} %theory declaration without meta-theory
+\newcommand{\vwdecl}[4]{\vwdeclm{#1}{#2}{#3}{}{#4}} %view (theorem link) declaration without meta-morphism
+\newcommand{\impdd}[3]{\impddm{#1}{#2}{}{#3}} %structure declaration
+\newcommand{\dimpdd}[3]{\symdd{#1}{#2}{#3}} %defined structure
+% symbol declaration
+% \symdd{name}{type}{definition} yields name : type := definition
+% if type or definition are omitted, so is their delimiter
+\newcommand{\symdd}[3]{\def\@empty{}\def\@typ{#2}\def\@def{#3}#1\ifx\@typ\@empty\else\,:\,\@typ\fi\ifx\@def\@empty\else\,:=\,\@def\fi}
+\newcommand{\symdecl}[2]{#1\,:\,#2} %symbol declaration with omitted definiens
+\newcommand{\import}[1]{\mathtt{import}\;#1} %unnamed import declaration
+
+\newcommand{\maps}[2]{#1\mapsto#2} %an instantiation
+\newcommand{\hides}[1]{\maps{#1}{\hid}} %a hiding, now defined in terms of \maps
+\newcommand{\includes}[2]{#1\rewrites #2} %an inclusion, currently not used
+\newcommand{\oblig}[2]{\maps{#1}{#2}} %discharging a proof obligation, now defined in terms of \maps
+\newcommand{\mapall}[1]{#1} %default instantiation
+\newcommand{\emptyimport}[1]{\cdot} %empty substitution defaulting to import
+\newcommand{\emptyview}{\cdot} %empty substitution defaulting to \hid
+
+\newcommand{\ifbot}[2]{#1?#2} %if #1=\bot, then #2 else #1
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%names
+\newcommand{\localpathsep}{/}
+\newcommand{\globalpathsep}{?}
+\newcommand{\mpath}[2]{#1\globalpathsep\ompath{#2}}
+\newcommand{\spath}[2]{#1\globalpathsep\ompath{#2}}
+\newcommand{\triple}[3]{\spath{\mpath{#1}{#2}}{#3}}
+\newcommand{\mmt@assoc}[2]{\let\@tmpop=\relax\@for\@I:=#2\do{\@tmpop\@I\let\@tmpop=#1}}% flexary arguments
+\newcommand{\ompath}[1]{\mmt@assoc{\localpathsep}{#1}} %lists used in theory paths and flat names
+\newcommand{\mmt@cnassoc}[2]{\let\@tmpop=\relax\@for\@I:=#2\do{\@tmpop\cn{\@I}\let\@tmpop=#1}}% flexary arguments
+\newcommand{\cnpath}[1]{\mmt@cnassoc{\localpathsep}{#1}} %lists used in theory paths and flat names
+\newcommand{\lapp}[2]{#1\localpathsep #2} %appending to a list
+\newcommand{\cn}[1]{\mathtt{#1}} %concrete names (i.e., those not given by meta-variables)
+\newcommand{\uq}[1]{\underline{#1}} %unqualified names
+
+%obsolete
+\newcommand{\omname}[3]{#1\globalpathsep#2\globalpathsep#3} %an mmt name as a triple of URI, theory path, and flat local name
+\newcommand{\omnameth}[2]{#1\globalpathsep#2} %an mmt name as a pair of URI and theory path
+\newcommand{\nameup}[1]{\op{up}(#1)} %go up in name space
+\newcommand{\namedown}[2]{#1\globalpathsep#2} %go down in name space
+\newcommand{\namedowni}[2]{#1/#2} %append one unqualified name to an mmt name of an import
+\newcommand{\ompathdots}[2]{\thpath{#1,\ldots,#2}} %an abbreviation for a theory path with \ldots
+\newcommand{\lconc}[2]{#1\localpathsep #2} %concatenating two lists
+\newcommand{\emptylist}{\localpathsep} %the empty list
+%shortcuts
+\newcommand{\us}{\uq{s}}
+\newcommand{\uc}{\uq{c}}
+\newcommand{\uh}{\uq{h}}
+\newcommand{\ui}{\uq{i}}
+\newcommand{\uj}{\uq{j}}
+\newcommand{\um}{\uq{v}}
+\newcommand{\uT}{\uq{T}}
+\newcommand{\uS}{\uq{S}}
+
+\newcommand{\resolve}[2]{\op{resolve}(#1,#2)} %unqualified names
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%lookup functions
+\newcommand{\gdom}[1]{\op{Doc}(#1)}
+\newcommand{\thdom}[1]{\op{Thy}(#1)}
+\newcommand{\tmdom}[1]{\op{Mor}(#1)}
+\newcommand{\sdom}[2]{\op{Sym}^{#1}(#2)}
+\newcommand{\scdom}[2]{\op{Con}^{#1}(#2)}
+\newcommand{\sidom}[2]{\op{Str}^{#1}(#2)}
+\newcommand{\llkp}[2]{#1(#2)}
+\newcommand{\glkp}[2]{#1(#2)}
+\newcommand{\tlkp}[2]{#1(#2)}
+\newcommand{\slkp}[3]{#1^{#2}(#3)}
+\newcommand{\slkpv}[3]{#1_*^{#2}(#3)}
+%\newcommand{\slkpo}[2]{#1(#2)}
+\newcommand{\body}[2]{\op{body}^{#1}(#2)}
+\newcommand{\meta}[2]{\op{meta}^{#1}(#2)}
+\newcommand{\domain}[2]{\op{dom}^{#1}(#2)}
+\newcommand{\codomain}[2]{\op{cod}^{#1}(#2)}
+%auxiliary functions
+\newcommand{\strip}[1]{\op{str}(#1)}
+\newcommand{\names}[2]{\op{Nam}^{#1}(#2)}
+\newcommand{\pref}[1]{\op{pref}(#1)}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%judgments
+\newcommand{\extendtg}[3]{#1+#3}
+\newcommand{\lastg}[1]{\op{lastDoc}\left(#1\right)}
+\newcommand{\lastT}[1]{\op{lastThy}\left(#1\right)}
+\newcommand{\lastm}[1]{\op{lastLink}\left(#1\right)}
+\newcommand{\judgmentsymbol}{\vartriangleright} %the symbol to distinguish judgments
+\newcommand{\library}[1]{\judgmentsymbol #1} %valid library
+\newcommand{\gsta}[2]{{#1}\judgmentsymbol #2} %valid document declaration
+\newcommand{\tsta}[3]{{#1}\judgmentsymbol #3} %valid theory level statement
+\newcommand{\ssta}[3]{{#1}\judgmentsymbol #3} %valid inner statement
+\newcommand{\sins}[3]{{#1}\judgmentsymbol #3} %valid instantiation
+\newcommand{\oterm}[3]{#1\judgmentsymbol_{#2}#3} %valid term
+\newcommand{\otermtype}[4]{#1\judgmentsymbol_{#2}#3:#4} %valid term of some type
+\newcommand{\otermequal}[4]{#1\judgmentsymbol_{#2}#3\equiv #4} %equality of terms
+\newcommand{\omorphism}[4]{{#1}\judgmentsymbol#2:#3\arr#4} %valid morphism
+\newcommand{\newname}[3]{#1\judgmentsymbol^{#2} #3\;\mathrm{new}} %new name
+\newcommand{\definedleq}[5]{#1\judgmentsymbol_{#2} #3\;|^{#4}\; #5} %definedness ordering
+%\newcommand{\definedless}[3]{#1\judgmentsymbol #2< #3} %definedness ordering
+\newcommand{\definedleqm}[6]{#1\judgmentsymbol_{#2} #3\;|^{#4}\;#5:#6} %definedness ordering for morphisms
+\newcommand{\rewrite}[3]{#1\judgmentsymbol #2\rewrites#3} %elimination of morphism
+\newcommand{\nrewrite}[3]{#1\judgmentsymbol #2\not\rewrites#3} %negation of the above
+\newcommand{\rewr}[1]{\ov{#1}} %abbreviation for result of morphism elimination
+
+\newcommand{\metai}[3]{\op{mi}^{#1}_{#3}(#2)}
+\newcommand{\metan}[3]{N(#2)}
+\newcommand{\foundtype}[5]{#2^{#1,#3}(#4:#5)} %typing as determined by foundation
+\newcommand{\foundequal}[5]{#2^{#1,#3}(#4\equiv#5)} %equality as determined by foundation
+\newcommand{\PhiD}{{\Phi^{Def}}} %default foundation
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% names of inference rules
+%\renewcommand{\rulename}[1]{{\it{#1}}}
+\newcommand{\algname}[2]{{\it{#1}}#2}
+
+\newcommand{\mmtDoc}{Doc}
+\newcommand{\mmtTth}{Thy}
+\newcommand{\TGsys}{}
+\newcommand{\TGemptydatabase}{\algname\TGsys{Lib_\es}}
+\newcommand{\TGemptygraph}{\algname\TGsys{\mmtDoc_\es}}
+\newcommand{\TGdocument}{\algname\TGsys{\mmtDoc}}
+\newcommand{\TGemptytheory}{\algname\TGsys{\mmtTth_\es}}
+\newcommand{\TGsymbol}{\algname\TGsys{Con}}
+\newcommand{\TGemptysubtheory}{\algname\TGsys{Sth_\es}}
+\newcommand{\TGsubtheory}{\algname\TGsys{\mmtTth_{Sth}}}
+\newcommand{\TGtoplevelstatement}{\algname\TGsys{Mod}}
+\newcommand{\TGstatement}{\algname\TGsys{Sym}}
+\newcommand{\TGemptyview}{\algname\TGsys{Viw_\es}}
+\newcommand{\TGemptyviewmapall}{\algname\TGsys{Viw_\mu}}
+\newcommand{\TGviewinstantiation}{\algname\TGsys{Viw_{Ass}}}
+\newcommand{\TGemptyimport}{\algname\TGsys{Str_\es}}
+\newcommand{\TGemptyimportmapall}{\algname\TGsys{Str_\mu}}
+\newcommand{\TGimportinstantiation}{\algname\TGsys{Str_{Ass}}}
+\newcommand{\TGinstsymb}{\algname\TGsys{ConAss}}
+\newcommand{\TGinstimp}{\algname\TGsys{StrAss}}
+\newcommand{\TGdefinedleq}{\algname\TMsys|_{Con}}
+\newcommand{\TGdefinedleqm}{\algname\TMsys|_{Str}}
+\newcommand{\TGnewnamedoc}{\algname\TGsys{new_{g}}}
+\newcommand{\TGnewnameth}{\algname\TGsys{new_{T}}}
+\newcommand{\TGnewnamem}{\algname\TGsys{new_{m}}}
+\newcommand{\TGnewnamedocsub}{\algname\TGsys{new'_{g}}}
+
+\newcommand{\TOsys}{\cal{T}}
+\newcommand{\TOspecial}{\algname\TOsys_{\hid}}
+\newcommand{\TOsym}{\algname\TOsys_{Con}}
+\newcommand{\TOvar}{\algname\TOsys_{Var}}
+\newcommand{\TOapp}{\algname\TOsys_{@}}
+\newcommand{\TObind}{\algname\TOsys_{\beta}}
+\newcommand{\TOattr}{\algname\TOsys_{\alpha}}
+\newcommand{\TOmor}{\algname\TOsys_{\mu}}
+%\newcommand{\TOax}{\algname\TOsys{ax}}
+%\newcommand{\TOrewr}{\algname\TOsys{rewr}}
+%\newcommand{\TOalpha}{\algname\TOsys{\alpha conv}}
+%\newcommand{\TOequalt}{\algname\TOsys{equtyp}}
+\newcommand{\TEtype}{\algname\TOsys_{:}}
+\newcommand{\TEequal}{\algname\TOsys_{\equiv}}
+
+\newcommand{\TMsys}{{\cal{M}}}
+\newcommand{\TMid}{\algname\TMsys_{id}}
+\newcommand{\TMmor}{\algname\TMsys_{m}}
+%\newcommand{\TMimp}{\algname\TMsys{Imp}}
+\newcommand{\TMcomp}{\algname\TMsys_{\bullet}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% operations
+\newcommand{\flatten}[3]{#3^{#1}(#2)}
+\newcommand{\flattenx}[2]{\mtext{translate}#1 \mtext{by} #2}
+\newcommand{\mergei}[2]{#1\cup #2}
+\newcommand{\elimi}[1]{\widetilde{#1}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% systems
+\newcommand{\ModSys}{\texorpdfstring{\scshape{Mmt}}{MMT}}
+\newcommand{\mmt}{\ModSys}
+\newcommand{\scsys}[1]{{\sc{#1}}\index{#1}}
+\newcommand{\relaxng}{\scsys{RelaxNG}}
+\providecommand{\mathml}{\scsys{MathML}}
+\providecommand{\openmath}{\scsys{OpenMath}}
+\providecommand{\omdoc}{\scsys{OMDoc}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Foundations
+\newcommand{\PhiLF}{{\Phi^{DTT}}} %DTT foundation
+\newcommand{\lfoftype}[2]{\der^{DTT} #1:#2}
+\newcommand{\lfisequal}[2]{\der^{DTT} #1\equiv #2}
+\newcommand{\lfsymi}[1]{\namedowni{i}{\cn{#1}}}
+\newcommand{\lfsym}[1]{\namedown{LF}{\cn{#1}}}
+%\newcommand{\elab}[2]{E^{#1}(#2)}
+\newcommand{\PhiZF}{{\Phi^{ST}}} %ZFC foundation
+\newcommand{\Log}{\op{Log}} %base logic
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%\newcommand{\frm}{\cn{o}} %the base symbol for the type of formulas
+%\newcommand{\wff}{\cn{wff}} %the base symbol for the judgment for well-formed formulas
+%\newcommand{\prf}{\cn{p}} %the base symbol for the truth judgment about formulas
+%
+%\newcommand{\Thm}[1]{\op{Thm}(#1)}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% miscallenous other commands that should be categorized better
+\newcommand{\om}[1]{\fbox{\ensuremath{#1}}}
+\newcommand{\deq}{\colon=}
+\providecommand{\dom}[1]{\mathop{dom}(#1)}
+\newcommand{\llquote}[1]{\ensuremath{\langle\kern-.25em\langle\hbox{\sl{#1}}\rangle\kern-.25em\rangle}}
+\newcommand{\NN}{{\mathbb{N}}}
+\newcommand{\functors}[2]{S\Rightarrow T} %functors
+
+%xml encoding
+\newcommand{\enc}[1]{E(#1)}
+\newcommand{\omdocoms}[1]{\op{OMDoc}(\texttt{#1})}
+
+% for kwarc.bib
+%\def\LNAI{LNAI}
+%\def\LNCS{LNCS}
+%\def\PROC{Proceedings }
+\newcommand{\USA}{USA}
+\newcommand{\cG}{{\cal G}}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%old stuff that seems to be redundant
+
+%names
+%\newcommand{\localpart}[1]{\widetilde{#1}} %get the last element of the third component of an mmt name -- obsolete
+
+%additional old syntax parts
+%\newcommand{\moddecl}[2]{#1=\{#2\}}
+%\newcommand{\modinst}[3]{#1:#2=#3}
+%\newcommand{\map}[2]{#1:= #2}
+%\newcommand{\incl}[3]{#1\mbox{ where }#2\;#3}
+%\newcommand{\modincl}[3]{\includ\;\incl{#1}{#2}{#3}}
+%\newcommand{\includ}{\mathrm{include}}
+%\newcommand{\Na}{Name}
+%\newcommand{\lam}[2]{\lambda\,#1\!:\!#2.\;}
+%\newcommand{\kity}{\op{type}}
+%\newcommand{\declval}[3]{#1=#3:#2}
+
+%\newcommand{\baseTG}{\Lambda} %the symbol used for a library
+%\newcommand{\undefall}{\maps{\ast}{\bot}} %empty substitution defaulting to \bot
+%\newcommand{\metais}[1]{\op{meta}=#1} 
+%\newcommand{\symdefin}[2]{#1:=#2} %symbol definition
+%\newcommand{\judgment}[2]{#1:#2} %judgment declaration
+%\newcommand{\judgdef}[2]{#1:=#2} %judgment definition
+%\newcommand{\assertion}[2]{#1:#2} %assertion declaration
+%\newcommand{\assdef}[2]{#1:=#2} %assertion (proof) definition
+%\newcommand{\deflink}[3]{#1:#2[#3]} %import (definitonal link) declaration without meta-morphism
+%\newcommand{\deflinkm}[4]{#1:#2^{#3}[#4]} %import declaration with meta-morphism
+%\newcommand{\assertiontop}[4]{{#1\vdash\;} #2=#4:\chc{#3}}
+
+%\newcommand{\tglookup}[2]{\op{lookup}^{#1}(#2)}
+%\newcommand{\flatdb}[1]{\op{FlatDb}(#1)}
+%\newcommand{\flatgraph}[3]{\op{FlatGraph}^{#1,#2}(#3)}
+%\newcommand{\flattheo}[3]{\op{FlatTheo}^{#1,#2}(#3)}
+%\newcommand{\flatsofar}[1]{\op{FlatSoFar}(#1)}
+%\newcommand{\defineflat}[1]{F:=F^{#1}}
+%\newcommand{\addflat}[1]{\op{AddFlat}\left(#1\right)}
+%\newcommand{\flatdecls}[2]{\op{Flatten}^{#1}(#2)}
+%\newcommand{\flatdecl}[3]{\left[#1=#3:#2\right]}
+%%\newcommand{\flataxioms}[2]{\flatdecls{#1}{#2}}
+%%\newcommand{\flataxiom}[3]{\flatdecl{#1}{#2}{#3}}
+%\newcommand{\metaimp}[2]{\op{metaimp}^{#1}(#2)} %-- obsolete
+%\newcommand{\hideafter}[2]{\op{hideaft}^{#2}(#1)} %-- obsolete
+%\newcommand{\included}[1]{\op{inc}(#1)}%-- obsolete
+%\newcommand{\hidden}[2]{#1\uparrow #2}%-- obsolete
+%\newcommand{\ifnotbot}[2]{{#1}?#2}%-- obsolete
+%\newcommand{\extend}[2]{{#2}^{#1}}%-- obsolete
+%\newcommand{\extendf}[1]{#1}%-- obsolete
+
+%%shortcuts for contexts
+%\newcommand{\tcont}{\TG;\docdecl{g}{\gamma}}
+%\newcommand{\scont}{\TG;\docdecl{g}{\gamma};\thdeclm{\uT}{M}{\theta}}
+%\newcommand{\ocont}{\TG;\docdecl{g}{\gamma};\thdeclm{\uT}{M}{\theta};\Ypsilon}
+%
+%\newcommand{\graph}[3]{\library{#1,\;\docdecl{#2}{#3}}} %valid document declaration
+%\newcommand{\theory}[6]{\graph{#2}{#1}{#3,\;\thdeclm{#4}{#5}{#6}}} %valid theory decclaration -- obsolete
+%\newcommand{\theoryname}[2]{#1\judgmentsymbol #2} %valid theory name -- obsolete
+%\newcommand{\substitution}[4]{{#1}\judgmentsymbol#2:#3\dashrightarrow #4} %valid substitution -- obsolete
+%\newcommand{\substitutionm}[5]{{#1}\judgmentsymbol#2:#4\stackrel{#3}{{\circ}\!\!\dashrightarrow} #5} %valid substitution with meta-morphism -- obsolete
+%\newcommand{\totsubstitution}[4]{{#1}\judgmentsymbol#2:#3\dashrightarrow^{t} #4} %valid total substitution -- obsolete
+%\newcommand{\totsubstitutionm}[5]{{#1}\judgmentsymbol#2:#4\stackrel{#3}{\dashrightarrow} #5} %valid total substitution with meta-morphism  -- obsolete
+%%\newcommand{\structure}[4]{#2\judgmentsymbol_{#1}#3:#4} %valid structure -- obsolete
+%\newcommand{\totmorphism}[4]{{#1}\judgmentsymbol#2:#3\arr#4} %valid total morphism -- obsolete
+%\newcommand{\judgmentoftype}[4]{#1\judgmentsymbol_{#2}#3:#4\;\texttt{Jdg}} %valid judgment of some type  -- obsolete
+%\newcommand{\context}[3]{#1\judgmentsymbol_{#2}#3\;\texttt{Ctx}} %valid context -- obsolete
+%\newcommand{\varobject}[4]{#1;#3\judgmentsymbol_{#2}#4} %valid term in context -- obsolete
+%\newcommand{\varobjectoftype}[5]{#1;#3\judgmentsymbol_{#2}#4:#5} %valid term in context of some type -- obsolete
+%\newcommand{\varequal}[5]{#1;#3\judgmentsymbol_{#2}#4\equiv #5} %equality of terms in context -- obsolete
+%\newcommand{\varjudgmentoftype}[5]{#1;#3\judgmentsymbol_{#2}#4:#5\;\texttt{Jdg}} %valid judgment in context of some type -- obsolete
+%\newcommand{\assertionoftype}[4]{\objectoftype{#1}{#2}{#3}{#4}} %valid proof in context of some judgment -- obsolete
+
+%base theories
+%\newcommand{\omdocbase}{\cn{omdoc}} %the name of the base theory for omdoc
+%\newcommand{\omdocbody}{\symdecl{\hid}{\bot},\;\symdecl{\key}{\bot}} %the body of said theory
+%\newcommand{\chc}[1]{{\scriptstyle\vdash}#1} %abbreviation for the truth judgment
+%\newcommand{\omdoclogic}{logic}
+%\renewcommand{\Form}[1]{\op{Form}(#1)}

@@ -1,0 +1,217 @@
+Homotopy Type Theory~\cite{hottbook} (HoTT) is a foundation of mathematics built upon a type system that we can now define as \emph{\texttt{LF}+Cumulative Universes+\sigmasym-Types+\coprodsym-Type+Finite Types+\wtypesym-Types}. It is based entirely around Propositions-as-Types, as summarized in \autoref{fig:lf:lfx:hott:pot} -- more precisely, the ``propositional'' part of homotopy type theory is an intuitionistic higher-order logic: Our proof rules can be easily observed to correspond to the usual introduction and elimination rules of a natural deduction calculus for intuitionistic logic. To get to a classical setting, it suffices to add a polymorphic constant $\cn{tnd}:\lfpi{i:\nat}{\lfpi{U:\univ i}{\lfpi{A:U}{\coprod A{(\lfarrow A\emptytype)}}}}$ -- which by Propositions-as-Types corresponds to the statement $A\vee\neg A$ for all ``propositions'' $A$. 
+
+\begin{figure}[ht]\begin{center}
+\begin{tabular}{ll|ll}
+\multicolumn{2}{c}{\textbf{Higher-Order Logic}} & \multicolumn{2}{c}{\textbf{Homotopy Type Theory}} \\\hline\hline
+Constant symbols & $c:\alpha$ & constants & $c:\alpha$ \\
+Function symbols & $f:\alpha\to\beta$ & functions & $f:\lfarrow\alpha\beta$ \\
+Predicate symbols & $P:\alpha\to\cn{Bool}$ & functions & $\lfarrow\alpha\type$ \\ \hline
+Propositions & $A$ & types & $A:\univ i$ \\
+Conjunctions & $A\wedge B$ & Simple Products & $\simpleprod AB$ \\
+Implications & $A\Rightarrow B$ & Simple Function Types & $\lfarrow AB$ \\
+Disjunctions & $A\vee B$ & Coproducts & $\coprod AB$ \\
+Negations & $\neg A$ & Function Types & $\lfarrow A\emptytype$ \\
+Universal Quantifier & $\forall x:A.\;P(x)$ & Dependent Function Types &  $\lfpi{x:A}P$ \\
+Existential Quantifier & $\exists x:A.\;P(x)$ & Dependent \sigmasym-Types &  $\sigmatp{x:A}P$ \\\hline
+\multicolumn{2}{l}{Proofs for $A$} & \multicolumn{2}{l}{Elements $p:A$} \\
+\end{tabular}\end{center}
+\caption{Propositions as Types }\label{fig:lf:lfx:hott:pot}
+\end{figure}
+
+Formalizing HoTT in a logical framework such as \LF is prohibitively difficult; a previous formalization by Florian Rabe is available online and shows the limitations of such an attempt\footnote{\url{https://gl.mathhub.info/MMT/examples/blob/master/source/hott.mmt}}: Even \sigmasym-types can only be fully formalized in \LF by adding simplification rules (see \autoref{rem:lf:lfx:sigma:rewriting}) and \wtypesym-types are left out entirely. Furthermore, since HoTT is -- like \LF -- based on a Martin-Löf type theory, a formalization \emph{within} \LF requires re-implementing that very type theory using a HOAS deep embedding, with all the associated drawbacks for working with and within the resulting formalization. This is contrasted by HoTT's aim to be a foundation of mathematics alongside and orthogonal to other such frameworks. Consequently, it is much more adequate to lift an implementation of Homotopy Type Theory to the level of logical frameworks itself. Additionally, this makes HoTT an attractive case study for a modular logical framework.
+
+\paragraph{} Homotopy Type Theory is a framework under active investigation and development, and hence frequently subject to change and subtle shifts regarding formal details. The description here follows the presentation in \cite{hottbook}, which does not necessarily reflect the current state of the art.
+
+Accordingly, the following definitions and theorems are all taken from the same source and described in much more detail there. They are only contained here for clarification. In particular, we omit all proofs.
+
+\subsection{Identity Types}\label{sec:lf:lfx:eq}
+
+\hypertarget{eqtp}{Notably, in the correpondences in \autoref{fig:lf:lfx:hott:pot} we are yet missing (propositional) equalities. For these, we can add a simple \emph{equality type} $\eqtp abA:U$ whose semantics is provided by the intended propositions-as-types correspondence.}
+
+However, HoTT is somewhat peculiar here, since it does \emph{not} consider propositional types to be \emph{proof irrelevant} - \emph{Equality} of elements $\eqtp abA$ is considered a type with \emph{arbitrarily many distinct elements}, and this notion of equality is distinct from the \emph{judgmental} equality $\judgeq abA$. In particular, the existence of a ``proof'' $p:\eqtp abA$ does not imply $\judgeq abA$. The reverse implication holds trivially by the introduction form, for which we use \emph{reflexivity}: For every $a:A$, we have $\refl a:\eqtp aaA$. 
+
+\paragraph{} For elimination we use a mechanism called (in the context of HoTT) \emph{path induction}: Given any $p:\eqtp abA$ and $c(x):C(x)$, we have $\eqind pxyq{C(x,y,q)}{c(x)}:C(a,b,p)$, where for any $x:A$ we demand that $c(x):C(x,x,\refl x)$ and will declare that $\eqind{\refl a}xyq{C(x,y,q)}{c(x)}=c(a)$. This requires some deliberation:
+
+The central idea is that given a proposition (or type) $C(x)$ depending on $x:A$, if we have a proof/element $c(a):C(a)$ and a proof $p:\eqtp abA$, then we should also have a proof/element $c(b):C(b)$ (\emph{congruence} of equality). This is what \eqindsym yields in the simple case where $C$ only depends on $x$.
+
+In homotopy type theory, this principle is generalized in that the type $C$ may depend not just on $x$, but also on an element $y$ considered propositionally (but not necessarily judgmentally) equal to $x$, as well as the \emph{proof} $p:\eqtp xyA$ for that equality. The postulated judgmental equality $\eqind{\refl a}xyq{C(x,y,q)}{c(x)}=c(a)$ can then be interpreted as the statement that the family of types $\eqtp xyA$ (for fixed $A$ and variable $x,y$) is inductively defined by the elements of the form $\refl a$, in the sense that any type family $C(x,y,p)$ for $x,y:A$ and $p:\eqtp xyA$ is determined by the cases of the form $C(x,x,\refl x)$. 
+
+Note that this does \emph{not} imply that the types $\eqtp abA$ (for fixed elements $a,b:A$) are \emph{themselves} inductively defined via the elements $\refl a$-- whenever $a$ and $b$ are not judgmentally equal, this type is not inhabited by a $\refl\_$-term at all.
+
+\begin{remark}[Based Path Induction]\label{rem:lf:lfx:hott:based}
+	The above is often inconvenient in situations where we want to use \emph{congruence} of equality -- i.e. when we know $P(a)$ holds for a fixed, definite element $a:A$, and given $p:\eqtp abA$ want to infer that $P(b)$ holds as well. The reason is that we need to be able to provide an element $c(x)$ which for \emph{arbitrary} $x:A$ represents a witness for $P(x)$, which we don't have in those instances.
+	
+	The way around this is to instead use path induction on lambda abstractions, which is a common enough situation to warrant a separate name: \textbf{Based Path Induction}. This is definable using general path induction in the following way:
+	
+	Let $T_C=\lfpi{x:A}{\lfarrow{\eqtp axA}{\mathcal U}}$ and $T_D=\lfpi{z:A}{\lfarrow{\eqtp xzA}{\mathcal U}}$:
+	
+	\begin{tabular}{rcl}
+		$\cn{based\_ind}$ &$:$ &$\lfpi{a:A}{\lfpi{C:T_C}{\lfpi{c:C(a,\refl a)}{\lfpi{b:A}{\lfpi{p:\eqtp abA}{C(b,p)}}}}}$\\
+		&$:=$&$\lflambda{a:A}{\lflambda{C: T_C}{\lflambda{c : C(a,\refl a)}{\lflambda{b:A}{\lflambda{p :\eqtp abA}{{}}}}}}$\\
+		&&$\left(\eqind pxyq{\lfpi{D:T_D}{\lfarrow{D(x,\refl x)}{D(y,q)}}}{\lflambda{D,d}{d}}\right)(C,c)$
+	\end{tabular}
+%	\end{align*}
+\end{remark}
+
+\begin{example}
+\begin{enumerate}
+	\item We can use path induction to prove symmetry of equality, i.e. a function of type
+		\[\lfpi{a:A}{\lfpi{b:A}{\lfarrow{\eqtp abA}{\eqtp baA}}}\]
+		for any type $A$.
+		
+		Given the argument $p:\eqtp abA$, we have $\eqind pxyq{C(x,y,q)}{c(x)}:C(a,b,p)$, so we need to choose $C(x,y,q)=\eqtp yxA$ for $C(a,b,p)$ to be the type $\eqtp baA$.
+		
+		The term $c(x)$ will have to check against $C(x,x,\refl x)$, so we can choose $c(x):=\refl x$.
+		
+		Hence, we get $\eqind pxyq{\eqtp yxA}{\refl x}:\eqtp baB$, so our function is
+		\[\cn{symm}:=\lflambda{a:A}{\lflambda{b:A}{\lflambda{p:\eqtp abA}{\eqind pxyq{\eqtp yxA}{\refl x}}}}\]
+	\item We can use based path induction to prove congruence, i.e. a function of type
+		\[ \lfpi{a:A}{\lfpi{b:A}{\lfpi{P:\lfarrow A{\mathcal U}}{\lfarrow{\eqtp abA}{\lfarrow{P(a)}{P(b)}}}}} \]
+		simply by applying the function \cn{based\_ind} in \autoref{rem:lf:lfx:hott:based}:
+		\[\cn{cong}:=\lflambda{a,b,P,p,pa}{\cn{based\_ind}(a,(\lflambda{x,q}{P(x)}),pa,b,p)}\]
+\end{enumerate}
+\end{example}
+
+The rules for identitiy types are given in \autoref{fig:lf:lfx:hott:idrules}. Note that if we wanted to identify propositional equality $\eqtp abA$ and judgmental equality $\judgeq abA$, we could add a corresponding equality rule.
+
+
+
+\begin{figure}[ht]%[ht]\centering%\vspace*{-1em}
+\begin{framed}
+{\small For any $U$ with $\gjudg{\judguniv U}$:}
+\begin{flushleft}
+\textbf{Formation:}
+\[
+\trule{\gjudg{\infertype AU} \quad \gjudg{\hastype aA} \quad \gjudg{\hastype bA}}{\gjudg{\infertype{\eqtp abA}U}}
+\]
+\textbf{Introduction:}
+\[
+\trule{\gjudg{\infertype aA} \quad \gjudg{\infertype AU} }{\gjudg{\infertype{\refl a}{\eqtp aaA}}}
+\]
+\textbf{Elimination:}
+
+\[
+\trule{\gjudg{\judgmatchinf p{\eqtp abA}} \quad \judg{\Gamma,x:A,y:A,q:\eqtp xyA}{\infertype CU} \quad \judg{\Gamma,x:A}{\hastype c{C\sub yx\sub q{\refl x}}} }{\infertype{\eqind pxyqCc}{C\sub xa\sub yb \sub qp} }
+\]
+%\textbf{Type Checking:}
+%\[
+%	\_
+%\]
+%\textbf{Equality:}
+%\[
+%\_
+%\]
+\textbf{Computation:}
+
+
+\[ 
+\trule{\gjudg{\infertype aA} \quad \judg{\Gamma,x:A,y:A,q:\eqtp xyA}{\infertype CU} \quad \judg{\Gamma,x:A}{\hastype c{C\sub yx\sub q{\refl x}}} }{\gjudg{\judgeqc{\eqind{\refl a}xyqCc}{c\sub xa} }}
+\]
+%\textbf{Computation (Optional):}
+%\[
+%	\trule{}{\gjudg{\judgeqc\unit{\emptytype\to\emptytype}}}
+%\]
+\end{flushleft}\end{framed}%\vspace*{-.5em}
+\caption{Rules for Identity Types}\label{fig:lf:lfx:hott:idrules}%\vspace*{-1em}
+\end{figure}
+
+\subsection{Equivalences and Univalence}
+
+The principal idea behind homotopy type theory is to interpret propositional equality topologically: Given two ``points'' $a,b:A$, the type $\eqtp abA$ is interpreted as the type of all continuous paths between $a$ and $b$. This makes sense of the multitude of possible ``proofs'' of $\eqtp abA$, since not all continuous paths between points are equal. Two such paths $p,q:\eqtp abA$ can be equivalent though, in the sense that there can be a continuous transformation from $p$ to $q$ - i.e. there can be a path $r:\eqtp pq{(\eqtp abA)}$ - making $r$ a homotopy.
+
+\begin{definition}
+	Let $f,g:\lfpi{x:A}B(x)$. A \textbf{homotopy} from $f$ to $g$ is a function of type
+		\[f\sim g := \lfpi{x:A}{\eqtp{f(x)}{g(x)}{B(x)}}\]
+\end{definition}
+\begin{theorem}
+Under propositions-as-types, homotopy is an equivalence relation, i.e.there are functions of the following types:
+\[\lfpi{f:\lfpi{x:A}{B(x)}}{f\sim f}\]
+\[\lfpi{f,g:\lfpi{x:A}{B(x)}}{\lfarrow{(f\sim g)}{(g\sim f)}}\]
+\[\lfpi{f,g,h:\lfpi{x:A}{B(x)}}{\lfarrow{(f\sim g)}{\lfarrow{(g\sim h)}{(f\sim h)}}}\]
+\end{theorem}
+
+We can now use homotopies to define two types as equivalent in the category theoretical manner: A function is an \emph{equivalence} (isomorphism) if it is invertible (up to homotopy), and two types are \emph{equivalent} (isomorphic) if there is an equivalence between them:
+
+\begin{definition}
+	\begin{enumerate}
+		\item We call a function $f:\lfarrow AB$ an \textbf{equivalence} if the following type is inhabited:
+			\[  \cn{isequiv}(f):=\simpleprod{\left(\sigmatp{g:\lfarrow BA}{f\circ g\sim \left(\lflambda{x:B}x\right)}\right)}{\left(\sigmatp{g:\lfarrow BA}{g\circ f\sim \left(\lflambda{x:A}x\right)}\right)} \]
+			Note that under propositions-as-types, this corresponds to the proposition ``there are left-inverse and right-inverse functions for $f$''.
+			\forcebreakhere
+		\item We call two types $A,B$ \textbf{equivalent} if the following type is inhabited:
+			\[ A\simeq B:=\sigmatp{f:\lfarrow AB}{\cn{isequiv}(f)}\]
+			Note that under propositions-as-types, this corresponds to ``there is an equivalence $f:\lfarrow AB$''.
+	\end{enumerate}
+\end{definition}
+\begin{theorem}
+	As with homotopy, equivalence of types is an equivalence relation.
+\end{theorem}
+
+The final step that Homotopy Type Theory takes is to declare function extensionality (on equivalences) and postulating the \emph{univalence axiom} that declares equality of types \emph{itself} an equivalence.
+
+\begin{definition}\begin{enumerate}
+	\item We define a polymorphic function:
+	\[\cn{happly}:\lfpi{n:\nat}{\lfpi{A:\univ n}{\lfpi{B:\lfarrow A{\univ n}}{\lfpi{f,g:\lfpi{x:A}{B(x)}}{\lfarrow{\eqtp fg{\lfpi{x:A}{B(x)}}}{\lfpi{x:A}{\eqtp{f(x)}{g(x)}{B(x)}}}}}} },\]
+	which is definable using \eqindsym.
+	\item We define a polymorphic function
+		\[ \cn{idtoequiv}:\lfpi{n:\nat}{\lfpi{A,B:\univ n}{\lfarrow{\eqtp AB{\univ n}}{A\simeq B}}}, \]
+	which is definable using \eqindsym.
+\end{enumerate}\end{definition}
+\begin{axiom}[Function Extensionality]
+	For any $A,B,f,g$, \cn{happly} is an equivalence, i.e. we have a constant
+	\[\_:\cn{isequiv}(\cn{happly}(n,A,B,f,g))\]
+\end{axiom}
+\begin{axiom}[Univalence]
+	For any $A,B$, \cn{idtoequiv} is an equivalence, i.e. we have a constant
+	\[\_:\cn{isequiv}(\cn{idtoequiv}(n,A,B)) \]
+	In particular, it follows that
+	\[(\eqtp AB{\univ n})\simeq(A\simeq B)\]
+\end{axiom}
+
+\subsection{Implementation}
+Implementing the rules for identity types as in \autoref{fig:lf:lfx:hott:idrules} is straight-forward\footnote{The implementation can be found at \url{https://gl.mathhub.info/MMT/LFX/blob/master/scala/info/kwarc/mmt/LFX/Equality/Rules.scala}, the corresponding symbols in \url{https://gl.mathhub.info/MMT/LFX/blob/master/source/Equality.mmt}}. All concepts and axioms of Homotopy Type Theory beyond our previously covered typing features can conveniently be specified in MMT syntax directly, as in \autoref{lst:lf:lfx:hott:implmmt}.
+
+\begin{mmtcode}[caption={A Theory for HOTT \protect\footnotemark},label=lst:lf:lfx:hott:implmmt]
+theory Types : TypedHierarchy?LFHierarchy =
+	include WTypes?Inductive ❙
+	include Equality?LFEquality ❙
+	
+	based_ind : {n : NAT, A :𝒰 n} {a : A, C : {x : A}a ≐ x on A ⟶ 𝒰 n, c : C a (refl a),b : A,
+			p : a ≐ b on A} C b p ❘
+  		= [n,A,a,C,c,b,p] (ind p.x,y,q ⟹ ([C : {z:A}x ≐ z on A ⟶ 𝒰 n,d : C x (refl x)] d) 
+  			to ({C:{z:A}x ≐ z on A ⟶ 𝒰 n}C x (refl x) ⟶ C y q)) C c❙
+	
+	Bool : type ❘ = ENUM 2 ❙
+ 	True : Bool ❘ = CASE 1 ❘ # ⊤ ❙
+ 	False : Bool ❘ = CASE 0 ❘ # ⊥ ❙
+ 	
+ 	u_eqtype : {i : NAT}{A: 𝒰 i} A ⟶ A ⟶ 𝒰 i❘ = [i,A,a,b] a ≐ b on A ❘ # 3 ≐ 4 prec -499 ❙
+ 	// to allow for types of equalities to be inferred rather than given explicitly ❙
+❚
+
+theory HOTT : ?Types =
+	
+	identity_fun : {i: NAT, A : 𝒰 i} A ⟶ A ❘ = [i,A]([x : A] x) ❘ # id 2 ❙
+	
+	homotopy : {i : NAT}{A : 𝒰 i, B : A ⟶ 𝒰 i} ({x:A} B x) ⟶ ({x:A} B x) ⟶ 𝒰 i ❘
+		= [i][A, B][f][g] {x:A} (f x ≐ g x) ❘ # 4 ∼ 5 ❙
+			
+	is_equiv : {i : NAT}{A:𝒰 i,B:𝒰 i} (A ⟶ B) ⟶ 𝒰 i ❘
+		= [i][A,B][f] (Σ g : B ⟶ A . ([x:B] f (g x)) ∼ (id B)) × 
+			(Σ h : B ⟶ A . ([x:A] h (f x)) ∼ (id A)) ❘ # isequiv 4 ❙
+	  	
+	equivalence : {i : NAT}𝒰 i ⟶ 𝒰 i ⟶ 𝒰 i ❘
+	  	= [i][A,B] Σ f : A ⟶ B . isequiv f ❘ # 2 ≃ 3 ❙
+	  
+	univalence : {i : NAT}{A:𝒰 i,B:𝒰 i} equivalence (succ i) (A ≃ B) (A ≐ B) ❙
+❚
+\end{mmtcode}
+\footnotetext{\url{https://gl.mathhub.info/MMT/LFX/blob/master/source/HOTT.mmt}}
+
+\begin{remark}[Higher Inductive Types]
+	One noteworthy aspect in Homotopy Type Theory that is being actively researched is the notion of \emph{higher inductive types} - types that are inductively defined via elements of equality types. The prototypical example is the unit circle:
+	
+	Since in HoTT, elements of an equality type can be thought of as a (homotopical) continuous path between two points, one can imagine defining a unit circle as a single point $a:S_1$ with a \emph{non-trivial} path from $a$ to $a$; that is an element $p:\eqtp aa{S_1}$ distinct from $\refl a$. Using higher inductive types, the unit circle (as a type) $S_1$ is thougt to be \emph{inductively defined / freely generated} from the two declarations $a:S_1$ and $p:\eqtp aa{S_1}$.
+	
+	Unfortunately, no formal specification of higher inductive types in general exists yet. However, once such a specification exists, one can use a structural feature as in \autoref{rem:lf:lfx:induct} (or even the \emph{same} feature) to generate higher inductive types. In the mean time, such a feature can easily serve as a tool to test and experiment with various approaches for formalizing higher inductive types.
+\end{remark}

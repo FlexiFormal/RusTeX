@@ -1,0 +1,9 @@
+\cn{LFX}~\cite{mmtlfx:git} is an \mmt archive that contains various features as extensions of \LF. Two such extensions are already part of the \cn{urtheories} archive~\cite{MMTUR:git}, namely \textsf{PLF} (see \autoref{remark:lf:lfx:plf}) and \textsf{LFS}~\cite{HKR:flexary:14}, that adds flexary operators and sequence arguments.
+
+%The only problem with this occurs when the types of subexpressions \expr{f(T)} need to be inferred during type checking, if \cn f is a polymorphic function, since the typing rule for apply-terms (see Figure \ref{fig:prelim:lf:prodrules}) requires the type of the function to reside in a valid universe. To get around this problem, we can introduce a new rule for applications of polymorphic functions that has a higher priority than the elimination rule of \LF:
+%\[\irule{ \gjudg{\infertype F C} \quad \gjudg{\judgeq C {\prod_{x:A}B} U} \quad \gjudg{\hastype t A} }{\gjudg{\infertype {F t} {B[x/t]} }}
+%\]
+
+\paragraph{} % We will start with $\sum$-types -- a relatively simple typing feature -- as an introduction on how to implement new typing features in \mmt in general. The remaining features in this chapter follow the same general approach.
+
+Many of the features in this chapter are primitives in homotopy type theory, and are hence treated in some detail in \cite{hottbook}. The contribution of this chapter consists, as the previous chapter, in adapting the rules for the typing features covered here to the \mmt framework and their implementation. Together and correspondingly modularly implemented, these features yield a flexible, modular meta logical framework following the \latin approach.

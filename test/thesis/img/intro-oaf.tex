@@ -1,0 +1,44 @@
+\documentclass{standalone}
+\usepackage{tikz,stex,amstext,amssymb}
+\usetikzlibrary{shapes,arrows,mmt}
+\begin{document}
+\begin{tikzpicture}%[scale=0.8]
+ \node (MMT) at (2,1.5) {MMT};
+ \node (L) at (1.2,0.5) {LF};
+ \node (Lx) at (3,0.5) {LF+X};
+ \draw[arrow](MMT) -- (L);
+ \draw[arrow](MMT) -- (Lx);
+ \draw[arrow](L) -- (Lx);
+
+ \draw[fill=red!60] (2,-.5) ellipse (3.2cm and .6cm);
+ \node[color=red] at (-3.3,-.5) {Logics};
+ \node at (2,-.7) {\ldots};
+
+ \draw[fill=blue!60] (0,-2.25) ellipse (1.9cm and .8cm);
+
+ \node (H) at (0,-.5) {HOL Light};
+ \node[color=blue!80] at (-3.5,-1.8) {HOL Light library};
+ \node (B) at (-1,-2.2) {Bool};
+ \node (A) at (1,-2.2) {Arith};
+ \node (E) at (0,-2.7) {\ldots};
+ \draw[arrow](L) -- (H);
+ \draw[arrow](H) -- (B);
+ \draw[arrow](H) -- (A);
+ \draw[arrow](B) -- (A);
+
+ \draw[fill=olive] (4,-2.25) ellipse (1.9cm and .8cm);
+
+ \node (M) at (4,-.5) {PVS};
+ \node[color=olive] at (-3.3,-2.6) {PVS Library};
+ \node (B') at (3.1,-2.2) {booleans};
+ \node (A') at (5.2,-2.2) {reals};
+ \node (E') at (4,-2.7) {\ldots};
+
+ \draw[arrow](Lx) -- (M);
+ \draw[arrow](M) -- (B');
+ \draw[arrow](M) -- (A');
+ \draw[arrow](B') -- (A');
+ \end{tikzpicture}%\lec{$LF+X$: here $X=\cn{Mod}$}
+
+
+\end{document}

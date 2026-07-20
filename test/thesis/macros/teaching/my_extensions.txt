@@ -1,0 +1,1 @@
+option showsection of package assignment switches off section numbers in problem numbers
