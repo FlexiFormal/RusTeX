@@ -1,7 +1,7 @@
 pub mod methods;
 
-use crate::commands::primitives::{PrimitiveIdentifier, PRIMITIVES};
 use crate::commands::TeXCommand;
+use crate::commands::primitives::{PRIMITIVES, PrimitiveIdentifier};
 use crate::commands::{CharOrPrimitive, CommandScope, PrimitiveCommand, ResolvedToken};
 use crate::engine::filesystem::File;
 use crate::engine::filesystem::SourceReference;
@@ -23,8 +23,8 @@ use crate::tex::nodes::{BoxTarget, ListTarget, NodeList, WhatsitFunction, Whatsi
 use crate::tex::numerics::{Skip, TeXDimen};
 use crate::tex::tokens::token_lists::TokenList;
 use crate::tex::tokens::{StandardToken, Token};
-use crate::utils::errors::{TeXError, TeXResult};
 use crate::utils::HMap;
+use crate::utils::errors::{TeXError, TeXResult};
 use either::Either;
 use std::fmt::Display;
 
@@ -388,7 +388,7 @@ pub trait Stomach<ET: EngineTypes /*<Stomach = Self>*/> {
                     limits: None,
                     kernel: MathKernel::Char {
                         char,
-                        style: UnresolvedMathFontStyle::of_fam(0),
+                        style: UnresolvedMathFontStyle::of_fam(17), // use current font
                     },
                 },
             }),
