@@ -1,12 +1,12 @@
 /*! Nodes allowed in math mode */
 use crate::commands::primitives::PRIMITIVES;
+use crate::engine::EngineTypes;
 use crate::engine::filesystem::SourceRef;
 use crate::engine::fontsystem::Font;
 use crate::engine::state::State;
-use crate::engine::EngineTypes;
 use crate::tex::nodes::boxes::{TeXBox, ToOrSpread};
 use crate::tex::nodes::vertical::VNode;
-use crate::tex::nodes::{display_do_indent, Leaders, ListTarget, NodeTrait, NodeType, WhatsitNode};
+use crate::tex::nodes::{Leaders, ListTarget, NodeTrait, NodeType, WhatsitNode, display_do_indent};
 use crate::tex::numerics::NumSet;
 use crate::tex::numerics::{MuSkip, Skip, TeXDimen};
 use crate::tex::tokens::token_lists::TokenList;
@@ -1351,22 +1351,19 @@ impl<ET: EngineTypes> MathGroup<ET> {
         style: MathStyle,
         unresolved: UnresolvedMathFontStyle<ET>,
     ) -> MathFontStyle<ET> {
-        match style.style {
-            MathStyleType::Script => MathFontStyle {
-                style: style.style,
-                cramped: style.cramped,
-                font: state.get_scriptfont(unresolved.fam()).clone(),
-            },
-            MathStyleType::ScriptScript => MathFontStyle {
-                style: style.style,
-                cramped: style.cramped,
-                font: state.get_scriptscriptfont(unresolved.fam()).clone(),
-            },
-            _ => MathFontStyle {
-                style: style.style,
-                cramped: style.cramped,
-                font: state.get_textfont(unresolved.fam()).clone(),
-            },
+        let font = if unresolved.fam() > 15 {
+            state.get_current_font().clone()
+        } else {
+            match style.style {
+                MathStyleType::Script => state.get_scriptfont(unresolved.fam()).clone(),
+                MathStyleType::ScriptScript => state.get_scriptscriptfont(unresolved.fam()).clone(),
+                _ => state.get_textfont(unresolved.fam()).clone(),
+            }
+        };
+        MathFontStyle {
+            style: style.style,
+            cramped: style.cramped,
+            font,
         }
     }
 }
