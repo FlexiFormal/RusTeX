@@ -1761,6 +1761,13 @@ pub(crate) enum ShipoutNodeV {
 }
 impl sealed::Sealed for ShipoutNodeV {}
 impl ShipoutNodeT for ShipoutNodeV {
+    fn has_ink(&self) -> bool {
+        match self {
+            Self::KernSkip(_) => false,
+            Self::Common(c) => c.has_ink(),
+            _ => true,
+        }
+    }
     fn into_nodes(v: Vec<Self>) -> ShipoutNodes {
         ShipoutNodes::V(v)
     }
@@ -1909,6 +1916,20 @@ impl ShipoutNodeH {
 }
 impl sealed::Sealed for ShipoutNodeH {}
 impl ShipoutNodeT for ShipoutNodeH {
+    fn has_ink(&self) -> bool {
+        match self {
+            ShipoutNodeH::KernSkip(..) => false,
+            ShipoutNodeH::LineBreak => false,
+            ShipoutNodeH::Indent(_) => false,
+            ShipoutNodeH::Char(..) => true,
+            ShipoutNodeH::Space => true,
+            ShipoutNodeH::Img(_) => true,
+            ShipoutNodeH::MissingGlyph { .. } => true,
+            ShipoutNodeH::VRule { .. } => true,
+            ShipoutNodeH::Math { .. } => true,
+            ShipoutNodeH::Common(c) => c.has_ink(),
+        }
+    }
     fn into_nodes(v: Vec<Self>) -> ShipoutNodes {
         ShipoutNodes::H(v)
     }
@@ -2056,6 +2077,9 @@ pub(crate) enum ShipoutNodeM {
 }
 impl sealed::Sealed for ShipoutNodeM {}
 impl ShipoutNodeT for ShipoutNodeM {
+    fn has_ink(&self) -> bool {
+        true
+    }
     fn into_nodes(v: Vec<Self>) -> ShipoutNodes {
         ShipoutNodes::Math(v)
     }
@@ -2153,6 +2177,9 @@ impl ShipoutNodeSVG {
 }
 impl sealed::Sealed for ShipoutNodeSVG {}
 impl ShipoutNodeT for ShipoutNodeSVG {
+    fn has_ink(&self) -> bool {
+        true
+    }
     fn into_nodes(v: Vec<Self>) -> ShipoutNodes {
         ShipoutNodes::SVG(v)
     }
@@ -2200,6 +2227,9 @@ pub(crate) enum ShipoutNodeTable {
 
 impl sealed::Sealed for ShipoutNodeTable {}
 impl ShipoutNodeT for ShipoutNodeTable {
+    fn has_ink(&self) -> bool {
+        true
+    }
     fn into_nodes(v: Vec<Self>) -> ShipoutNodes {
         ShipoutNodes::Table(v)
     }
@@ -2244,6 +2274,9 @@ pub(crate) enum ShipoutNodeHRow {
 }
 impl sealed::Sealed for ShipoutNodeHRow {}
 impl ShipoutNodeT for ShipoutNodeHRow {
+    fn has_ink(&self) -> bool {
+        true
+    }
     fn into_nodes(v: Vec<Self>) -> ShipoutNodes {
         ShipoutNodes::HRow(v)
     }
@@ -2277,6 +2310,7 @@ pub(crate) trait ShipoutNodeT: sealed::Sealed + From<Common<Self>> {
     fn get(nodes: ShipoutNodes) -> Option<Vec<Self>>;
     fn uses_previous_color(&self) -> bool;
     fn uses_previous_font(&self) -> bool;
+    fn has_ink(&self) -> bool;
 }
 
 #[derive(Clone, Debug)]
@@ -2344,6 +2378,19 @@ pub(crate) enum Common<T: ShipoutNodeT> {
     },
 }
 impl<T: ShipoutNodeT> Common<T> {
+    pub fn has_ink(&self) -> bool {
+        match self {
+            Self::Literal(_) | Self::SVG { .. } => true,
+            Self::HBox { children, .. } => children.iter().any(|e| e.has_ink()),
+            Self::WithColor { children, .. }
+            | Self::WithAnnotation { children, .. }
+            | Self::WithFont { children, .. }
+            | Self::WithLink { children, .. }
+            | Self::WithMatrix { children, .. } => children.iter().any(|e| e.has_ink()),
+            Self::VBox { children, .. } => children.iter().any(|e| e.has_ink()),
+            Self::PDFDest(_) => false,
+        }
+    }
     fn with_color(c: PDFColor, nodes: Vec<T>) -> Result<Self, Vec<T>> {
         let mut uses_color = false;
         let mut uses_font = false;

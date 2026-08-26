@@ -421,6 +421,7 @@ impl<ET: EngineTypes> Mouth<ET> for DefaultMouth<ET> {
                     let cc: &CategoryCodeScheme<ET::Char> = state.get_catcode_scheme();
                     let endline: Option<ET::Char> = state.get_endline_char();
                     let par = state.get_par_token();
+
                     match s.get_next(aux.memory.cs_interner_mut(), cc, endline, &par) {
                         Ok(Some(t)) => return Ok(Some(t)),
                         Ok(None) => return Ok(Some(self.end_file(aux, state))),

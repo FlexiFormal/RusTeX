@@ -5,7 +5,7 @@ use crate::engine::extension::CSS;
 use crate::engine::{Font, Types};
 use crate::shipout::state::{
     Alignment, CharOrStr, Common, FontData, ShipoutNodeH, ShipoutNodeHRow, ShipoutNodeM,
-    ShipoutNodeSVG, ShipoutNodeTable, ShipoutNodeV, SourceRef,
+    ShipoutNodeSVG, ShipoutNodeT, ShipoutNodeTable, ShipoutNodeV, SourceRef,
 };
 use crate::utils::{Flex, Margin, VecMap, VecSet};
 use std::borrow::Cow;
@@ -28,6 +28,7 @@ pub enum ImageOptions {
     Embed,
 }
 
+#[allow(clippy::struct_excessive_bools)]
 pub struct CompilationDisplay<'a, 'b> {
     pub(crate) width: i32,
     pub(crate) indent: u8,
@@ -41,6 +42,7 @@ pub struct CompilationDisplay<'a, 'b> {
     pub(crate) image: &'a ImageOptions,
     pub(crate) f: &'a mut Formatter<'b>,
     pub(crate) font_info: bool,
+    pub(crate) had_ink: bool,
 }
 
 macro_rules! node {
@@ -259,7 +261,18 @@ impl CompilationDisplay<'_, '_> {
             )?;
         }
         self.f.write_str("\">")?;
-        for c in out {
+        let mut last = 0;
+        for nb in out.iter().rev() {
+            if nb.has_ink() {
+                break;
+            }
+            last += 1;
+        }
+        for c in &out[..out.len() - last] {
+            self.do_v(c, true)?;
+        }
+        self.had_ink = false;
+        for c in &out[out.len() - last..] {
             self.do_v(c, true)?;
         }
         self.f.write_str("\n</body></html>")
@@ -552,6 +565,7 @@ impl CompilationDisplay<'_, '_> {
                 Ok(())
             }
             ShipoutNodeV::KernSkip(m) => {
+                //if self.had_ink => {
                 node!(self !<div class="rustex-vskip" style:{
                 if m.base.is_positive() {
                     style!("min-height"=Self::dim_to_string(m.base));
@@ -576,6 +590,7 @@ impl CompilationDisplay<'_, '_> {
                 }
                 Ok(())
             }
+            //ShipoutNodeV::KernSkip(_) => Ok(()),
             ShipoutNodeV::Common(Common::VBox {
                 sref,
                 info: info @ VBoxInfo::VBox { .. },
@@ -609,6 +624,7 @@ impl CompilationDisplay<'_, '_> {
                 if ht <= 0 {
                     return Ok(());
                 }
+                self.had_ink = true;
                 let bottom = match depth {
                     None => None,
                     Some(d) if d.0 == 0 => None,
@@ -675,6 +691,7 @@ impl CompilationDisplay<'_, '_> {
                 line_skip,
                 ..
             } => {
+                self.had_ink = true;
                 //let lineht = line_skip.factor(&self.font);
                 node!(self !<table class="rustex-halign"
                     style:"--rustex-align-num"=num_cols;
@@ -811,6 +828,7 @@ impl CompilationDisplay<'_, '_> {
                     Some(w) => w.0,
                     None => 26214,
                 };
+                self.had_ink = true;
                 let color = self.color;
                 if height.is_none() && depth.is_none() {
                     node!(self <div class="rustex-vrule" style:{
@@ -848,6 +866,7 @@ impl CompilationDisplay<'_, '_> {
                 Ok(())
             }
             ShipoutNodeH::Char(c) => {
+                self.had_ink = true;
                 if self.attrs.is_empty() && self.styles.is_empty() {
                     Display::fmt(&Escaped(c), self.f)?
                 } else {
@@ -874,41 +893,44 @@ impl CompilationDisplay<'_, '_> {
                 ..
             } => self.math_list(display, sref, children),
 
-            ShipoutNodeH::Img(img) => match (&self.image, &img.img) {
-                (ImageOptions::AsIs, PDFImage::PDF(imgfile)) => {
-                    let width = img.width().0;
-                    let height = img.height().0;
-                    let path = format!("{}-rustex.png", img.filepath.display());
+            ShipoutNodeH::Img(img) => {
+                self.had_ink = true;
+                match (&self.image, &img.img) {
+                    (ImageOptions::AsIs, PDFImage::PDF(imgfile)) => {
+                        let width = img.width().0;
+                        let height = img.height().0;
+                        let path = format!("{}-rustex.png", img.filepath.display());
 
-                    node!(self <img "src"=path;
+                        node!(self <img "src"=path;
                         "width"=Self::dim_to_int(width);
                         "height"=Self::dim_to_int(height);
                     />>);
-                    if !std::path::Path::new(&path).exists() {
-                        let _ = imgfile.save_with_format(path, image::ImageFormat::Png);
+                        if !std::path::Path::new(&path).exists() {
+                            let _ = imgfile.save_with_format(path, image::ImageFormat::Png);
+                        }
+                        Ok(())
                     }
-                    Ok(())
-                }
-                (ImageOptions::AsIs, _) => {
-                    let width = img.width().0;
-                    let height = img.height().0;
-                    node!(self <img "src"=img.filepath.display();
+                    (ImageOptions::AsIs, _) => {
+                        let width = img.width().0;
+                        let height = img.height().0;
+                        node!(self <img "src"=img.filepath.display();
                         "width"=Self::dim_to_int(width);
                         "height"=Self::dim_to_int(height);
                     />>);
-                    Ok(())
-                }
-                (ImageOptions::ModifyURL(f), _) => {
-                    let width = img.width().0;
-                    let height = img.height().0;
-                    node!(self <img "src"=f(&img.filepath);
+                        Ok(())
+                    }
+                    (ImageOptions::ModifyURL(f), _) => {
+                        let width = img.width().0;
+                        let height = img.height().0;
+                        node!(self <img "src"=f(&img.filepath);
                         "width"=Self::dim_to_int(width);
                         "height"=Self::dim_to_int(height);
                     />>);
-                    Ok(())
+                        Ok(())
+                    }
+                    _ => todo!(),
                 }
-                _ => todo!(),
-            },
+            }
             ShipoutNodeH::Indent(i) => {
                 if *i != 0 {
                     node!(self <div class="rustex-parindent" style:"margin-left"=Self::dim_to_string(*i);/>);
@@ -919,6 +941,7 @@ impl CompilationDisplay<'_, '_> {
             ShipoutNodeH::MissingGlyph {
                 char, font_name, ..
             } => {
+                self.had_ink = true;
                 node!(self <span class="rustex-missing-glyph" "title"=format_args!("Missing Glyph {char} in {font_name}");/>);
                 Ok(())
             }
@@ -1030,6 +1053,7 @@ impl CompilationDisplay<'_, '_> {
         c: &ShipoutNodeM,
         cls: Option<MathClass>, /*,cramped:bool */
     ) -> std::fmt::Result {
+        self.had_ink = true;
         match c {
             ShipoutNodeM::Common(Common::Literal(s)) => self.f.write_str(s),
             ShipoutNodeM::Common(Common::WithLink { href, children, .. }) => {
@@ -1365,7 +1389,7 @@ impl CompilationDisplay<'_, '_> {
                     Some(o) => {
                         node!(self <mo "lspace"="0"; "rspace"="0"; class=Self::cls(o); "stretchy"="false"; {Display::fmt(&Escaped(&char.into()), self.f)?}/>);
                     }
-                };
+                }
                 Ok(())
             }
             ShipoutNodeM::Space => {
@@ -1756,6 +1780,7 @@ impl CompilationDisplay<'_, '_> {
         maxy: i32,
         children: &Vec<ShipoutNodeSVG>,
     ) -> std::fmt::Result {
+        self.had_ink = true;
         node!(self <div class="rustex-svg" {node!(self <svg ref=sref
             "width"=Self::dim_to_string(maxx - minx);
             "height"=Self::dim_to_string(maxy - miny);

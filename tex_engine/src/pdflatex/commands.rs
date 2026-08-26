@@ -7,12 +7,12 @@ use super::nodes::{
     PDFImage, PDFLiteral, PDFLiteralOption, PDFNode, PDFObj, PDFOutline, PDFStartLink, PDFXForm,
     PDFXImage,
 };
-use crate::commands::primitives::*;
 use crate::commands::CommandScope;
+use crate::commands::primitives::*;
 use crate::engine::filesystem::{File, FileSystem};
 use crate::engine::fontsystem::Font;
-use crate::engine::gullet::methods::CSOrActiveChar;
 use crate::engine::gullet::Gullet;
+use crate::engine::gullet::methods::CSOrActiveChar;
 use crate::engine::state::State;
 use crate::engine::stomach::Stomach;
 use crate::engine::stomach::TeXMode;
@@ -21,10 +21,10 @@ use crate::pdflatex::{FileWithMD5, FontWithLpRp};
 use crate::prelude::CSHandler;
 use crate::prelude::Character;
 use crate::tex::catcodes::CommandCode;
+use crate::tex::nodes::WhatsitFunction;
 use crate::tex::nodes::horizontal::HNode;
 use crate::tex::nodes::math::MathNode;
 use crate::tex::nodes::vertical::VNode;
-use crate::tex::nodes::WhatsitFunction;
 use crate::tex::numerics::NumSet;
 use crate::tex::tokens::token_lists::Otherize;
 use crate::tex::tokens::{StandardToken, Token};
@@ -896,8 +896,11 @@ where
             if engine.read_keyword(b"attr")? {
                 // TODO
             }
+            if engine.read_keyword(b"file")? {
+                // TODO
+            }
             let mut str = String::new();
-            engine.read_braced_string(false, true, tk, &mut str)?;
+            engine.read_braced_string(true, true, tk, &mut str)?;
             engine.aux.extension.pdfobjs().push(PDFObj(str));
             Ok(engine.aux.extension.pdfobjs().len() - 1)
         }
@@ -1381,6 +1384,29 @@ where
     engine.state.set_par_token(par);
     Ok(())
 }
+pub fn pdfnobuiltintounicode<ET: EngineTypes>(
+    engine: &mut EngineReferences<ET>,
+    tk: ET::Token,
+) -> TeXResult<(), ET>
+where
+    ET::Extension: PDFExtension<ET>,
+    ET::CustomNode: From<PDFNode<ET>>,
+{
+    let _ = engine.read_font(false, &tk)?;
+    Ok(())
+}
+pub fn pdffontattr<ET: EngineTypes>(
+    engine: &mut EngineReferences<ET>,
+    tk: ET::Token,
+) -> TeXResult<(), ET>
+where
+    ET::Extension: PDFExtension<ET>,
+    ET::CustomNode: From<PDFNode<ET>>,
+{
+    let _ = engine.read_font(false, &tk)?;
+    let _ = engine.read_braced_string(true, false, &tk, &mut String::new())?;
+    Ok(())
+}
 
 const PRIMITIVE_INTS: &[&str] = &[
     "pdfadjustspacing",
@@ -1487,6 +1513,13 @@ where
         pdfpagesattr,
         Some(|_, _| Ok(Vec::new())),
     );
+    register_unexpandable(
+        engine,
+        "pdfnobuiltintounicode",
+        CommandScope::Any,
+        pdfnobuiltintounicode,
+    );
+    register_unexpandable(engine, "pdffontattr", CommandScope::Any, pdffontattr);
     register_unexpandable(engine, "partokenname", CommandScope::Any, partokenname);
     register_unexpandable(engine, "pdfrefobj", CommandScope::Any, pdfrefobj);
     register_int(engine, "pdflastobj", pdflastobj, None);
@@ -1574,13 +1607,11 @@ where
     cmtodo!(engine, pdfcopyfont);
     cmtodo!(engine, pdfendthread);
     cmtodo!(engine, pdffakespace);
-    cmtodo!(engine, pdffontattr);
     cmtodo!(engine, pdfinterwordspaceoff);
     cmtodo!(engine, pdfinterwordspaceon);
     cmtodo!(engine, pdfmapfile);
     cmtodo!(engine, pdfmapline);
     cmtodo!(engine, pdfnames);
-    cmtodo!(engine, pdfnobuiltintounicode);
     cmtodo!(engine, pdfnoligatures);
     cmtodo!(engine, pdfrunninglinkoff);
     cmtodo!(engine, pdfrunninglinkon);

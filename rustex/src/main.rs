@@ -19,14 +19,41 @@ profile 1:38 / 1:38     ==> 1:43
 thesis  0:15
  */
 fn main() {
-    run();
+    //run();
     //profile()
     //thesis();
     //test()
-    //temp_test()
+    temp_test()
     //notes()
     //test2()
-    //test_all()
+    //test_snippets()
+}
+
+#[test]
+fn test_snippets() {
+    let filedir = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../test/snippets"));
+    for d in std::fs::read_dir(filedir).expect("wut") {
+        let d = d.expect("wut");
+        let path = d.path();
+        if path.extension().and_then(|e| e.to_str()) == Some("tex") {
+            println!("\n\n{}\n", path.display());
+            let mut ret = RusTeXEngine::do_file(path.to_str().unwrap(), Settings::default());
+            match ret.error.take() {
+                None => {
+                    let out = filedir.join(format!("{}.html", d.file_name().display()));
+                    ret.write_out(&out).unwrap();
+                }
+                Some((e, _)) => {
+                    println!("Errored");
+                    panic!(
+                        "Errored: {}\n{}\n\n", //Missing glyphs: {}\nMissing web fonts: {}",
+                        path.display(),
+                        e
+                    );
+                }
+            }
+        }
+    }
 }
 
 fn test_all() {
@@ -150,12 +177,13 @@ fn test_all() {
     );
 }
 
+#[test]
 fn test() {
     //env_logger::builder().filter_level(log::LevelFilter::Info).try_init();
     let ret = RusTeXEngine::do_file(
-        "/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/test.tex",
+        concat!(env!("CARGO_MANIFEST_DIR"), "/../test/test.tex"),
         Settings {
-            verbose: false,
+            verbose: true,
             log: true,
             sourcerefs: true,
             image_options: Default::default(),
@@ -164,11 +192,15 @@ fn test() {
     );
     let s = ret.to_string().replace(
         "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex.css",
-        "file:///home/jazzpirate/work/Software/FlexiFormal/RusTeX/rustex/src/resources/rustex.css",
+        concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../rustex/src/resources/rustex.css"
+        ),
     );
-    let mut f = std::fs::File::create(Path::new(
-        "/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/test.html",
-    ))
+    let mut f = std::fs::File::create(Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../test/test.html"
+    )))
     .expect("bug");
     f.write_all(s.as_bytes()).expect("bug");
 }
@@ -179,7 +211,7 @@ fn temp_test() {
     let ret = RusTeXEngine::do_file(
         //"/home/jazzpirate/work/MathHub/courses/UMR/GdMA/course/source/course/sec/Vorwort.de.tex",
         //"/home/jazzpirate/work/MathHub/Papers/25-CICM-MathMap/source/paper.tex",
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../test/umlaut.tex"),
+        "/home/jazzpirate/work/MathHub/Papers/26-RVI-Legal-Domain-Model/source/paper.tex",
         //"/home/jazzpirate/work/MathHub/FTML/math/source/test.tex",
         //"/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/tmptest.tex",
         Settings {
@@ -194,7 +226,7 @@ fn temp_test() {
     //std::fs::write("/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/numtest.html", &ret.out).unwrap();
     ret.write_out(Path::new(
         //"/home/jazzpirate/rustex.out.html"
-        concat!(env!("CARGO_MANIFEST_DIR"), "/../test/out.html"),
+        "/home/jazzpirate/work/MathHub/Papers/26-RVI-Legal-Domain-Model/source/out.html",
         //"/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/tmptest.html", //"/home/jazzpirate/work/MathHub/courses/UMR/GdMA/course/source/course/sec/Vorwort.de.tex.html"
     ))
     .unwrap();

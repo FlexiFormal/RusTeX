@@ -14,6 +14,8 @@ use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use stomach::RusTeXStomach;
 use tex_engine::commands::{Macro, TeXCommand};
+use tex_engine::engine::EngineExtension;
+use tex_engine::engine::TeXEngine;
 use tex_engine::engine::filesystem::FileSystem;
 use tex_engine::engine::filesystem::{File, SourceReference, VirtualFile};
 use tex_engine::engine::fontsystem::FontSystem;
@@ -24,18 +26,16 @@ use tex_engine::engine::mouth::Mouth;
 use tex_engine::engine::state::State as OrigState;
 use tex_engine::engine::stomach::Stomach as StomachT;
 use tex_engine::engine::utils::memory::MemoryManager;
-use tex_engine::engine::EngineExtension;
-use tex_engine::engine::TeXEngine;
 use tex_engine::engine::{DefaultEngine, EngineAux, EngineReferences, EngineTypes};
-use tex_engine::pdflatex::nodes::PDFColor;
 use tex_engine::pdflatex::PDFTeXEngine;
+use tex_engine::pdflatex::nodes::PDFColor;
 use tex_engine::prelude::*;
 use tex_engine::tex;
 use tex_engine::tex::catcodes::AT_LETTER_SCHEME;
 use tex_engine::tex::numerics::{Dim32, Mu};
 use tex_engine::tex::tokens::CompactToken;
-use tex_engine::utils::errors::{ErrorThrower, TeXError, TeXResult};
 use tex_engine::utils::HMap;
+use tex_engine::utils::errors::{ErrorThrower, TeXError, TeXResult};
 
 pub mod commands;
 pub(crate) mod extension;
@@ -171,6 +171,7 @@ impl Display for CompilationResult {
             font_data: &self.font_data,
             image: &self.img,
             font_info: self.font_info,
+            had_ink: false,
             f,
         };
         dsp.display(

@@ -737,7 +737,7 @@ impl<ET: EngineTypes> EngineReferences<'_, ET> {
                 Some(t) => match t.command_code() {
                     CommandCode::BeginGroup => break,
                     CommandCode::Space if skip_ws => (),
-                    _ => {
+                    cc => {
                         TeXError::missing_begingroup(self.aux, self.state, self.mouth)?;
                         break;
                     }
