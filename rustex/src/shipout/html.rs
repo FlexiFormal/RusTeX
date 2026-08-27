@@ -115,6 +115,13 @@ macro_rules! node {
                 write!($self.f,"{}:{};",$a,$v)?;
             }};
         }
+        macro_rules! height {
+            ($v:expr) => {{
+                style!("height"=$v);
+                style!("max-height"=$v);
+                style!("min-height"=$v);
+            }}
+        }
         #[allow(unused_macros)]
         macro_rules! width {
             ($v:expr) => {
@@ -633,14 +640,14 @@ impl CompilationDisplay<'_, '_> {
                 let color = self.color;
 
                 node!(self !<div class="rustex-hrule" style:{
-                style!("height"=Self::dim_to_string(ht));
+                height!(Self::dim_to_string(ht));
                 match width {
                     None => style!("min-width"="100%"),
                     Some(w) => style!("--rustex-scale-width"=(w.0 as f32) / (self.width as f32))
                 }
             }{node!(self !<div style:{
                 style!("background"=color);
-                style!("height"=Self::dim_to_string(ht));
+                height!(Self::dim_to_string(ht));
                 if let Some(b) = bottom {
                     style!("margin-bottom"=Self::dim_to_string(b));
                 }
@@ -849,6 +856,8 @@ impl CompilationDisplay<'_, '_> {
                         Some(depth.map(|d| d.0).unwrap_or(0))
                     };
                     node!(self <div class="rustex-vrule-container"
+                    style:"max-height"=Self::dim_to_string(ht);
+                    style:"min-height"=Self::dim_to_string(ht);
                     style:"height"=Self::dim_to_string(ht);
                     style:"--rustex-this-width"=Self::dim_to_string(wd);
                     {node!(self <div style:{
@@ -856,7 +865,7 @@ impl CompilationDisplay<'_, '_> {
                         match dp {
                             Some(dp) => style!("margin-bottom"=Self::dim_to_string(-dp)),
                             None => {
-                                style!("height"=format_args!("calc(0.5ex + {})",Self::dim_to_string(ht)));
+                                height!(format_args!("calc(0.5ex + {})",Self::dim_to_string(ht)));
                                 style!("margin-bottom"="-0.5ex");
                             }
                         }
@@ -1843,6 +1852,8 @@ impl CompilationDisplay<'_, '_> {
                 self.do_indent()?;
                 node!(self !<foreignObject class="rustex-foreign"
                 style:"width"=Self::dim_to_string(wd);
+                style:"max-height"=Self::dim_to_string(ht);
+                style:"min-height"=Self::dim_to_string(ht);
                 style:"height"=Self::dim_to_string(ht);
                 style:"translate"=format_args!("0 {}",Self::dim_to_string(-ht));
                 {node!(self <div
@@ -1962,7 +1973,7 @@ impl CompilationDisplay<'_, '_> {
                 let cls = if inh {"rustex-box-hhc"} else {"rustex-box-vhc"};
                 node!(slf <div class=cls; style:{
                     if ht >= 0 {
-                        style!("height"=Self::dim_to_string(ht));
+                        height!(Self::dim_to_string(ht));
                         if let Some(dp) = ass_dp {
                             style!("margin-bottom"=Self::dim_to_string(dp));
                         }
@@ -2030,7 +2041,7 @@ impl CompilationDisplay<'_, '_> {
                     //?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
                     style:{
                         if ass_height.is_some() {
-                            style!("height"="0");
+                            style!("max-height"="0");
                         }
                         if let Some(w) = ass_width {
                             style!("width"=Self::dim_to_string(w));
@@ -2039,7 +2050,7 @@ impl CompilationDisplay<'_, '_> {
                     {
                         if let Some(t) = to {
                             node!(slf <div class="rustex-vbox-to" style:{
-                                style!("height"=Self::dim_to_string(t));
+                                height!(Self::dim_to_string(t));
                             } {
                                 for c in children {
                                     slf.do_v(c,true)?;
@@ -2062,7 +2073,7 @@ impl CompilationDisplay<'_, '_> {
                     node!(slf <div class=cls; style:{
                         style!("width"="fit-content;");
                         if let Some(ht) = ass_height {
-                            style!("height"=Self::dim_to_string(ht));
+                            height!(Self::dim_to_string(ht));
                         }
                         if let Some(dp) = ass_dp {
                             style!("margin-bottom"=Self::dim_to_string(dp));
@@ -2130,7 +2141,7 @@ impl CompilationDisplay<'_, '_> {
                             style!("margin-top"=Self::dim_to_string(-dp));
                         }
                         if ass_height.is_some() {
-                            style!("height"="0");
+                            style!("max-height"="0");
                         }
                         if let Some(w) = ass_width {
                             style!("width"=Self::dim_to_string(w));
@@ -2139,7 +2150,7 @@ impl CompilationDisplay<'_, '_> {
                     {
                         if let Some(t) = to {
                             node!(slf <div class="rustex-vbox-to" style:{
-                                style!("height"=Self::dim_to_string(t));
+                                height!(Self::dim_to_string(t));
                             } {
                                 for c in children {
                                     slf.do_v(c,true)?;
@@ -2162,9 +2173,9 @@ impl CompilationDisplay<'_, '_> {
                     node!(slf <div class=cls; style:{
                         style!("width"="fit-content;");
                         if let Some(ht) = ass_height {
-                            style!("height"=Self::dim_to_string(ht));
+                            height!(Self::dim_to_string(ht));
                         } else if let Some(ht) = orig_height {
-                            style!("height"=Self::dim_to_string(ht));
+                            height!(Self::dim_to_string(ht));
                         }
                         if let Some(dp) = ass_dp {
                             style!("margin-bottom"=Self::dim_to_string(dp));

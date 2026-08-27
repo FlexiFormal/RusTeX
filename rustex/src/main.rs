@@ -19,11 +19,11 @@ profile 1:38 / 1:38     ==> 1:43
 thesis  0:15
  */
 fn main() {
-    //run();
+    run();
     //profile()
     //thesis();
     //test()
-    temp_test()
+    //temp_test()
     //notes()
     //test2()
     //test_snippets()
@@ -40,8 +40,20 @@ fn test_snippets() {
             let mut ret = RusTeXEngine::do_file(path.to_str().unwrap(), Settings::default());
             match ret.error.take() {
                 None => {
-                    let out = filedir.join(format!("{}.html", d.file_name().display()));
-                    ret.write_out(&out).unwrap();
+                    //let out = filedir.join(format!("{}.html", d.file_name().display()));
+                    //ret.write_out(&out).unwrap();
+                    let s = ret.to_string().replace(
+                        "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex.css",
+                        concat!(
+                            env!("CARGO_MANIFEST_DIR"),
+                            "/../rustex/src/resources/rustex.css"
+                        ),
+                    );
+                    let mut f = std::fs::File::create(
+                        filedir.join(format!("{}.html", d.file_name().display())),
+                    )
+                    .expect("bug");
+                    f.write_all(s.as_bytes()).expect("bug");
                 }
                 Some((e, _)) => {
                     println!("Errored");
@@ -245,11 +257,25 @@ fn thesis() {
             insert_font_info: false,
         },
     );
-    ret.write_out(Path::new(concat!(
+    let s = ret.to_string().replace(
+        "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex.css",
+        concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../rustex/src/resources/rustex.css"
+        ),
+    );
+    /*ret.write_out(Path::new(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/../test/thesis.html"
     )))
-    .unwrap();
+    .unwrap();*/
+
+    let mut f = std::fs::File::create(Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../test/thesis.html"
+    )))
+    .expect("bug");
+    f.write_all(s.as_bytes()).expect("bug");
 }
 
 fn notes() {
