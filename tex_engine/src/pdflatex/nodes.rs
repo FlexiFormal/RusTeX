@@ -765,8 +765,11 @@ pub fn pdf_as_image<ET: EngineTypes, E: PDFExtension<ET>>(
 }
 
 #[cfg(not(feature = "pdfium"))]
-pub fn pdf_as_image<ET: EngineTypes, E: PDFExtension<ET>>(_path: &Path, _ext: &mut E) -> PDFImage {
-    PDFImage::None
+pub fn pdf_as_image<ET: EngineTypes, E: PDFExtension<ET>>(
+    _path: &Path,
+    _ext: &mut E,
+) -> Result<PDFImage, String> {
+    Ok(PDFImage::None)
 }
 
 #[derive(Debug, Clone)]
