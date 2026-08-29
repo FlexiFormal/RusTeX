@@ -108,8 +108,4 @@ impl PDFExtension<Types> for RusTeXExtension {
     fn pdfannots(&mut self) -> &mut Vec<PDFAnnot<Types>> {
         self.pdf.pdfannots()
     }
-
-    fn pdfium_direct(&mut self) -> &mut Option<Result<Pdfium, String>> {
-        self.pdf.pdfium_direct()
-    }
 }

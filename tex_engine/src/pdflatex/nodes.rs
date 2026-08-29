@@ -470,9 +470,6 @@ const PDFIUM_NAME: &str = "pdfium.dll";
 const PDFIUM_NAME: &str = "libpdfium.so";
 
 #[cfg(feature = "pdfium")]
-static PDFIUM_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
-
-#[cfg(feature = "pdfium")]
 fn download_pdfium(lib_dir: &std::path::Path) {
     const BASE_URL: &str =
         "https://github.com/bblanchon/pdfium-binaries/releases/download/chromium";
@@ -540,15 +537,14 @@ pub trait PDFExtension<ET: EngineTypes>: EngineExtension<ET> {
     fn pdfannots(&mut self) -> &mut Vec<PDFAnnot<ET>>;
     fn pdfxforms(&mut self) -> &mut Vec<PDFXForm<ET>>;
     fn pdfximages(&mut self) -> &mut Vec<PDFXImage<ET>>;
-    #[cfg(feature = "pdfium")]
-    fn pdfium_direct(&mut self) -> &mut Option<Result<pdfium_render::prelude::Pdfium, String>>;
 
     #[cfg(feature = "pdfium")]
+    #[allow(clippy::single_match_else)]
     fn pdfium(&mut self) -> Result<&pdfium_render::prelude::Pdfium, &str> {
         use pdfium_render::prelude::*;
-        fn load_pdfium() -> Result<pdfium_render::prelude::Pdfium, String> {
-            let lock = PDFIUM_LOCK.lock();
-            match Pdfium::bind_to_system_library() {
+
+        static GLOBAL_PDFIUM: std::sync::LazyLock<Result<pdfium_render::prelude::Pdfium, String>> =
+            std::sync::LazyLock::new(|| match Pdfium::bind_to_system_library() {
                 Ok(b) => Ok(Pdfium::new(b)),
                 _ => {
                     let Some(lib_dir) = std::env::current_exe()
@@ -574,18 +570,10 @@ pub trait PDFExtension<ET: EngineTypes>: EngineExtension<ET> {
                             ));
                         }
                     };
-                    drop(lock);
                     Ok(Pdfium::new(pdfium))
                 }
-            }
-        }
-        match self.pdfium_direct() {
-            Some(p) => p.as_ref().map_err(|s| &**s),
-            r => {
-                *r = Some(load_pdfium());
-                r.as_ref().expect("unreachable").as_ref().map_err(|s| &**s)
-            }
-        }
+            });
+        GLOBAL_PDFIUM.as_ref().map_err(|s| &**s)
     }
 }
 
@@ -598,8 +586,6 @@ pub struct MinimalPDFExtension<ET: EngineTypes> {
     pdfxforms: Vec<PDFXForm<ET>>,
     pdfximages: Vec<PDFXImage<ET>>,
     pdfannots: Vec<PDFAnnot<ET>>,
-    #[cfg(feature = "pdfium")]
-    pdfium: Option<Result<pdfium_render::prelude::Pdfium, String>>,
 }
 impl<ET: EngineTypes> EngineExtension<ET> for MinimalPDFExtension<ET> {
     fn new(_memory: &mut MemoryManager<ET::Token>) -> Self {
@@ -612,8 +598,6 @@ impl<ET: EngineTypes> EngineExtension<ET> for MinimalPDFExtension<ET> {
             pdfannots: Vec::new(),
             pdfxforms: Vec::new(),
             pdfximages: Vec::new(),
-            #[cfg(feature = "pdfium")]
-            pdfium: None,
         }
     }
 }
@@ -648,11 +632,6 @@ impl<ET: EngineTypes> PDFExtension<ET> for MinimalPDFExtension<ET> {
 
     fn pdfximages(&mut self) -> &mut Vec<PDFXImage<ET>> {
         &mut self.pdfximages
-    }
-
-    #[cfg(feature = "pdfium")]
-    fn pdfium_direct(&mut self) -> &mut Option<Result<pdfium_render::prelude::Pdfium, String>> {
-        &mut self.pdfium
     }
 }
 
