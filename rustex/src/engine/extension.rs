@@ -3,8 +3,8 @@ use crate::shipout::state::ShipoutState;
 use crate::utils::{VecMap, VecSet};
 use pdfium_render::prelude::Pdfium;
 use tex_engine::commands::Macro;
-use tex_engine::engine::utils::memory::MemoryManager;
 use tex_engine::engine::EngineExtension;
+use tex_engine::engine::utils::memory::MemoryManager;
 use tex_engine::pdflatex::nodes::{
     MinimalPDFExtension, PDFAnnot, PDFColor, PDFExtension, PDFObj, PDFXForm, PDFXImage,
 };
@@ -109,7 +109,7 @@ impl PDFExtension<Types> for RusTeXExtension {
         self.pdf.pdfannots()
     }
 
-    fn pdfium_direct(&mut self) -> &mut Option<Option<Pdfium>> {
+    fn pdfium_direct(&mut self) -> &mut Option<Result<Pdfium, String>> {
         self.pdf.pdfium_direct()
     }
 }
