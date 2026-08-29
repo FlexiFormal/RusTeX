@@ -125,11 +125,11 @@ macro_rules! node {
         #[allow(unused_macros)]
         macro_rules! width {
             ($v:expr) => {
-                if $v == 0 {style!("width"="0");} else if $v != $self.width {
+                if $v == 0 {style!("max-width"="0");} else if $v != $self.width {
                     needs_span = Some($self.width);
-                    let pctg = $v as f32 / ($self.width as f32);
+                    let pctg = $v as f64 / ($self.width as f64);
                     $self.width = $v;
-                    style!("--rustex-scale-width"=format_args!("{:.2}",pctg));
+                    style!("--rustex-scale-width"=format_args!("{:.3}",pctg));
                 }
             }
         }
@@ -680,9 +680,9 @@ impl CompilationDisplay<'_, '_> {
                         style!("margin-right"=Self::dim_to_string(right_skip.base))
                     }
                     match alignment {
-                        Alignment::L => style!("text-align"="left"),
-                        Alignment::C => style!("text-align"="center"),
-                        Alignment::R => style!("text-align"="right"),
+                        Alignment::L => {style!("text-align"="left");style!("text-align-last"="left");},
+                        Alignment::C => {style!("text-align"="center");style!("text-align-last"="center");},
+                        Alignment::R => {style!("text-align"="right");style!("text-align-align"="right");},
                         _ => ()
                     }
                     width!(*width);
@@ -818,13 +818,13 @@ impl CompilationDisplay<'_, '_> {
                 info: info @ VBoxInfo::VBox { .. },
                 children,
                 ..
-            }) => self.do_vbox(sref, info, children, true, true, false),
+            }) => self.do_vbox(sref, info, children, true, in_para, false),
             ShipoutNodeH::Common(Common::VBox {
                 sref,
                 info: info @ VBoxInfo::VTop { .. },
                 children,
                 ..
-            }) => self.do_vtop(sref, info, children, true, true, false),
+            }) => self.do_vtop(sref, info, children, true, in_para, false),
             ShipoutNodeH::VRule {
                 width,
                 height,
@@ -1875,12 +1875,12 @@ impl CompilationDisplay<'_, '_> {
         match (raised, left) {
             (Some(r), None) => {
                 node!(self <div class="rustex-raise" style:"--rustex-raise"=Self::dim_to_string(r.0);{
-                    then(self)?
+                    then(self)?;
                 }/>);
             }
             (None, Some(ml)) => {
                 node!(self <div class="rustex-moveleft" style:"--rustex-moveleft"=Self::dim_to_string(ml.0);{
-                    then(self)?
+                    then(self)?;
                 }/>);
             }
             _ => then(self)?, // both are impossible anyway
@@ -1906,6 +1906,7 @@ impl CompilationDisplay<'_, '_> {
             Some(ToOrSpread::Spread(to)) => Some(to.0 + orig_width.unwrap_or_default()),
             _ => None,
         };
+        /*
         let cls = match (ass_width, inh) {
             (Some(w), true) if w > 0 => "rustex-box-hh rustex-scalewidth",
             (_, true) => "rustex-box-hh",
@@ -1915,13 +1916,13 @@ impl CompilationDisplay<'_, '_> {
         self.moveraise(info.moved_left(), info.raised(), move |slf| {
             let inner = |slf:&mut Self| {
                 node!(slf <div class=cls; ref=sref
-                    //?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
-                    //?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
-                    //?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
-                    //?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
-                    //?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
-                    //?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
-                    //?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
+                    ?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
+                    ?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
+                    ?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
+                    ?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
+                    ?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
+                    ?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
+                    ?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
                     style:{
                         if let Some(wd) = ass_width {
                             if wd >= 0 {
@@ -2002,6 +2003,57 @@ impl CompilationDisplay<'_, '_> {
             }
             Ok(())
         })
+         */
+        let cls = if ass_width.is_some_and(|w| w != 0) {
+            if ass_height.is_some() || ass_dp.is_some() {
+                "rustex-hbox-outer rustex-scalewidth rustex-dims"
+            } else {
+                "rustex-hbox-outer rustex-scalewidth"
+            }
+        } else if ass_height.is_some() || ass_dp.is_some() {
+            "rustex-hbox-outer rustex-dims"
+        } else {
+            "rustex-hbox-outer"
+        };
+        self.moveraise(info.moved_left(), info.raised(), move |slf| {
+            node!(slf <div class=cls; ref=sref
+                ?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
+                ?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
+                ?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
+                ?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
+                ?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
+                ?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
+                ?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
+                style: {
+                    if let Some(wd) = ass_width {
+                        width!(wd);
+                    }
+                    if let Some(ht) = ass_height {
+                        style!("--rustex-ht"=Self::dim_to_string(ht));
+                    }
+                    if let Some(dp) = ass_dp {
+                        style!("--rustex-dp"=Self::dim_to_string(dp));
+                    }
+                }
+                {
+                    let cls = if to.is_some() {"rustex-hbox rustex-scalewidth"} else {"rustex-hbox"};
+                    node!(slf <div class=cls;
+                        style:{
+                            if let Some(wd) = to {
+                                width!(wd);
+                            }
+                        }
+                        {
+                            for c in children {
+                                slf.do_h(c,false,true)?;
+                            }
+                        }
+                    />);
+                }
+
+             />);
+            Ok::<_, std::fmt::Error>(())
+        })
     }
 
     fn do_vbox(
@@ -2013,11 +2065,10 @@ impl CompilationDisplay<'_, '_> {
         in_para: bool,
         top: bool,
     ) -> std::fmt::Result {
-        let cls = if inh {
-            "rustex-box-hv"
-        } else {
-            "rustex-box-vv"
-        };
+        /*if inh || in_para {
+            node!(self <div class="rustex-vinh" {self.do_vbox(sref,info,children,false,false,false)?;}/>);
+            return Ok(());
+        }*/
         let ass_width = info.assigned_width().map(|d| d.0);
         let orig_width = info.computed_width().map(|d| d.0);
         let ass_height = info.assigned_height().map(|d| d.0);
@@ -2029,20 +2080,26 @@ impl CompilationDisplay<'_, '_> {
             Some(ToOrSpread::Spread(to)) => Some(to.0 + orig_height.unwrap_or_default()),
             _ => None,
         };
+        /*
+        let cls = if inh {
+            "rustex-box-hv"
+        } else {
+            "rustex-box-vv"
+        };
         self.moveraise(info.moved_left(), info.raised(), move |slf| {
             let inner = move |slf: &mut Self| {
                 node!(slf <div class=cls; ref=sref
-                    //?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
-                    //?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
-                    //?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
-                    //?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
-                    //?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
-                    //?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
-                    //?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
+                    ?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
+                    ?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
+                    ?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
+                    ?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
+                    ?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
+                    ?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
+                    ?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
                     style:{
-                        if ass_height.is_some() {
+                        /*if ass_height.is_some() {
                             style!("max-height"="0");
-                        }
+                        }*/
                         if let Some(w) = ass_width {
                             style!("width"=Self::dim_to_string(w));
                         }
@@ -2096,6 +2153,59 @@ impl CompilationDisplay<'_, '_> {
                 inner(slf)
             }
         })
+         */
+        let cls = if ass_height.is_some() || ass_dp.is_some() {
+            "rustex-vbox-outer rustex-dims"
+        } else {
+            "rustex-vbox-outer"
+        };
+        self.moveraise(info.moved_left(), info.raised(), move |slf| {
+            node!(slf <div class=cls; ref=sref
+                ?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
+                ?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
+                ?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
+                ?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
+                ?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
+                ?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
+                ?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
+                style:{
+                    if let Some(ht) = ass_height {
+                        style!("--rustex-ht"=Self::dim_to_string(ht));
+                    }
+                    if let Some(dp) = ass_dp {
+                        style!("--rustex-dp"=Self::dim_to_string(dp));
+                    }
+                }
+                {
+                    let cls = if ass_width.is_some() {
+                        "rustex-vbox rustex-scalewidth"
+                    } else {
+                        "rustex-vbox"
+                    };
+                    node!(slf <div class=cls;
+                        style:{
+                            if let Some(wd) = ass_width {
+                                if wd >= 0 {
+                                    width!(wd);
+                                } else {
+                                    style!("max-width"=0);
+                                    style!("margin-right"=Self::dim_to_string(wd));
+                                }
+                            }
+                            if let Some(ht) = to {
+                                height!(Self::dim_to_string(ht));
+                            }
+                        }
+                        {
+                            for c in children {
+                                slf.do_v(c,false)?;
+                            }
+                        }
+                    />);
+                }
+             />);
+            Ok::<_, std::fmt::Error>(())
+        })
     }
 
     fn do_vtop(
@@ -2107,11 +2217,6 @@ impl CompilationDisplay<'_, '_> {
         in_para: bool,
         top: bool,
     ) -> std::fmt::Result {
-        let cls = if inh {
-            "rustex-box-ht"
-        } else {
-            "rustex-box-vt"
-        };
         let ass_width = info.assigned_width().map(|d| d.0);
         let orig_width = info.computed_width().map(|d| d.0);
         let ass_height = info.assigned_height().map(|d| d.0);
@@ -2124,81 +2229,120 @@ impl CompilationDisplay<'_, '_> {
             _ => None,
         };
 
+        /*
+           let cls = if inh {
+               "rustex-box-ht"
+           } else {
+               "rustex-box-vt"
+           };
+
+           self.moveraise(info.moved_left(), info.raised(), move |slf| {
+               let inner = move |slf: &mut Self| {
+                   node!(slf <div class=cls; ref=sref
+                       ?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
+                       ?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
+                       ?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
+                       ?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
+                       ?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
+                       ?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
+                       ?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
+                       style:{
+                           if let Some(dp) = orig_dp {
+                               style!("top"=Self::dim_to_string(dp));
+                               style!("margin-bottom"=Self::dim_to_string(dp));
+                               style!("margin-top"=Self::dim_to_string(-dp));
+                           }
+                           if ass_height.is_some() {
+                               style!("max-height"="0");
+                           }
+                           if let Some(w) = ass_width {
+                               style!("width"=Self::dim_to_string(w));
+                           }
+                       }
+                       {
+                           if let Some(t) = to {
+                               node!(slf <div class="rustex-vbox-to" style:{
+                                   height!(Self::dim_to_string(t));
+                               } {
+                                   for c in children {
+                                       slf.do_v(c,true)?;
+                                   }
+                               }/>)
+                           } else {
+                               for c in children {
+                                   slf.do_v(c,true)?;
+                               }
+                           }
+                           if to.is_some() {
+                               node!(slf <div class="rustex-box-after-v"/>);
+                           }
+                       }
+                   />);
+                   Ok(())
+               };
+               let inner = move |slf: &mut Self| {
+                   if ass_height.is_some() || ass_dp.is_some() {
+                       node!(slf <div class=cls; style:{
+                           style!("width"="fit-content;");
+                           if let Some(ht) = ass_height {
+                               height!(Self::dim_to_string(ht));
+                           } else if let Some(ht) = orig_height {
+                               height!(Self::dim_to_string(ht));
+                           }
+                           if let Some(dp) = ass_dp {
+                               style!("margin-bottom"=Self::dim_to_string(dp));
+                           } else if let Some(dp) = orig_dp {
+                               style!("margin-bottom"=Self::dim_to_string(dp));
+                           }
+                       } {
+                           inner(slf)?;
+                           if ass_height.is_some() {
+                               node!(slf <div class="rustex-box-after-v"/>);
+                           }
+                       }/>);
+                       Ok(())
+                   } else {
+                       inner(slf)
+                   }
+               };
+               if in_para {
+                   node!(slf <div class="rustex-box-hh" {inner(slf)?;} />);
+                   Ok(())
+               } else {
+                   inner(slf)
+               }
+           })
+        */
         self.moveraise(info.moved_left(), info.raised(), move |slf| {
-            let inner = move |slf: &mut Self| {
-                node!(slf <div class=cls; ref=sref
-                    //?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
-                    //?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
-                    //?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
-                    //?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
-                    //?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
-                    //?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
-                    //?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
-                    style:{
-                        if let Some(dp) = orig_dp {
-                            style!("top"=Self::dim_to_string(dp));
-                            style!("margin-bottom"=Self::dim_to_string(dp));
-                            style!("margin-top"=Self::dim_to_string(-dp));
-                        }
-                        if ass_height.is_some() {
-                            style!("max-height"="0");
-                        }
-                        if let Some(w) = ass_width {
-                            style!("width"=Self::dim_to_string(w));
-                        }
-                    }
-                    {
-                        if let Some(t) = to {
-                            node!(slf <div class="rustex-vbox-to" style:{
-                                height!(Self::dim_to_string(t));
-                            } {
-                                for c in children {
-                                    slf.do_v(c,true)?;
+            node!(slf <div class="rustex-vtop-outer" ref=sref
+                ?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
+                ?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
+                ?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
+                ?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
+                ?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
+                ?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
+                ?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
+                {
+                    node!(slf <div class="rustex-vtop"
+                        style:{
+                            if let Some(wd) = ass_width {
+                                if wd >= 0 {
+                                    width!(wd);
+                                } else {
+                                    style!("max-width"=0);
+                                    style!("margin-right"=Self::dim_to_string(wd));
                                 }
-                            }/>)
-                        } else {
-                            for c in children {
-                                slf.do_v(c,true)?;
                             }
                         }
-                        if to.is_some() {
-                            node!(slf <div class="rustex-box-after-v"/>);
+                        {
+                            for c in children {
+                                slf.do_v(c,false)?;
+                            }
                         }
-                    }
-                />);
-                Ok(())
-            };
-            let inner = move |slf: &mut Self| {
-                if ass_height.is_some() || ass_dp.is_some() {
-                    node!(slf <div class=cls; style:{
-                        style!("width"="fit-content;");
-                        if let Some(ht) = ass_height {
-                            height!(Self::dim_to_string(ht));
-                        } else if let Some(ht) = orig_height {
-                            height!(Self::dim_to_string(ht));
-                        }
-                        if let Some(dp) = ass_dp {
-                            style!("margin-bottom"=Self::dim_to_string(dp));
-                        } else if let Some(dp) = orig_dp {
-                            style!("margin-bottom"=Self::dim_to_string(dp));
-                        }
-                    } {
-                        inner(slf)?;
-                        if ass_height.is_some() {
-                            node!(slf <div class="rustex-box-after-v"/>);
-                        }
-                    }/>);
-                    Ok(())
-                } else {
-                    inner(slf)
+                    />);
                 }
-            };
-            if in_para {
-                node!(slf <div class="rustex-box-hh" {inner(slf)?;} />);
-                Ok(())
-            } else {
-                inner(slf)
-            }
+             />);
+            Ok::<_, std::fmt::Error>(())
         })
     }
 }

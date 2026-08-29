@@ -43,8 +43,9 @@
     --rustex-this-width: calc(
         var(--rustex-curr-width) * var(--rustex-scale-width)
     );
-    min-width: var(--rustex-this-width);
-    max-width: var(--rustex-this-width);
+    width: var(--rustex-this-width);
+    /*max-width: var(--rustex-this-width);
+    min-width: var(--rustex-this-width);*/
 }
 .rustex-setwidth {
     display: contents;
@@ -95,6 +96,9 @@
 .rustex-paragraph {
     text-align: justify;
     white-space: normal;
+    text-align-last: left;
+    hyphens:auto;
+    text-wrap: pretty;
     display: block;
     /*margin-top: auto;*/
 }
@@ -106,7 +110,6 @@
 
 .rustex-space-in-hbox {
     display: inline-block;
-    line-height: 0;
     &:before {
         content: " ";
     }
@@ -223,6 +226,7 @@
     white-space: initial;
     min-width: calc(var(--rustex-curr-width) * var(--rustex-scale-width));
     max-width: calc(var(--rustex-curr-width) * var(--rustex-scale-width));
+    width: calc(var(--rustex-curr-width) * var(--rustex-scale-width));
     > * {
         display: block;
         width: 100%;
@@ -504,4 +508,88 @@
 .rustex-pdfmatrix {
     transform-origin: bottom left;
     display: inline-block;
+}
+
+
+/* -------------------------------------------------------------------------------------------------------- */
+
+.rustex-hbox-outer, .rustex-vbox-outer, .rustex-vtop-outer {
+    display:inline-block;
+    vertical-align: baseline;
+    overflow:visible;
+    width:min-content;
+    height:auto;
+}
+.rustex-hbox-outer {
+    align-items: first baseline;
+}
+
+.rustex-hbox, .rustex-vbox, .rustex-vtop {
+    display:flex;
+    width:min-content;
+    height:auto;
+}
+
+.rustex-hbox {
+    flex-direction: row;
+    white-space: nowrap;
+    align-items:baseline;
+
+    & > *, & > .rustex-setwidth > * {
+        margin-right: auto;
+        margin-left: auto;
+    }
+    /*min-height: 0;*/
+}
+
+.rustex-vbox-outer {
+    display: inline-flex;
+    align-items: last baseline;
+}
+.rustex-vtop-outer {
+    display: inline-flex;
+    align-items: first baseline;
+}
+
+.rustex-vbox, .rustex-vtop {
+    flex-direction: column;
+}
+
+.rustex-dims {
+    --rustex-ht: initial;
+    --rustex-dp: initial;
+    height: calc(var(--rustex-ht, 0px) + var(--rustex-dp, 0px));
+    display:inline-flex;
+    &::after {
+        content:"";
+        width:0;
+        margin-top: var(--rustex-ht,0px);
+        margin-bottom: var(--rustex-dp,0px);
+    }
+    & > .rustex-hbox, & > .rustex-vbox, & > .rustex-vtop, & > .rustex-setwidth > .rustex-hbox,
+    & > .rustex-setwidth > .rustex-vbox, & > .rustex-setwidth > .rustex-vtop {
+        /*margin-block: -9999px;*/
+        height:0;
+        flex-shrink: 0;
+    }
+    & > .rustex-hbox, & > .rustex-vtop, & > .rustex-setwidth > .rustex-hbox, & > .rustex-setwidth > .rustex-vtop {
+        align-items: first baseline;
+    }
+    & > .rustex-vbox, & > .rustex-setwidth > .rustex-vbox {
+        align-items: last baseline;
+    }
+}
+
+.rustex-paragraph > .rustex-box-outer > .rustex-vbox, .rustex-paragraph > .rustex-contents > .rustex-box-outer > .rustex-vbox {
+    --foo:bar
+}
+
+
+.rustex-scalewidth {
+    --rustex-this-width: calc(
+        var(--rustex-curr-width) * var(--rustex-scale-width)
+    );
+    width: var(--rustex-this-width);
+    max-width: var(--rustex-this-width);
+    min-width: var(--rustex-this-width);
 }
