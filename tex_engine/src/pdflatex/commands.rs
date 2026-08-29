@@ -16,6 +16,7 @@ use crate::engine::gullet::methods::CSOrActiveChar;
 use crate::engine::state::State;
 use crate::engine::stomach::Stomach;
 use crate::engine::stomach::TeXMode;
+use crate::engine::utils::outputs::Outputs;
 use crate::engine::{EngineReferences, EngineTypes, TeXEngine};
 use crate::pdflatex::{FileWithMD5, FontWithLpRp};
 use crate::prelude::CSHandler;
@@ -1143,7 +1144,13 @@ where
     let file = engine.filesystem.get(&filename);
 
     let img = if file.path().extension().is_some_and(|ext| ext == "pdf") {
-        super::nodes::pdf_as_image(file.path(), &mut engine.aux.extension)
+        match super::nodes::pdf_as_image(file.path(), &mut engine.aux.extension) {
+            Ok(r) => r,
+            Err(s) => {
+                engine.aux.outputs.message(s);
+                PDFImage::None
+            }
+        }
     } else {
         let Ok(img) = image::ImageReader::open(file.path()) else {
             engine.general_error("Unknown type of image".into())?;

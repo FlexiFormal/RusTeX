@@ -1,8 +1,8 @@
 use crate::engine::utils::memory::MemoryManager;
 use crate::engine::{EngineExtension, EngineReferences, EngineTypes};
-use crate::tex::nodes::boxes::TeXBox;
 use crate::tex::nodes::CustomNodeTrait;
-use crate::tex::nodes::{display_do_indent, NodeTrait, NodeType};
+use crate::tex::nodes::boxes::TeXBox;
+use crate::tex::nodes::{NodeTrait, NodeType, display_do_indent};
 use crate::tex::numerics::TeXDimen;
 use crate::utils::errors::{TeXError, TeXResult};
 use std::fmt::Formatter;
@@ -541,38 +541,49 @@ pub trait PDFExtension<ET: EngineTypes>: EngineExtension<ET> {
     fn pdfxforms(&mut self) -> &mut Vec<PDFXForm<ET>>;
     fn pdfximages(&mut self) -> &mut Vec<PDFXImage<ET>>;
     #[cfg(feature = "pdfium")]
-    fn pdfium_direct(&mut self) -> &mut Option<Option<pdfium_render::prelude::Pdfium>>;
+    fn pdfium_direct(&mut self) -> &mut Option<Result<pdfium_render::prelude::Pdfium, String>>;
 
     #[cfg(feature = "pdfium")]
-    fn pdfium(&mut self) -> Option<&pdfium_render::prelude::Pdfium> {
+    fn pdfium(&mut self) -> Result<&pdfium_render::prelude::Pdfium, &str> {
         use pdfium_render::prelude::*;
-        match self.pdfium_direct() {
-            Some(p) => p.as_ref(),
-            r => {
-                let Ok(lock) = PDFIUM_LOCK.lock() else {
-                    log::warn!("Could not lock PDFium lock");
-                    return None;
-                };
-                let pdfium = Pdfium::bind_to_system_library().ok().or_else(|| {
-                    std::env::current_exe().ok().and_then(|d| {
-                        let lib_dir = d.parent()?.join("lib");
-                        let lib_path = lib_dir.join(PDFIUM_NAME);
-                        if !lib_path.exists() {
-                            download_pdfium(&lib_dir);
+        fn load_pdfium() -> Result<pdfium_render::prelude::Pdfium, String> {
+            let lock = PDFIUM_LOCK.lock();
+            match Pdfium::bind_to_system_library() {
+                Ok(b) => Ok(Pdfium::new(b)),
+                _ => {
+                    let Some(lib_dir) = std::env::current_exe()
+                        .ok()
+                        .and_then(|d| d.parent().map(|d| d.join("lib")))
+                    else {
+                        return Err("failed to determine lib/pdfium directory".to_string());
+                    };
+                    let lib_path = lib_dir.join(PDFIUM_NAME);
+                    if lib_path.exists() {
+                        if let Ok(pd) = Pdfium::bind_to_library(&lib_path) {
+                            return Ok(Pdfium::new(pd));
                         }
-                        Pdfium::bind_to_library(&lib_path)
-                            .map_err(|e| {
-                                log::warn!(
-                                    "Could not bind to pdfium at {}: {e}",
-                                    lib_path.display()
-                                );
-                            })
-                            .ok()
-                    })
-                });
-                *r = Some(pdfium.map(Pdfium::new));
-                drop(lock);
-                r.as_ref().unwrap_or_else(|| unreachable!()).as_ref()
+                        let _ = std::fs::remove_file(&lib_path);
+                    }
+                    download_pdfium(&lib_dir);
+                    let pdfium = match Pdfium::bind_to_library(&lib_path) {
+                        Ok(p) => p,
+                        Err(e) => {
+                            return Err(format!(
+                                "Pdfium failed to bind to {}: {e}",
+                                lib_path.display()
+                            ));
+                        }
+                    };
+                    drop(lock);
+                    Ok(Pdfium::new(pdfium))
+                }
+            }
+        }
+        match self.pdfium_direct() {
+            Some(p) => p.as_ref().map_err(|s| &**s),
+            r => {
+                *r = Some(load_pdfium());
+                r.as_ref().expect("unreachable").as_ref().map_err(|s| &**s)
             }
         }
     }
@@ -588,7 +599,7 @@ pub struct MinimalPDFExtension<ET: EngineTypes> {
     pdfximages: Vec<PDFXImage<ET>>,
     pdfannots: Vec<PDFAnnot<ET>>,
     #[cfg(feature = "pdfium")]
-    pdfium: Option<Option<pdfium_render::prelude::Pdfium>>,
+    pdfium: Option<Result<pdfium_render::prelude::Pdfium, String>>,
 }
 impl<ET: EngineTypes> EngineExtension<ET> for MinimalPDFExtension<ET> {
     fn new(_memory: &mut MemoryManager<ET::Token>) -> Self {
@@ -640,7 +651,7 @@ impl<ET: EngineTypes> PDFExtension<ET> for MinimalPDFExtension<ET> {
     }
 
     #[cfg(feature = "pdfium")]
-    fn pdfium_direct(&mut self) -> &mut Option<Option<pdfium_render::prelude::Pdfium>> {
+    fn pdfium_direct(&mut self) -> &mut Option<Result<pdfium_render::prelude::Pdfium, String>> {
         &mut self.pdfium
     }
 }
@@ -728,25 +739,29 @@ impl<ET: EngineTypes> PDFXImage<ET> {
 }
 
 #[cfg(feature = "pdfium")]
-pub fn pdf_as_image<ET: EngineTypes, E: PDFExtension<ET>>(path: &Path, ext: &mut E) -> PDFImage {
+pub fn pdf_as_image<ET: EngineTypes, E: PDFExtension<ET>>(
+    path: &Path,
+    ext: &mut E,
+) -> Result<PDFImage, String> {
     use pdfium_render::prelude::PdfRenderConfig;
-    let Some(pdfium) = ext.pdfium() else {
-        log::warn!("PDFium not loaded");
-        return PDFImage::None;
+    let pdfium = match ext.pdfium() {
+        Ok(p) => p,
+        Err(e) => return Err(e.to_string()),
     };
     let Ok(pdf) = pdfium.load_pdf_from_file(&path, None) else {
         log::warn!("Failed to load PDF file {}", path.display());
-        return PDFImage::None;
+        return Err(format!("Failed to load PDF file {}", path.display()));
     };
     let cfg = PdfRenderConfig::new().scale_page_by_factor(5.0);
     let pages = pdf.pages();
-    let r = if let Ok(bmp) = pages.iter().next().unwrap().render_with_config(&cfg) && let Ok(img) = bmp.as_image() {
-        PDFImage::PDF(img)
+    if let Ok(bmp) = pages.iter().next().unwrap().render_with_config(&cfg)
+        && let Ok(img) = bmp.as_image()
+    {
+        Ok(PDFImage::PDF(img))
     } else {
         log::warn!("Failed to render PDF file {}", path.display());
-        PDFImage::None
-    };
-    r
+        Err(format!("Failed to render PDF file {}", path.display()))
+    }
 }
 
 #[cfg(not(feature = "pdfium"))]
