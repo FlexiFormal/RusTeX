@@ -20,6 +20,7 @@ thesis  0:15
  */
 fn main() {
     run();
+    //test_css();
     //profile()
     //thesis();
     //test()
@@ -27,6 +28,54 @@ fn main() {
     //notes()
     //test2()
     //test_snippets()
+}
+
+#[test]
+fn test_css() {
+    let filedir = Path::new(concat!(env!("CARGO_MANIFEST_DIR"), "/../test/css"));
+    for d in std::fs::read_dir(filedir).expect("wut") {
+        let d = d.expect("wut");
+        let path = d.path();
+        if path.extension().and_then(|e| e.to_str()) == Some("tex") {
+            println!("\n\n{}\n", path.display());
+            let mut ret = RusTeXEngine::do_file(
+                path.to_str().unwrap(),
+                Settings {
+                    verbose: true,
+                    log: true,
+                    sourcerefs: true,
+                    image_options: Default::default(),
+                    insert_font_info: true,
+                }, /*Settings::default()*/
+            );
+            match ret.error.take() {
+                None => {
+                    //let out = filedir.join(format!("{}.html", d.file_name().display()));
+                    //ret.write_out(&out).unwrap();
+                    let s = ret.to_string().replace(
+                        "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex.css",
+                        "./rustex.css"/*concat!(
+                            env!("CARGO_MANIFEST_DIR"),
+                            "/../rustex/src/resources/rustex.css"
+                        ),*/
+                    );
+                    let mut f = std::fs::File::create(
+                        filedir.join(format!("{}.html", d.file_name().display())),
+                    )
+                    .expect("bug");
+                    f.write_all(s.as_bytes()).expect("bug");
+                }
+                Some((e, _)) => {
+                    println!("Errored");
+                    panic!(
+                        "Errored: {}\n{}\n\n", //Missing glyphs: {}\nMissing web fonts: {}",
+                        path.display(),
+                        e
+                    );
+                }
+            }
+        }
+    }
 }
 
 #[test]

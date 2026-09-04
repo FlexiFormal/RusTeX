@@ -1,0 +1,151 @@
+\documentclass{article}
+\input{preamble.pre}
+\begin{document}
+
+    \block{}{
+        \showh{\showv{\hbox{Content}}}
+        \noindent\showpar{\showv{\hbox{Content}}}
+        \noindent\showpar{\showh{\showv{\hbox{Content}}}}
+    }
+
+    \block{Height}{
+        \showh{\showvwith{}{50pt}{}{\hbox{Content}}}
+        \noindent\showpar{\showvwith{}{50pt}{}{\hbox{Content}}}
+        \noindent\showpar{\showh{\showvwith{}{50pt}{}{\hbox{Content}}}}
+    }
+
+    \block{Depth}{
+        \showh{\showvwith{}{}{30pt}{\hbox{Content}}}
+        \noindent\showpar{\showvwith{}{}{30pt}{\hbox{Content}}}
+        \noindent\showpar{\showh{\showvwith{}{}{30pt}{\hbox{Content}}}}
+    }
+
+    \block{Height and Depth:}{
+        \showh{\showvwith{}{50pt}{30pt}{\hbox{Content}}}
+        \noindent\showpar{\showvwith{}{50pt}{30pt}{\hbox{Content}}}
+        \noindent\showpar{\showh{\showvwith{}{50pt}{30pt}{\hbox{Content}}}}
+    }
+
+    \block{To and Depth:}{
+        \showh{\setbox0\vbox to 50pt{\showvinner{\hbox{Content}}}%
+            \dp0=30pt\box0}
+        \noindent\showpar{\setbox0\vbox to 50pt{\showvinner{\hbox{Content}}}%
+            \dp0=30pt\box0}
+        \noindent\showpar{\showh{\setbox0\vbox to 50pt{\showvinner{\hbox{Content}}}%
+            \dp0=30pt\box0}}
+    }
+
+    \block{Height with Para:}{
+        \showh{\showvwith{}{80pt}{}{\noindent\lorem\par}}
+    }
+    \block{To with Para:}{
+        \showh{\showvto{80pt}{\noindent\lorem\par}}
+    }
+    \block{Small Height with Para:}{
+        \showh{\showvwith{}{5pt}{}{\noindent\lorem\par}}
+    }
+    \vskip40pt
+    \noindent(\cs{vskip})
+
+    \block{Small Height with Depth and Para:}{
+        \showh{\showvwith{}{5pt}{40pt}{\noindent\lorem\par}}
+    }
+
+    \block{VBox with To and Height and Depth:}{
+        \showh{\setbox0\vbox to 50pt{\showvinner{\noindent\lorem\par}}%
+            \dp0=30pt\box0}
+    }
+
+    \block{Para in \cs{vbox} in Para}{\showpar{\showvwith{50pt}{}{}{\showpar{}}}}
+
+    \block{VBoxes:}{\showh{%
+        \showvwith{}{150pt}{}{\hbox{Box Content}}%
+        \showvto{150pt}{\hbox{Box Content}}
+        \setbox0\vbox to100pt{\showvinner{ \hbox{ Box Content } }}%
+        \ht0=150pt\box0%
+        \setbox0\vbox to100pt{\showvinner{ \hbox{ Box Content } \noindent\lorem\par }}%
+        \ht0=150pt\box0%
+    }}
+
+
+\subsection{VTops}
+
+\block{}{
+  \showh{\showt{\hbox{Content}}}
+  \noindent\showpar{\showt{\hbox{Content}}}
+  \noindent\showpar{\showh{\showt{\hbox{Content}}}}
+}
+
+\block{Height}{
+  \showh{\showtwith{}{50pt}{}{\hbox{Content}}}
+  \noindent\showpar{\showtwith{}{50pt}{}{\hbox{Content}}}
+  \noindent\showpar{\showh{\showtwith{}{50pt}{}{\hbox{Content}}}}
+}
+
+\block{Depth}{
+  \showh{\showtwith{}{}{10pt}{\hbox{Content}}}
+  \showh{\showtwith{}{}{50pt}{\hbox{Content}}}
+  \noindent\showpar{\showtwith{}{}{50pt}{\hbox{Content}}}
+  \noindent\showpar{\showh{\showtwith{}{}{10pt}{\hbox{Content}}}}
+}
+
+\block{Height and Depth:}{
+  \showh{\showtwith{}{50pt}{10pt}{\hbox{Content}}}
+  \noindent\showpar{\showtwith{}{50pt}{50pt}{\hbox{Content}}}
+  \noindent\showpar{\showh{\showtwith{}{50pt}{10pt}{\hbox{Content}}}}
+}
+
+\block{To and Depth:}{
+  \showh{\setbox0\vtop to 50pt{\showtinner{\hbox{Content}}}%
+    \dp0=10pt\box0}
+  \noindent\showpar{\setbox0\vtop to 50pt{\showtinner{\hbox{Content}}}%
+    \dp0=50pt\box0}
+  \noindent\showpar{\showh{\setbox0\vtop to 50pt{\showtinner{\hbox{Content}}}%
+    \dp0=10pt\box0}}
+}
+
+\block{Height with Para:}{
+  \showh{\showtwith{}{80pt}{}{\noindent\lorem\par}}
+}
+\block{To with Para:}{
+  \showh{\showtto{80pt}{\noindent\lorem\par}}
+}
+\block{Small Height with Para:}{
+  \showh{\showtwith{}{10pt}{}{\noindent\lorem\par}}
+}
+
+\block{Small Height with Depth and Para:}{
+  \showh{\showtwith{}{10pt}{40pt}{\noindent\lorem\par}}
+}
+
+\vskip20pt
+\noindent(\cs{vskip})
+
+\block{VTop with To and Height and Depth:}{
+  \showh{\setbox0\vtop to 50pt{\showtinner{\noindent\lorem\par}}%
+    \dp0=30pt\box0}
+}
+
+\vskip20pt
+\noindent(\cs{vskip})
+
+\block{Para in \cs{vtop} in Para}{\showpar{\showtwith{50pt}{}{}{\showpar{}}}}
+
+\block{VTops:}{\showh{%
+  \showtwith{}{150pt}{}{\hbox{Box Content}}%
+  \showtto{150pt}{\hbox{Box Content}}
+  \setbox0\vtop to100pt{\showtinner{ \hbox{ Box Content } }}%
+  \ht0=150pt\box0%
+  \setbox0\vtop to100pt{\showtinner{ \hbox{ Box Content } \noindent\lorem\par }}%
+  \ht0=150pt\box0%
+}}
+
+\block{\cs{vtop} with Depth/Height in H}{%
+  \showh{%
+    \showtwith{}{50pt}{}{\hbox{Box Content}}%
+    \showtwith{}{}{50pt}{\hbox{Box Content}}%
+    \showtwith{}{50pt}{50pt}{\hbox{Box Content}}%
+  }
+}
+
+\end{document}

@@ -1,0 +1,66 @@
+\usepackage[dvipsnames]{xcolor}
+\usepackage{amsmath,graphicx}
+
+\def\red{\textcolor{red}}
+\def\blue{\textcolor{blue}}
+\def\gray{\textcolor{gray}}
+\def\green{\textcolor{ForestGreen}}
+\def\orange{\textcolor{YellowOrange}}
+\def\purple{\textcolor{RedViolet}}
+
+\definecolor{mvgray}{gray}{0.89}
+\newcommand\mvbox[1]{\ifmmode \text{\colorbox{mvgray}{#1}} \else \colorbox{mvgray}{#1} \fi}
+
+\def\loremI{Lorem ipsum dolor sit amet, consectetur adipiscing elit. 
+Pellentesque sed diam ex. Nam pretium sagittis lacus.%, et consequat lacus 
+%interdum in. %In molestie porttitor purus, ac euismod quam cursus id. 
+%Sed facilisis eget enim in varius.
+}
+\def\lorem{\gray\loremI}
+
+\long\def\showpar#1{\lorem{} #1 {}\lorem\medskip\par}
+
+\long\def\showhinner#1{\blue{\textbackslash hbox\{}#1\blue{\}}}
+\long\def\showh#1{\hbox{\showhinner{#1}}}
+\long\def\showhto#1#2{\hbox to#1{\showhinner{#2}}}
+\long\def\showhwith#1#2#3#4{\boxwith{#1}{#2}{#3}{\showh{#4}}}
+
+\long\def\showvinner#1{\hbox{\red{\textbackslash vbox\{}}#1\hbox{\red{\}}}}
+\long\def\showv#1{\vbox{\showvinner{#1}}}
+\long\def\showvto#1#2{\vbox to#1{\showvinner{#2}}}
+\long\def\showvwith#1#2#3#4{\boxwith{#1}{#2}{#3}{\showv{#4}}}
+
+\long\def\showtinner#1{\hbox{\red{\textbackslash vtop\{}}#1\hbox{\red{\}}}}
+\long\def\showt#1{\vtop{\showtinner{#1}}}
+\long\def\showtto#1#2{\vtop to#1{\showtinner{#2}}}
+\long\def\showtwith#1#2#3#4{\boxwith{#1}{#2}{#3}{\showt{#4}}}
+
+\long\def\showcinner#1{\hbox{\red{\textbackslash vcenter\{}}#1\hbox{\red{\}}}}
+\long\def\showc#1{\vcenter{\showcinner{#1}}}
+\long\def\showcto#1#2{\vcenter to#1{\showcinner{#2}}}
+\long\def\showcwith#1#2#3#4{\boxwith{#1}{#2}{#3}{\showc{#4}}}
+
+\long\def\block#1#2{\par\noindent\textbf{#1}\smallskip\par\hrule width\textwidth
+  \relax#2\par\hrule width\textwidth\bigskip
+}
+\def\conclude#1{%
+  \green{\begin{itemize}\item[$\Rightarrow$]#1\end{itemize}\medskip}%
+}
+\def\cs#1{\orange{\texttt{\textbackslash#1}}}
+\def\meta#1{\purple{$\langle$\texttt{#1}$\rangle$}}
+
+\ExplSyntaxOn
+\long\def\boxwith#1#2#3#4{
+  \setbox0#4
+  \tl_if_empty:nF{#1}{\wd0=#1}
+  \tl_if_empty:nF{#2}{\ht0=#2}
+  \tl_if_empty:nF{#3}{\dp0=#3}
+  \box0
+}
+\ExplSyntaxOff
+
+\parindent=15pt
+
+\newbox\mynumbox
+
+\def\mynum#1{\setbox\mynumbox\hbox{\hskip-20pt #1.}\wd\mynumbox=0pt\ht\mynumbox=0pt\dp\mynumbox=0pt\box\mynumbox}
