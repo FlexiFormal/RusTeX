@@ -1,0 +1,47 @@
+\documentclass{article}
+\input{preamble.pre}
+\begin{document}
+    
+    \block{HBox:}{%
+        \showhwith\textwidth{}{}{ Box Content }
+
+        \setbox0\hbox to 150pt{\showhinner{ Box Content }}
+        \wd0=\textwidth\box0
+
+        \showhto\textwidth{ Box Content }
+
+        \showhto\textwidth{ \showhwith\textwidth{}{}{ Box Content } }
+
+        \setbox0\hbox to 150pt{ \showhinner{ Box Content } }
+        \wd0=\textwidth\showhto\textwidth{ \box0 }
+        
+        \showhto\textwidth{ \showhto\textwidth{ Box Content } }
+
+        \hbox to\textwidth{ BoxContent}
+
+        \showhto\textwidth{%
+            \showhwith{20pt}{}{}{ Box Content }................................\hskip50pt%
+            \showhto{20pt}{ Box Content }................................\hskip50pt%
+        }
+        \showhwith{}{40pt}{}{ Box Content }
+
+        \hbox spread 0.5\textwidth{\showhinner{ Box Content }}
+        \showh{\showhwith{-20pt}{}{}{Box Content}}
+        \showh{\showhto{-20pt}{Box Content}}
+    }
+
+    \block{In Paragraphs:}{
+    \noindent \showpar{\hbox to100pt{Some Box Content}}
+
+        \noindent \showpar{\setbox0\hbox to150pt{Some Box Content}\unhbox0}
+
+        \noindent \showpar{\hbox spread50pt{Some Box Content}}
+
+        \noindent \showpar{\setbox0\hbox to50pt{ Box }\wd0=100pt\ht0=50pt\dp0=25pt\box0}
+
+        \noindent \showpar{\setbox0\hbox to50pt{ \showv{%
+            \hbox{Content}\hbox{Content}\hbox{Content}\hbox{Content}%
+        } }\wd0=100pt\ht0=50pt\dp0=25pt\box0}
+    }
+
+\end{document}
