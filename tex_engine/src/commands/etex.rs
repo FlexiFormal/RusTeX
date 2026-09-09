@@ -5,8 +5,8 @@ use crate::commands::{
 };
 use crate::engine::filesystem::FileSystem;
 use crate::engine::fontsystem::Font;
-use crate::engine::gullet::methods::NumContinuation;
 use crate::engine::gullet::Gullet;
+use crate::engine::gullet::methods::NumContinuation;
 use crate::engine::mouth::Mouth;
 use crate::engine::state::{GroupType, State};
 use crate::engine::stomach::Stomach;
@@ -660,7 +660,7 @@ pub fn middle<ET: EngineTypes>(
         _ => {
             return engine.general_error(
                 "You can't use `\\middle` outside of a `\\left`-`\\right` pair".to_string(),
-            )
+            );
         }
     }
     let del = match engine.read_opt_delimiter(&tk)? {
@@ -803,6 +803,13 @@ pub fn gluestretch<ET: EngineTypes>(
     })
 }
 
+pub fn splitdiscards<ET: EngineTypes>(
+    engine: &mut EngineReferences<ET>,
+    tk: ET::Token,
+) -> TeXResult<(), ET> {
+    Ok(()) // dummy
+}
+
 const PRIMITIVE_INTS: &[&str] = &[
     "savinghyphcodes",
     "tracingassigns",
@@ -866,6 +873,8 @@ pub fn register_etex_primitives<E: TeXEngine>(engine: &mut E) {
     register_expandable(engine, "splitfirstmarks", splitfirstmarks);
     register_expandable(engine, "splitbotmarks", splitbotmarks);
 
+    register_unexpandable(engine, "splitdiscards", CommandScope::Any, splitdiscards);
+
     cmtodo!(engine, beginL);
     cmtodo!(engine, beginR);
     cmtodo!(engine, clubpenalties);
@@ -886,7 +895,7 @@ pub fn register_etex_primitives<E: TeXEngine>(engine: &mut E) {
     cmtodo!(engine, showgroups);
     cmtodo!(engine, showifs);
     cmtodo!(engine, showtokens);
-    cmtodo!(engine, splitdiscards);
+    //cmtodo!(engine, splitdiscards);
     cmtodo!(engine, TeXXeTstate);
     cmtodo!(engine, widowpenalties);
     /*

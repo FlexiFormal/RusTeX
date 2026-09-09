@@ -14,9 +14,9 @@ use crate::tex::numerics::TeXDimen;
 use std::fmt::{Display, Formatter};
 
 #[cfg(feature = "multithreaded")]
-type Once<A> = std::sync::OnceLock<A>;
+pub type Once<A> = std::sync::OnceLock<A>;
 #[cfg(not(feature = "multithreaded"))]
-type Once<A> = std::cell::OnceCell<A>;
+pub type Once<A> = std::cell::OnceCell<A>;
 
 /// The type of a box, e.g. `\hbox` or `\vbox`.
 #[derive(Clone, Copy, Eq, PartialEq, Debug)]
@@ -332,6 +332,15 @@ impl<ET: EngineTypes> Display for VBoxInfo<ET> {
 }
 
 impl<ET: EngineTypes> VBoxInfo<ET> {
+    pub fn is_trivial(&self) -> bool {
+        matches!(self, Self::VBox { .. } | Self::VTop { .. })
+            && self.assigned_depth().is_none()
+            && self.assigned_height().is_none()
+            && self.raised().is_none()
+            && self
+                .to_or_scaled()
+                .is_none_or(|s| matches!(s, ToOrSpread::None))
+    }
     /// Create a new `\vbox` box info with the given scaling factor
     pub fn new_box(scaled: ToOrSpread<ET::Dim>) -> Self {
         VBoxInfo::VBox {

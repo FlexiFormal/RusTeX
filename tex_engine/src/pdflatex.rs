@@ -9,7 +9,8 @@ use crate::engine::gullet::DefaultGullet;
 use crate::engine::mouth::DefaultMouth;
 use crate::engine::stomach::DefaultStomach;
 use crate::engine::utils::outputs::LogOutputs;
-use crate::engine::{filesystem, state, DefaultEngine, EngineReferences, EngineTypes, TeXEngine};
+use crate::engine::{DefaultEngine, EngineReferences, EngineTypes, TeXEngine, filesystem, state};
+use crate::pdflatex::nodes::PDFNodeLike;
 use crate::prelude::CSName;
 use crate::tex;
 use crate::tex::characters::Character;
@@ -23,7 +24,7 @@ use nodes::{MinimalPDFExtension, PDFExtension, PDFNode};
 pub trait PDFTeXEngine: TeXEngine
 where
     <Self::Types as EngineTypes>::Extension: PDFExtension<Self::Types>,
-    <Self::Types as EngineTypes>::CustomNode: From<PDFNode<Self::Types>>,
+    <Self::Types as EngineTypes>::CustomNode: PDFNodeLike<Self::Types>,
     <Self::Types as EngineTypes>::File: FileWithMD5,
     <Self::Types as EngineTypes>::Font: FontWithLpRp,
 {
@@ -51,10 +52,10 @@ where
 }
 
 pub trait FileWithMD5: File {
-    fn md5(&self) -> [u8;16];
+    fn md5(&self) -> [u8; 16];
 }
 impl<C: Character> FileWithMD5 for VirtualFile<C> {
-    fn md5(&self) -> [u8;16] {
+    fn md5(&self) -> [u8; 16] {
         let mut hasher = md5::Md5::default();
         if let Some(s) = self.source.as_ref() {
             for r in s.iter() {
@@ -62,7 +63,7 @@ impl<C: Character> FileWithMD5 for VirtualFile<C> {
                     let c = c.to_char();
                     let mut dst = [0u8; 4];
                     c.encode_utf8(&mut dst);
-                    let bts = &dst[.. c.len_utf8()];
+                    let bts = &dst[..c.len_utf8()];
                     hasher.update(bts);
                 }
             }
@@ -132,7 +133,7 @@ impl<A> PDFTeXEngine for A
 where
     A: TeXEngine,
     <A::Types as EngineTypes>::Extension: PDFExtension<A::Types>,
-    <A::Types as EngineTypes>::CustomNode: From<PDFNode<A::Types>>,
+    <A::Types as EngineTypes>::CustomNode: PDFNodeLike<A::Types>,
     <A::Types as EngineTypes>::File: FileWithMD5,
     <A::Types as EngineTypes>::Font: FontWithLpRp,
 {

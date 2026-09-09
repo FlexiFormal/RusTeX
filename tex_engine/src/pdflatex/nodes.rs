@@ -527,7 +527,20 @@ fn download_pdfium(lib_dir: &std::path::Path) {
     }
     let _ = std::fs::remove_file(archive_path);
 }
-
+pub trait PDFNodeLike<ET: EngineTypes>: From<PDFNode<ET>> {
+    fn as_pdf(&self) -> Option<&PDFNode<ET>>;
+    fn as_pdf_mut(&mut self) -> Option<&mut PDFNode<ET>>;
+}
+impl<ET: EngineTypes> PDFNodeLike<ET> for PDFNode<ET> {
+    #[inline]
+    fn as_pdf(&self) -> Option<&Self> {
+        Some(self)
+    }
+    #[inline]
+    fn as_pdf_mut(&mut self) -> Option<&mut Self> {
+        Some(self)
+    }
+}
 pub trait PDFExtension<ET: EngineTypes>: EngineExtension<ET> {
     fn pdfmatches(&mut self) -> &mut Vec<String>;
     fn elapsed(&mut self) -> &mut std::time::Instant;
@@ -678,7 +691,7 @@ impl PDFImage {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct PDFXImage<ET: EngineTypes> {
     pub attr: String,
     pub width: Option<ET::Dim>,
@@ -689,6 +702,17 @@ pub struct PDFXImage<ET: EngineTypes> {
     pub boxspec: Option<PDFBoxSpec>,
     pub filepath: PathBuf,
     pub img: PDFImage,
+}
+impl<ET: EngineTypes> std::fmt::Debug for PDFXImage<ET> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("PDFXImage")
+            .field("file", &self.filepath.display())
+            .field("width", &self.width)
+            .field("height", &self.height)
+            .field("image_height", &self.img.height())
+            .field("image_width", &self.img.width())
+            .finish()
+    }
 }
 impl<ET: EngineTypes> PDFXImage<ET> {
     pub fn height(&self) -> ET::Dim {

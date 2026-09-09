@@ -23,7 +23,7 @@ fn main() {
     //test_css();
     //profile()
     //thesis();
-    //test()
+    //test_basic()
     //temp_test()
     //notes()
     //test2()
@@ -53,10 +53,10 @@ fn test_css() {
                     //let out = filedir.join(format!("{}.html", d.file_name().display()));
                     //ret.write_out(&out).unwrap();
                     let s = ret.to_string().replace(
-                        "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex.css",
+                        "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex-v0-1-16.css",
                         "./rustex.css"/*concat!(
                             env!("CARGO_MANIFEST_DIR"),
-                            "/../rustex/src/resources/rustex.css"
+                            "/../rustex/src/resources/rustex-v0-1-16.css"
                         ),*/
                     );
                     let mut f = std::fs::File::create(
@@ -92,10 +92,10 @@ fn test_snippets() {
                     //let out = filedir.join(format!("{}.html", d.file_name().display()));
                     //ret.write_out(&out).unwrap();
                     let s = ret.to_string().replace(
-                        "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex.css",
+                        "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex-v0-1-16.css",
                         concat!(
                             env!("CARGO_MANIFEST_DIR"),
-                            "/../rustex/src/resources/rustex.css"
+                            "/../rustex/src/resources/rustex-v0-1-16.css"
                         ),
                     );
                     let mut f = std::fs::File::create(
@@ -239,7 +239,7 @@ fn test_all() {
 }
 
 #[test]
-fn test() {
+fn test_basic() {
     //env_logger::builder().filter_level(log::LevelFilter::Info).try_init();
     let ret = RusTeXEngine::do_file(
         concat!(env!("CARGO_MANIFEST_DIR"), "/../test/test.tex"),
@@ -252,10 +252,10 @@ fn test() {
         },
     );
     let s = ret.to_string().replace(
-        "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex.css",
+        "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex-v0-1-16.css",
         concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../rustex/src/resources/rustex.css"
+            "/../rustex/src/resources/rustex-v0-1-16.css"
         ),
     );
     let mut f = std::fs::File::create(Path::new(concat!(
@@ -266,13 +266,14 @@ fn test() {
     f.write_all(s.as_bytes()).expect("bug");
 }
 
+//#[test]
 fn temp_test() {
     //env_logger::builder().filter_level(log::LevelFilter::Info).try_init();
     //let ret = RusTeXEngine::do_file("/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/numtest.tex",false,true,true);
     let ret = RusTeXEngine::do_file(
         //"/home/jazzpirate/work/MathHub/courses/UMR/GdMA/course/source/course/sec/Vorwort.de.tex",
         //"/home/jazzpirate/work/MathHub/Papers/25-CICM-MathMap/source/paper.tex",
-        "/home/jazzpirate/work/MathHub/Papers/26-RVI-Legal-Domain-Model/source/paper.tex",
+        "/home/jazzpirate/work/MathHub/courses/FAU/AI/course/source/course/sec/concept.en.tex",
         //"/home/jazzpirate/work/MathHub/FTML/math/source/test.tex",
         //"/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/tmptest.tex",
         Settings {
@@ -287,7 +288,7 @@ fn temp_test() {
     //std::fs::write("/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/numtest.html", &ret.out).unwrap();
     ret.write_out(Path::new(
         //"/home/jazzpirate/rustex.out.html"
-        "/home/jazzpirate/work/MathHub/Papers/26-RVI-Legal-Domain-Model/source/out.html",
+        "/home/jazzpirate/work/rustex.out.html",
         //"/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/tmptest.html", //"/home/jazzpirate/work/MathHub/courses/UMR/GdMA/course/source/course/sec/Vorwort.de.tex.html"
     ))
     .unwrap();
@@ -307,10 +308,10 @@ fn thesis() {
         },
     );
     let s = ret.to_string().replace(
-        "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex.css",
+        "https://raw.githack.com/FlexiFormal/RusTeX/main/rustex/src/resources/rustex-v0-1-16.css",
         concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/../rustex/src/resources/rustex.css"
+            "/../rustex/src/resources/rustex-v0-1-16.css"
         ),
     );
     /*ret.write_out(Path::new(concat!(

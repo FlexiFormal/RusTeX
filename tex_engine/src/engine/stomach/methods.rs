@@ -1,4 +1,4 @@
-use crate::commands::primitives::{PrimitiveIdentifier, PRIMITIVES};
+use crate::commands::primitives::{PRIMITIVES, PrimitiveIdentifier};
 use crate::commands::{PrimitiveCommand, ResolvedToken, TeXCommand};
 use crate::engine::filesystem::{File, SourceReference};
 use crate::engine::fontsystem::Font;
@@ -866,7 +866,7 @@ pub fn do_output<ET: EngineTypes>(
     engine
         .state
         .set_primitive_int(engine.aux, PRIMITIVES.badness, (10).into(), true);
-
+    engine.stomach.data_mut().outpenalty = caused_penalty;
     let SplitResult {
         mut first,
         rest,
@@ -917,7 +917,7 @@ pub fn do_output<ET: EngineTypes>(
             let children: Box<[VNode<ET>]> = match engine.state.take_box_register(*n) {
                 Some(TeXBox::V { children, .. }) => {
                     let mut c = children.into_vec();
-                    c.extend(std::mem::replace(v, vec![].into()).into_vec().into_iter());
+                    c.extend(std::mem::replace(v, vec![].into()));
                     c.into()
                 }
                 _ => std::mem::replace(v, vec![].into()),
@@ -933,7 +933,7 @@ pub fn do_output<ET: EngineTypes>(
                 }),
                 true,
             );
-            deletes.push(i)
+            deletes.push(i);
         }
     }
     for (j, i) in deletes.into_iter().enumerate() {

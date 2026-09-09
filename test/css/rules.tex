@@ -1,0 +1,36 @@
+\documentclass{article}
+\input{preamble.pre}
+\begin{document}
+    
+    \block{\cs{hrule} in \cs{vbox} in \cs{hbox}}{
+        \showh{ \showv{ \hrule width 50pt height 75pt depth 25 pt } }
+    }
+
+    \block{\cs{hrule} in \cs{vbox} with height in \cs{hbox}}{
+        \showh{ \setbox0\showv{ \hrule width 50pt height 75pt depth 25 pt } \ht0=150pt\box0 }
+    }
+
+    \block{\cs{vrule} in \cs{hbox}}{
+        \showh{ \vrule width 50pt height 75pt depth 25pt }
+        \showh{ foo \vrule foo}
+        \showh{\vrule \showv{\showh{}}\vrule}
+        \hbox{\vrule}
+        \vskip10pt
+    }
+
+    \block{\cs{vrule} in Para without parameters}{
+        \vskip10pt \noindent Here \vrule bla\par
+        \noindent \vrule \par
+        \noindent Here\par\vskip10pt
+    }
+
+    \block{\cs{vrule} in Para}{
+        \showpar{ \vrule width 50pt height 75pt depth 25pt }
+        \showpar{ \vrule width 10pt height 0.1pt \gray{lorem bla}
+        \vrule width 10pt }
+    }
+
+    \block{\cs{hrule} in \cs{vbox}}{
+        \showv{ \hrule }
+    }
+\end{document}

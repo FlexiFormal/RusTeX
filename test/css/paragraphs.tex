@@ -1,0 +1,84 @@
+\documentclass{article}
+\input{preamble.pre}
+\begin{document}
+
+\lorem
+
+\noindent \lorem
+
+\the\hsize - (\the\leftskip + \the\rightskip)
+
+\hsize=200pt
+
+\leftskip=100pt
+\lorem
+
+\leftskip=0pt
+\rightskip=100pt
+\lorem
+
+\hsize=430pt \leftskip=0pt \rightskip=0pt
+Parshape:
+
+\parshape 1 50pt 50pt
+\noindent \lorem \the\parshape Group: {\the\parshape} After: \the\parshape 
+HBox: \hbox{\the\parshape} After: \the\parshape Vbox: \vbox{\global\edef\foo{\the\parshape}}
+\foo{} After: \the\parshape everyv: \expandafter\detokenize\expandafter{\the\everyvbox}
+
+\noindent \lorem
+
+
+\hsize=200pt
+\leftskip=0pt
+\rightskip=100pt
+\begin{itemize}
+    \item \the\parshape
+    \item \the\leftskip\the\rightskip\the\hsize\the\parshape ::\vbox{\noindent \the\leftskip\the\rightskip\the\hsize\the\parshape\lorem}\the\leftskip\the\rightskip\the\hsize\the\parshape
+\end{itemize}
+
+\leftskip=20pt\relax\rightskip=0pt
+
+
+
+\hbox{
+    ::\vbox{
+        \noindent\lorem
+    }::
+    \vbox{
+        \noindent\lorem
+    }::
+}
+
+\rightskip=0pt
+\leftskip=-50pt
+\lorem
+
+\leftskip=0pt
+\rightskip=-50pt
+\lorem
+
+\lorem
+
+\hbox{
+    ::\vbox{
+        \noindent\lorem
+    }::
+    \vbox{
+        \noindent\lorem
+    }::
+}
+
+\leftskip=-50pt
+\hbox{
+    ::\vbox{
+        \noindent\lorem
+    }::
+    \vbox{
+        \noindent\lorem
+    }::
+}
+
+\leftskip20pt\rightskip20pt
+\noindent Lorem\\ \vbox{\noindent \lorem}
+
+\end{document}

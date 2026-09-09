@@ -10,8 +10,12 @@ use crate::shipout::state::{
     ShipoutNodeTable, ShipoutNodeV, ShipoutState, VLike,
 };
 use crate::shipout::utils::{HNodes, MNode, MNodes, VNodes};
-use crate::utils::{Flex, Margin};
+use crate::utils::{Flex, Margin, VecMap, VecSet};
+use tex_engine::commands::primitives::PRIMITIVES;
+use tex_engine::engine::filesystem::SourceReference;
 use tex_engine::engine::fontsystem::Font;
+use tex_engine::engine::state::State;
+use tex_engine::engine::stomach::Stomach;
 use tex_engine::engine::stomach::methods::ParLineSpec;
 use tex_engine::pdflatex::nodes::{PDFDest, PDFNode};
 use tex_engine::tex::nodes::NodeTrait;
@@ -41,15 +45,33 @@ pub(crate) fn make_page<F:FnOnce(Refs,&mut ShipoutState) -> Res<()>>(engine:Refs
  */
 
 pub fn shipout(engine: Refs, n: VNode<Types>) -> Res<()> {
+    let penalty = engine
+        .stomach
+        .data_mut()
+        .outpenalty
+        .take()
+        .unwrap_or_default();
     //println!("Here: {}\n\n-------------------------------------------\n\n",n.display());
     match n {
         VNode::Box(TeXBox::V { children, .. }) => {
-            let children = get_page_inner(children.into_vec());
+            let mut children = get_page_inner(children.into_vec());
+            if !children.is_empty() && penalty <= -9999 {
+                children.extend(vec![
+                    /*VNode::Custom(RusTeXNode::Literal(format!(
+                        "<div data-penalty=\"{penalty}\"></div>"
+                    ))),*/
+                    VNode::VSkip(Skip {
+                        base: Dim32(65536 * 20),
+                        stretch: None,
+                        shrink: None,
+                    }),
+                ]);
+            }
             /*println!("--------------------------------------------");
             for c in &children {
                 println!("{}", c.display());
             }*/
-            ShipoutState::split_state(engine, |state| state.do_vlist(&mut children.into()))
+            ShipoutState::split_state(engine, |state| state.do_vlist(&mut children))
                 .map_err(|e| TeXError::General(format!("Not allowed in V-Mode: {e:?}")))?;
             /*
                         println!("--------------------------------------------");
@@ -264,7 +286,7 @@ impl<Mode: VLike> Shipout<'_, '_, Mode> {
                             }
                             if !done {
                                 for r in redos.into_iter().rev() {
-                                    self.push(r)
+                                    self.push(r);
                                 }
                             }
                             // TODO lost table row
@@ -282,6 +304,7 @@ impl<Mode: VLike> Shipout<'_, '_, Mode> {
                     height,
                     depth,
                 }),
+                VNode::Custom(RusTeXNode::ParagraphEnd) => (),
                 VNode::Custom(RusTeXNode::PDFNode(PDFNode::XImage(_))) => todo!(),
 
                 _ => todo!("{c:?}"),
@@ -313,6 +336,10 @@ impl<Mode: VLike> Shipout<'_, '_, Mode> {
                     | VNode::Vss
                     | VNode::Mark(..)
                     | VNode::VKern(_) => (),
+                    c @ VNode::Custom(RusTeXNode::ParagraphBegin { .. }) if is_empty => {
+                        later.push(c);
+                        return Ok(later);
+                    }
                     VNode::Custom(RusTeXNode::ParagraphEnd) if is_empty => emergency_break = true,
                     VNode::Custom(RusTeXNode::ParagraphEnd) => return Ok(later),
                     VNode::Box(TeXBox::H {
@@ -1053,7 +1080,289 @@ impl Shipout<'_, '_, SVG> {
     }
 }
 
-fn get_page_inner(children: Vec<VNode<Types>>) -> Vec<VNode<Types>> {
+fn get_page_inner(children: Vec<VNode<Types>>) -> VNodes {
+    let mut list: VNodes = children.into();
+    let mut redo = Vec::new();
+    while let Some(c) = list.next() {
+        if matches!(c, VNode::Custom(RusTeXNode::PageBegin)) {
+            break;
+        }
+        unpack(c, &mut list, &mut redo, false);
+    }
+    while let Some(c) = list.next() {
+        if !unpack2(c, &mut list, &mut redo, false) {
+            break;
+        }
+    }
+    list.prefix(redo);
+    let mut redo = Vec::new();
+    while let Some(c) = list.next_back() {
+        if matches!(c, VNode::Custom(RusTeXNode::PageEnd)) {
+            break;
+        }
+        unpack(c, &mut list, &mut redo, true);
+    }
+    while let Some(c) = list.next_back() {
+        if !unpack2(c, &mut list, &mut redo, true) {
+            break;
+        }
+    }
+    redo.reverse();
+    list.extend(redo);
+    /*
+       println!("\n\n---------------------------------------------------------");
+       for c in list.clone() {
+           println!("{c:?}");
+       }
+       println!("---------------------------------------------------------\n");
+    */
+    list
+}
+
+fn unpack2(mut c: VNode<Types>, list: &mut VNodes, ret: &mut Vec<VNode<Types>>, rev: bool) -> bool {
+    match c {
+        VNode::VSkip(_)
+        | VNode::VKern(_)
+        | VNode::VFil
+        | VNode::VFill
+        | VNode::VFilneg
+        | VNode::Vss
+        | VNode::Penalty(_)
+        | VNode::Mark(..)
+        | VNode::Custom(
+            RusTeXNode::PDFNode(
+                PDFNode::PDFDest(..)
+                | PDFNode::PDFCatalog(_)
+                | PDFNode::PDFLiteral(_)
+                | PDFNode::XForm(..)
+                | PDFNode::Obj(..)
+                | PDFNode::PDFOutline(_),
+            )
+            | RusTeXNode::PageBegin
+            | RusTeXNode::PageEnd,
+        ) => return true,
+        VNode::Custom(
+            n @ (RusTeXNode::FontChange(_, _)
+            | RusTeXNode::Literal(_)
+            | RusTeXNode::FontChangeEnd
+            | RusTeXNode::AnnotBegin { .. }
+            | RusTeXNode::AnnotEnd(_)
+            | RusTeXNode::PDFNode(PDFNode::Color(_))),
+        ) => {
+            ret.push(VNode::Custom(n));
+            return true;
+        }
+        VNode::Whatsit(w) => {
+            ret.push(VNode::Whatsit(w));
+            return true;
+        }
+        VNode::Box(TeXBox::V { info, children, .. }) if info.is_trivial() => {
+            if rev {
+                list.extend(children);
+            } else {
+                list.prefix(children.into_vec());
+            }
+            return true;
+        }
+        VNode::Box(TeXBox::H {
+            ref info,
+            ref mut children,
+            ..
+        }) if unpackable(info, children) => {
+            for c in std::mem::take(children) {
+                unpack_h(c, list, ret, rev);
+            }
+            return true;
+        }
+        _ => (),
+    }
+    //println!("\n\n----------------------{rev}: {c:#?}\n------------------------------\n");
+    ret.push(c);
+    false
+}
+
+fn unpackable(info: &HBoxInfo<Types>, children: &[HNode<Types>]) -> bool {
+    matches!(info, HBoxInfo::HBox { .. })
+        && info.assigned_depth().is_none()
+        && info.assigned_height().is_none()
+        && info.raised().is_none()
+        && children.iter().all(|c| match c {
+            HNode::HSkip(_)
+            | HNode::HKern(_)
+            | HNode::HFil
+            | HNode::HFill
+            | HNode::HFilneg
+            | HNode::Hss
+            | HNode::Penalty(_)
+            | HNode::Mark(..)
+            | HNode::Custom(
+                RusTeXNode::Literal(_)
+                | RusTeXNode::PDFNode(
+                    PDFNode::PDFDest(..)
+                    | PDFNode::PDFCatalog(_)
+                    | PDFNode::PDFLiteral(_)
+                    | PDFNode::XForm(..)
+                    | PDFNode::Obj(..)
+                    | PDFNode::PDFOutline(_)
+                    | PDFNode::Color(_),
+                )
+                | RusTeXNode::PageBegin
+                | RusTeXNode::PageEnd
+                | RusTeXNode::FontChange(_, _)
+                | RusTeXNode::FontChangeEnd
+                | RusTeXNode::AnnotBegin { .. }
+                | RusTeXNode::AnnotEnd(_),
+            ) => true,
+            HNode::Box(TeXBox::H { info, children, .. }) => unpackable(info, children),
+            HNode::Box(TeXBox::V { info, .. }) => info.is_trivial(),
+            _ => false,
+        })
+}
+fn unpack_h(c: HNode<Types>, list: &mut VNodes, ret: &mut Vec<VNode<Types>>, rev: bool) {
+    match c {
+        HNode::HSkip(_)
+        | HNode::HKern(_)
+        | HNode::HFil
+        | HNode::HFill
+        | HNode::HFilneg
+        | HNode::Hss
+        | HNode::Penalty(_)
+        | HNode::Mark(..)
+        | HNode::Custom(
+            RusTeXNode::PDFNode(
+                PDFNode::PDFDest(..)
+                | PDFNode::PDFCatalog(_)
+                | PDFNode::PDFLiteral(_)
+                | PDFNode::XForm(..)
+                | PDFNode::Obj(..)
+                | PDFNode::PDFOutline(_),
+            )
+            | RusTeXNode::PageBegin
+            | RusTeXNode::PageEnd,
+        ) => (),
+        HNode::Custom(
+            n @ (RusTeXNode::Literal(_)
+            | RusTeXNode::FontChange(_, _)
+            | RusTeXNode::FontChangeEnd
+            | RusTeXNode::AnnotBegin { .. }
+            | RusTeXNode::AnnotEnd(_)
+            | RusTeXNode::PDFNode(PDFNode::Color(_))),
+        ) => {
+            ret.push(VNode::Custom(n));
+        }
+        HNode::Box(TeXBox::H { children, .. }) => {
+            for c in children {
+                unpack_h(c, list, ret, rev);
+            }
+        }
+        HNode::Box(TeXBox::V { children, .. }) if rev => list.extend(children),
+        HNode::Box(TeXBox::V { children, .. }) => list.prefix(children.into_vec()),
+        _ => unreachable!(),
+    }
+}
+
+fn unpack(c: VNode<Types>, list: &mut VNodes, ret: &mut Vec<VNode<Types>>, rev: bool) {
+    match c {
+        VNode::Box(TeXBox::V { children, .. }) if rev => list.extend(children),
+        VNode::Box(TeXBox::V { children, .. }) => list.prefix(children.into_vec()),
+        VNode::Box(TeXBox::H { children, .. }) if hbox_works(&children) => {
+            get_page_hbox(children, ret, list, rev);
+        }
+        VNode::VSkip(_)
+        | VNode::VKern(_)
+        | VNode::VFil
+        | VNode::VFill
+        | VNode::VFilneg
+        | VNode::Vss
+        | VNode::Penalty(_)
+        | VNode::Mark(..)
+        | VNode::Custom(RusTeXNode::PDFNode(
+            PDFNode::PDFDest(..)
+            | PDFNode::PDFCatalog(_)
+            | PDFNode::PDFLiteral(_)
+            | PDFNode::XForm(..)
+            | PDFNode::Obj(..)
+            | PDFNode::PDFOutline(_),
+        )) => (),
+        _ => ret.push(c),
+    }
+}
+
+fn get_page_hbox(
+    children: Box<[HNode<Types>]>,
+    ret: &mut Vec<VNode<Types>>,
+    list: &mut VNodes,
+    rev: bool,
+) {
+    for c in children {
+        match c {
+            HNode::HSkip(_)
+            | HNode::Hss
+            | HNode::Space
+            | HNode::HKern(_)
+            | HNode::HFil
+            | HNode::HFill
+            | HNode::HFilneg
+            | HNode::Penalty(_)
+            | HNode::Mark(_, _)
+            | HNode::Custom(RusTeXNode::PDFNode(
+                PDFNode::PDFDest(..)
+                | PDFNode::PDFCatalog(_)
+                | PDFNode::PDFLiteral(_)
+                | PDFNode::XForm(..)
+                | PDFNode::Obj(..)
+                | PDFNode::PDFOutline(_),
+            )) => (),
+            HNode::Custom(
+                n @ (RusTeXNode::PDFNode(PDFNode::Color(_))
+                | RusTeXNode::FontChange(..)
+                | RusTeXNode::FontChangeEnd),
+            ) => ret.push(VNode::Custom(n)),
+            HNode::Box(TeXBox::V { children, .. }) if rev => list.extend(children),
+            HNode::Box(TeXBox::V { children, .. }) => list.prefix(children.into_vec()),
+            HNode::Box(TeXBox::H { children, .. }) if hbox_works(&children) => {
+                get_page_hbox(children, ret, list, rev);
+            }
+            HNode::Box(t @ TeXBox::H { .. }) => {
+                ret.push(VNode::Box(t));
+            }
+            c => unreachable!("wut: {c:?}"),
+        }
+    }
+}
+
+fn hbox_works(children: &[HNode<Types>]) -> bool {
+    children.iter().all(|n| {
+        matches!(
+            n,
+            HNode::HSkip(_)
+                | HNode::Hss
+                | HNode::Space
+                | HNode::HKern(_)
+                | HNode::HFil
+                | HNode::HFill
+                | HNode::HFilneg
+                | HNode::Penalty(_)
+                | HNode::Mark(_, _)
+                | HNode::Custom(RusTeXNode::PDFNode(
+                    PDFNode::PDFDest(..)
+                        | PDFNode::PDFCatalog(_)
+                        | PDFNode::PDFLiteral(_)
+                        | PDFNode::XForm(..)
+                        | PDFNode::Obj(..)
+                        | PDFNode::PDFOutline(_)
+                        | PDFNode::Color(_)
+                ) |  RusTeXNode::FontChange(..)
+                | RusTeXNode::FontChangeEnd)
+                //| HNode::Custom(RusTeXNode::PDFNode(PDFNode::Color(_)))
+                //| HNode::Custom(RusTeXNode::FontChange(..) | RusTeXNode::FontChangeEnd)
+                | HNode::Box(_)
+        )
+    })
+}
+
+/*
+fn get_page_inner(children: Vec<VNode<Types>>) -> VNodes {
     let mut ret = Vec::new();
     let mut list: VNodes = children.into();
     while let Some(c) = list.next() {
@@ -1102,7 +1411,7 @@ fn get_page_inner(children: Vec<VNode<Types>>) -> Vec<VNode<Types>> {
             _ => ret.push(c),
         }
     }
-    ret
+    ret.into()
 }
 
 fn get_page_hbox(children: Box<[HNode<Types>]>, ret: &mut Vec<VNode<Types>>, list: &mut VNodes) {
@@ -1167,3 +1476,4 @@ fn hbox_works(children: &[HNode<Types>]) -> bool {
         )
     })
 }
+ */

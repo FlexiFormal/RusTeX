@@ -255,3 +255,9 @@ impl<'a, 'b> Into<VecMap<Cow<'a, str>, Cow<'b, str>>> for VecMap<String, String>
         }
     }
 }
+impl<S, T> From<Vec<(S, T)>> for VecMap<S, T> {
+    #[inline]
+    fn from(value: Vec<(S, T)>) -> Self {
+        Self { inner: value }
+    }
+}

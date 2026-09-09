@@ -1,0 +1,128 @@
+\documentclass{article}
+\usepackage{notesslides}
+\input{preamble.pre}
+\usepackage[most]{tcolorbox}
+\usepackage{mdframed,varwidth}
+\begin{document}
+
+\hbox{lorem}
+\hbox{\hbox to \textwidth{}}
+\vbox to 0pt{
+    \vskip-108pt
+    \setbox0\hbox to 0pt{\raise -108pt
+        \hbox to 0pt{\hskip-108pt}
+    }
+    \ht0=0pt
+    \dp0=0pt
+    \box0
+    \vskip 0pt plus 1fil
+}
+\hbox{\hbox to \textwidth{}}
+\hbox{lorem}
+
+\begin{minipage}\textwidth\centering
+    \leavevmode
+    \quad
+    \begin{lrbox}0\begin{minipage}{\dimexpr\textwidth-4.5cm\relax}
+        \begin{itemize}
+            \item \lorem
+            \item Lorem ipsum dolor sit amet
+            \item Lorem ipsum dolor sit amet
+            \item Lorem ipsum dolor sit amet
+            \item Lorem ipsum dolor sit amet
+            \item Lorem ipsum dolor sit amet
+        \end{itemize}
+    \end{minipage}\end{lrbox}\usebox0
+    \quad
+    \begin{lrbox}0\begin{minipage}{2.5cm}
+        \includegraphics[width=2.5cm]{dummy}
+    \end{minipage}\end{lrbox}\usebox0
+\end{minipage}\par\noindent
+
+
+    \begin{itemize}
+    \item[narf] \lorem
+    \item[zort] \lorem 
+    \end{itemize}
+
+    \begin{mdframed}
+        \lorem \lorem
+    \end{mdframed}
+
+    \begin{mdframed}
+        \[ \alpha + \beta \]
+    \end{mdframed}
+
+    \begin{mdframed}
+        \[ \vcenter{
+\lorem \lorem
+        } \]
+    \end{mdframed}
+
+    \newtcolorbox{exampleborderbox}{
+        empty,
+        title={Example Box},
+        attach boxed title to top left,
+            minipage boxed title,
+        boxed title style={empty,size=minimal,toprule=0pt,top=1pt,left=3mm,overlay={}},
+        coltitle=blue,fonttitle=\bfseries,
+        parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,pad at break=0mm,
+            before upper=\csname @totalleftmargin\endcsname0pt, 
+        overlay unbroken={\draw[blue,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+        overlay first={\draw[blue,line width=2pt] ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+        overlay middle={\draw[blue,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+        overlay last={\draw[blue,line width=2pt] ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+        outer arc=4pt%
+    }
+
+    \definecolor{backcolor}{gray}{.96}
+    \begin{exampleborderbox}
+    %\rustexBREAK
+    \lorem
+    \begin{lstlisting}[backgroundcolor=\color{backcolor},numbers=left,gobble=4,numbersep=3pt,xleftmargin=5pt,lineskip=-.7ex,alsoletter=\\]
+        \newtcolorbox{exampleborderbox}{
+        empty,
+        title={Example Box},
+        attach boxed title to top left,
+            minipage boxed title,
+        boxed title style={empty,size=minimal,toprule=0pt,top=1pt,
+            left=3mm,overlay={}},
+        coltitle=blue,fonttitle=\bfseries,
+        parbox=false,boxsep=0pt,left=3mm,right=0mm,top=2pt,breakable,
+            pad at break=0mm, before upper=\csname @totalleftmargin\endcsname0pt, 
+        overlay unbroken={\draw[blue,line width=2pt] 
+            ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+        overlay first={\draw[blue,line width=2pt] 
+            ([xshift=-0pt]title.north west) -- ([xshift=-0pt]frame.south west); },
+        overlay middle={\draw[blue,line width=2pt] 
+            ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+        overlay last={\draw[blue,line width=2pt] 
+            ([xshift=-0pt]frame.north west) -- ([xshift=-0pt]frame.south west); },
+        outer arc=4pt%
+        }
+    \end{lstlisting}
+    \begin{mdframed}
+        \lorem \lorem
+    \end{mdframed}
+    \end{exampleborderbox}
+
+    \definecolor{bubblegreen}{RGB}{103,184,104}
+    \definecolor{bubblegray}{RGB}{241,240,240}
+
+    \newcommand{\bubble}[4]{%
+    \tcbox[
+        on line,
+        arc=2mm,
+        colback=#1,
+        colframe=#1,
+        #2,top=0pt,left=1pt,right=1pt,bottom=0pt
+    ]{\color{#3}\begin{varwidth}{0.5\textwidth}#4\end{varwidth}}%
+    }
+
+    \noindent \bubble{bubblegreen}{rounded corners}{white}{%
+    foo \the\textwidth \texttt{\expandafter\detokenize\expandafter{\the\everypar}}
+    }\par
+
+    \bubble{bubblegreen}{rounded corners}{white}{\lorem}
+
+\end{document}

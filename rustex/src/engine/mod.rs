@@ -165,6 +165,7 @@ impl Display for CompilationResult {
             width: self.top_width,
             indent: 0,
             in_link: false,
+            in_svg: false,
             attrs: VecMap::default(),
             styles: VecMap::default(),
             sourcerefs: self.sourcerefs,
@@ -271,8 +272,7 @@ impl RusTeXEngineExt for RusTeXEngine {
                 top_state: &mut s,
                 engine: &mut refs,
             };
-            let _ = ShipoutWrapper::close_all(&mut istate);
-            let nodes = std::mem::take(&mut istate.nodes);
+            let nodes = istate.finalize();
             drop(istate);
             drop(refs);
             s.output = nodes;
@@ -320,8 +320,7 @@ impl RusTeXEngineExt for RusTeXEngine {
                 top_state: &mut s,
                 engine: &mut refs,
             };
-            let _ = ShipoutWrapper::close_all(&mut istate);
-            let nodes = std::mem::take(&mut istate.nodes);
+            let nodes = istate.finalize();
             drop(istate);
             drop(refs);
             s.output = nodes;

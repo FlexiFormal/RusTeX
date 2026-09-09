@@ -1,14 +1,14 @@
 /*! Utility methods for [`TeXCommand`]s.
 */
 
-use crate::commands::primitives::{PrimitiveIdentifier, PRIMITIVES};
+use crate::commands::primitives::{PRIMITIVES, PrimitiveIdentifier};
 use crate::commands::{
     CharOrPrimitive, Macro, MacroSignature, PrimitiveCommand, ResolvedToken, TeXCommand,
 };
 use crate::engine::filesystem::FileSystem;
 use crate::engine::fontsystem::{Font, FontSystem};
-use crate::engine::gullet::hvalign::{AlignColumn, AlignData};
 use crate::engine::gullet::Gullet;
+use crate::engine::gullet::hvalign::{AlignColumn, AlignData};
 use crate::engine::mouth::Mouth;
 use crate::engine::state::{GroupType, State};
 use crate::engine::stomach::TeXMode;
@@ -16,22 +16,22 @@ use crate::engine::stomach::{Stomach, StomachData};
 use crate::engine::{EngineAux, EngineReferences, EngineTypes};
 use crate::expand_loop;
 use crate::tex::catcodes::CommandCode;
+use crate::tex::nodes::NodeTrait;
 use crate::tex::nodes::boxes::{BoxType, HBoxInfo, TeXBox, ToOrSpread, VBoxInfo};
 use crate::tex::nodes::horizontal::{HNode, HorizontalNodeListType};
 use crate::tex::nodes::math::{
     Delimiter, MathAtom, MathClass, MathKernel, MathNode, MathNucleus, UnresolvedMathFontStyle,
 };
 use crate::tex::nodes::vertical::{VNode, VerticalNodeListType};
-use crate::tex::nodes::NodeTrait;
 use crate::tex::nodes::{
     BoxTarget, LeaderBody, LeaderSkip, LeaderType, Leaders, ListTarget, NodeList,
 };
 use crate::tex::numerics::Skip;
+use crate::tex::tokens::Token;
 use crate::tex::tokens::control_sequences::CSHandler;
 use crate::tex::tokens::token_lists::TokenList;
-use crate::tex::tokens::Token;
-use crate::utils::errors::{TeXError, TeXResult};
 use crate::utils::HMap;
+use crate::utils::errors::{TeXError, TeXResult};
 
 pub(crate) struct MacroParser<T: Token> {
     arity: u8,
@@ -80,13 +80,13 @@ impl<T: Token> MacroParser<T> {
                         _ => {
                             return Err(TeXError::General(
                                 "Invalid argument number\nTODO: Better error message".to_string(),
-                            ))
+                            ));
                         }
                     },
                     None => {
                         return Err(TeXError::General(
                             "Missing argument number\nTODO: Better error message".to_string(),
-                        ))
+                        ));
                     }
                 }
                 self.arity += 1;
@@ -113,13 +113,13 @@ impl<T: Token> MacroParser<T> {
                         _ => {
                             return Err(TeXError::General(
                                 "Invalid argument number\nTODO: Better error message".to_string(),
-                            ))
+                            ));
                         }
                     },
                     None => {
                         return Err(TeXError::General(
                             "Missing argument number\nTODO: Better error message".to_string(),
-                        ))
+                        ));
                     }
                 }
             }
@@ -276,6 +276,9 @@ pub(in crate::commands) fn do_box_start<ET: EngineTypes>(
         ResolvedToken::Tk {code:CommandCode::BeginGroup,..} |
         ResolvedToken::Cmd(Some(TeXCommand::Char{code:CommandCode::BeginGroup,..})) => {
             engine.state.push(engine.aux,tp,engine.mouth.line_number());
+            if matches!(tp,GroupType::VBox|GroupType::VTop|GroupType::VCenter) {
+                engine.state.set_parshape(engine.aux, Vec::new(), false);
+            }
             engine.push_every(every);
             return Ok(scaled)
         }
@@ -983,7 +986,7 @@ pub(crate) fn do_leaders<ET: EngineTypes>(
         Some(_) => {
             return Err(TeXError::General(
                 "Not yet implemented: leaders with width/height/depth".to_string(),
-            ))
+            ));
         }
         _ => crate::expand_loop!(engine,token,
             ResolvedToken::Cmd(Some(TeXCommand::Primitive {cmd:PrimitiveCommand::Box(read),..})) => {

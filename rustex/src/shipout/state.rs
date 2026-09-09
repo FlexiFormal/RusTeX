@@ -381,7 +381,7 @@ impl ShipoutWrapper {
                 .push((ShipoutNodeSVG::into_nodes(nodes), wrapper));
         }
     }
-    pub(crate) fn close_all<Mode: ShipoutModeT>(state: &mut Shipout<Mode>) -> Vec<ShipoutWrapper> {
+    pub(crate) fn close_all<Mode: ShipoutModeT>(state: &mut Shipout<Mode>) -> Vec<Self> {
         let mut reopen = Vec::new();
         loop {
             match state.wrapper.kind() {
@@ -478,8 +478,17 @@ pub(crate) struct Shipout<'a, 'b, Mode: ShipoutModeT> {
     pub(crate) state: Mode,
     pub(crate) previous: Vec<(ShipoutNodes, ShipoutWrapper)>,
 }
+impl<'a, 'b> Shipout<'a, 'b, Top> {
+    pub fn finalize(&mut self) -> Vec<ShipoutNodeV> {
+        ShipoutWrapper::close_all(self);
+        while matches!(self.nodes.last(), Some(ShipoutNodeV::KernSkip(_))) {
+            self.nodes.pop();
+        }
+        std::mem::take(&mut self.nodes)
+    }
+}
+
 impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
-    #[inline(always)]
     fn do_in<R, M: ShipoutModeT>(
         &mut self,
         new: impl FnOnce() -> M,
@@ -516,7 +525,6 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
         (r, s.nodes, uses_color, uses_font)
     }
 
-    #[inline(always)]
     pub(crate) fn in_v<R>(
         &mut self,
         start: SRef,
@@ -537,7 +545,7 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
         );
         r
     }
-    #[inline(always)]
+
     pub(crate) fn in_h<R>(
         &mut self,
         start: SRef,
@@ -560,7 +568,7 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
         );
         r
     }
-    #[inline(always)]
+
     pub(crate) fn in_svg<R>(
         &mut self,
         start: SRef,
@@ -595,12 +603,11 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
         r
     }
 
-    #[inline(always)]
+    #[inline]
     pub(crate) fn push(&mut self, node: Mode::NodeType) {
         self.nodes.push(node)
     }
 
-    #[inline(always)]
     pub(crate) fn open_link(&mut self, link: PDFStartLink<Types>) {
         let s = match link.action {
             ActionSpec::Goto(GotoAction::Current { target, .. }) => {
@@ -629,11 +636,11 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
             oldwrap,
         ))
     }
-    #[inline(always)]
+    #[inline]
     pub(crate) fn close_link(&mut self) {
         ShipoutWrapper::close(self, WrapperKind::Link)
     }
-    #[inline(always)]
+
     pub(crate) fn open_font(&mut self, font: Font, global: bool) {
         if global {
             self.top_state.top_font = Some(font)
@@ -645,11 +652,11 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
             ))
         }
     }
-    #[inline(always)]
+    #[inline]
     pub(crate) fn close_font(&mut self) {
         ShipoutWrapper::close(self, WrapperKind::Font)
     }
-    #[inline(always)]
+
     pub(crate) fn open_annot(
         &mut self,
         start: SRef,
@@ -673,12 +680,12 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
             oldwrap,
         ))
     }
-    #[inline(always)]
+    #[inline]
     pub(crate) fn close_annot(&mut self, end: SRef) {
         // TODO: end
         ShipoutWrapper::close(self, WrapperKind::Annotation)
     }
-    #[inline(always)]
+
     pub(crate) fn open_matrix(&mut self, scale: f32, rotate: f32, skewx: f32, skewy: f32) {
         let oldwrap = std::mem::replace(
             &mut self.wrapper,
@@ -694,11 +701,11 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
             oldwrap,
         ))
     }
-    #[inline(always)]
+    #[inline]
     pub(crate) fn close_matrix(&mut self) {
         ShipoutWrapper::close(self, WrapperKind::Matrix)
     }
-    #[inline(always)]
+
     pub(crate) fn do_color(&mut self, act: ColorStackAction) {
         let stack = self.engine.aux.extension.colorstacks();
         match act {
@@ -750,7 +757,7 @@ impl<'a, 'b, Mode: VLike> Shipout<'a, 'b, Mode> {
             self.push(ShipoutNodeV::KernSkip(skip))
         }
     }
-    #[inline(always)]
+
     pub(crate) fn reopen_halign(
         &mut self,
         start: SRef,
@@ -781,7 +788,7 @@ impl<'a, 'b, Mode: VLike> Shipout<'a, 'b, Mode> {
         *uses_color |= uc2;
         r
     }
-    #[inline(always)]
+
     pub(crate) fn in_halign<R>(
         &mut self,
         line_skip: LineSkip,
@@ -803,7 +810,7 @@ impl<'a, 'b, Mode: VLike> Shipout<'a, 'b, Mode> {
         });
         r
     }
-    #[inline(always)]
+
     pub(crate) fn in_par<R>(
         &mut self,
         mut specs: Vec<ParLineSpec<Types>>,

@@ -1,5 +1,6 @@
 \usepackage[dvipsnames]{xcolor}
 \usepackage{amsmath,graphicx}
+\usepackage[paperheight=30cm,textheight=25cm]{geometry}
 
 \def\red{\textcolor{red}}
 \def\blue{\textcolor{blue}}

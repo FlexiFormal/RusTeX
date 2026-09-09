@@ -20,6 +20,8 @@
         \noindent\showpar{\showh{\showvwith{}{}{30pt}{\hbox{Content}}}}
     }
 
+    \pagebreak
+
     \block{Height and Depth:}{
         \showh{\showvwith{}{50pt}{30pt}{\hbox{Content}}}
         \noindent\showpar{\showvwith{}{50pt}{30pt}{\hbox{Content}}}
@@ -34,6 +36,8 @@
         \noindent\showpar{\showh{\setbox0\vbox to 50pt{\showvinner{\hbox{Content}}}%
             \dp0=30pt\box0}}
     }
+
+    \pagebreak
 
     \block{Height with Para:}{
         \showh{\showvwith{}{80pt}{}{\noindent\lorem\par}}
@@ -58,6 +62,8 @@
 
     \block{Para in \cs{vbox} in Para}{\showpar{\showvwith{50pt}{}{}{\showpar{}}}}
 
+    \pagebreak
+
     \block{VBoxes:}{\showh{%
         \showvwith{}{150pt}{}{\hbox{Box Content}}%
         \showvto{150pt}{\hbox{Box Content}}
@@ -67,6 +73,18 @@
         \ht0=150pt\box0%
     }}
 
+    \block{Negative Height:}{
+        \showh{\showvwith{}{-20pt}{}{\hbox{Content}}}
+        \noindent\showpar{\showvwith{}{-20pt}{}{\hbox{Content}}}
+    }
+    \block{Negative Depth:}{
+        \showh{\showvwith{}{}{-20pt}{\hbox{Content}}}
+        \noindent\showpar{\showvwith{}{}{-20pt}{\hbox{Content}}}
+    }
+    \block{Negative To:}{
+        \showh{\showvto{-20pt}{\hbox{Content}}}
+        \noindent\showpar{\showvto{-20pt}{\hbox{Content}}}
+    }
 
 \subsection{VTops}
 
@@ -81,6 +99,8 @@
   \noindent\showpar{\showtwith{}{50pt}{}{\hbox{Content}}}
   \noindent\showpar{\showh{\showtwith{}{50pt}{}{\hbox{Content}}}}
 }
+
+\pagebreak
 
 \block{Depth}{
   \showh{\showtwith{}{}{10pt}{\hbox{Content}}}
@@ -103,6 +123,8 @@
   \noindent\showpar{\showh{\setbox0\vtop to 50pt{\showtinner{\hbox{Content}}}%
     \dp0=10pt\box0}}
 }
+
+\pagebreak
 
 \block{Height with Para:}{
   \showh{\showtwith{}{80pt}{}{\noindent\lorem\par}}
@@ -131,6 +153,8 @@
 
 \block{Para in \cs{vtop} in Para}{\showpar{\showtwith{50pt}{}{}{\showpar{}}}}
 
+\pagebreak
+
 \block{VTops:}{\showh{%
   \showtwith{}{150pt}{}{\hbox{Box Content}}%
   \showtto{150pt}{\hbox{Box Content}}
@@ -146,6 +170,43 @@
     \showtwith{}{}{50pt}{\hbox{Box Content}}%
     \showtwith{}{50pt}{50pt}{\hbox{Box Content}}%
   }
+}
+
+\block{Negative Height:}{
+  \showh{\showtwith{}{-20pt}{}{\hbox{Content}}}
+  \noindent\showpar{\showtwith{}{-20pt}{}{\hbox{Content}}}
+}
+\block{Negative Depth:}{
+  \showh{\showtwith{}{}{-20pt}{\hbox{Content}}}
+  \noindent\showpar{\showtwith{}{}{-20pt}{\hbox{Content}}}
+}
+\block{Negative To:}{
+  \showh{\showtto{-20pt}{\hbox{Content}}}
+  \noindent\showpar{\showtto{-20pt}{\hbox{Content}}}
+}
+
+\subsection{VCenter}
+
+    \block{\$\cs{vcenter}\$ in H}{%
+        \showh{$\showc{\hbox{Box Content}}$}%
+    }
+
+    \block{\$\cs{vcenter}\$}{\showpar{$\showc{\hbox{Foo}}$}}
+
+    \conclude{\cs{vcenter} is not a box with modifiable dimensions, apparently?}
+
+    \block{Para in \cs{vcenter} in Para}{\showpar{$\showc{\showpar{}}$}}
+
+\subsection{Interactions}
+
+\block{\cs{v*} in H}{%
+  \showh{%
+    \showvwith{}{150pt}{}{\hbox{Box Content}}%
+    \showtwith{}{150pt}{}{\hbox{Box Content}}%
+    \showvwith{}{150pt}{50pt}{\hbox{Box Content}}%
+    \showtwith{}{150pt}{50pt}{\hbox{Box Content}}%
+    \hbox{$\showc{\hbox{Box Content}}$}%
+  }%
 }
 
 \end{document}

@@ -18,18 +18,27 @@ use crate::engine::stomach::Stomach;
 use crate::engine::stomach::TeXMode;
 use crate::engine::utils::outputs::Outputs;
 use crate::engine::{EngineReferences, EngineTypes, TeXEngine};
+use crate::pdflatex::nodes::PDFNodeLike;
 use crate::pdflatex::{FileWithMD5, FontWithLpRp};
 use crate::prelude::CSHandler;
 use crate::prelude::Character;
 use crate::tex::catcodes::CommandCode;
+use crate::tex::nodes::NodeList;
 use crate::tex::nodes::WhatsitFunction;
+use crate::tex::nodes::boxes::HBoxInfo;
+use crate::tex::nodes::boxes::Once;
+use crate::tex::nodes::boxes::TeXBox;
+use crate::tex::nodes::boxes::ToOrSpread;
+use crate::tex::nodes::boxes::VBoxInfo;
 use crate::tex::nodes::horizontal::HNode;
 use crate::tex::nodes::math::MathNode;
 use crate::tex::nodes::vertical::VNode;
 use crate::tex::numerics::NumSet;
+use crate::tex::numerics::TeXDimen;
 use crate::tex::tokens::token_lists::Otherize;
 use crate::tex::tokens::{StandardToken, Token};
 use crate::utils::errors::{TeXError, TeXResult};
+use std::cell::OnceCell;
 use std::fmt::Write;
 
 pub fn pdftexversion<ET: EngineTypes>(
@@ -255,14 +264,260 @@ pub fn pdfrestore<ET: EngineTypes>(
 ) -> TeXResult<(), ET>
 where
     ET::Extension: PDFExtension<ET>,
-    ET::CustomNode: From<PDFNode<ET>>,
+    ET::CustomNode: PDFNodeLike<ET>,
 {
+    if let Some(NodeList::Horizontal { children, .. }) =
+        engine.stomach.data_mut().open_lists.last_mut()
+        && let Some((i, scale)) = children.iter().enumerate().rev().find_map(|(i, e)| {
+            if let HNode::Custom(n) = e
+                && let Some(PDFNode::PDFMatrix {
+                    scale,
+                    rotate: 0.0,
+                    skewx: 0.0,
+                    skewy, //: 0.0,
+                }) = n.as_pdf()
+                && skewy == scale
+            {
+                Some((i, *scale))
+            } else {
+                None
+            }
+        })
+    {
+        let after = &mut children[i + 1..];
+
+        /*
+        println!("---------------------------------------------------------------");
+        println!("HERE: {scale},{rotate},{skewx},{skewy}");
+        for c in &*after {
+            println!("{c:?}");
+        }
+         */
+
+        if simplifyable_h(after) {
+            simplify_h(after, scale);
+            children.remove(i);
+            return Ok(());
+        }
+    } else if let Some(NodeList::Vertical { children, .. }) =
+        engine.stomach.data_mut().open_lists.last_mut()
+        && let Some((i, scale)) = children.iter().enumerate().rev().find_map(|(i, e)| {
+            if let VNode::Custom(n) = e
+                && let Some(PDFNode::PDFMatrix {
+                    scale,
+                    rotate: 0.0,
+                    skewx: 0.0,
+                    skewy: 0.0,
+                }) = n.as_pdf()
+            {
+                Some((i, *scale))
+            } else {
+                None
+            }
+        })
+    {
+        let after = &mut children[i + 1..];
+        if simplifyable_v(after) {
+            simplify_v(after, scale);
+            children.remove(i);
+            return Ok(());
+        }
+    }
     crate::add_node!(ET::Stomach;engine,
         VNode::Custom(PDFNode::PDFRestore.into()),
         HNode::Custom(PDFNode::PDFRestore.into()),
         MathNode::Custom(PDFNode::PDFRestore.into())
     );
     Ok(())
+}
+
+fn simplifyable_h<ET: EngineTypes>(nodes: &[HNode<ET>]) -> bool
+where
+    ET::Extension: PDFExtension<ET>,
+    ET::CustomNode: PDFNodeLike<ET>,
+{
+    nodes.iter().all(|n| match n {
+        HNode::Custom(n) if let Some(n) = n.as_pdf() => match n {
+            PDFNode::PDFMatrix { .. } => false,
+            _ => true,
+        },
+        HNode::Box(TeXBox::H { children, .. }) => simplifyable_h(children),
+        HNode::Box(TeXBox::V { children, .. }) => simplifyable_v(children),
+        HNode::HFil
+        | HNode::HFill
+        | HNode::HFilneg
+        | HNode::HKern(_)
+        | HNode::HSkip(_)
+        | HNode::Hss
+        | HNode::Space
+        | HNode::Mark(_, _) => true,
+        _ => false,
+    })
+}
+
+fn simplify_h<ET: EngineTypes>(nodes: &mut [HNode<ET>], scale: f32)
+where
+    ET::Extension: PDFExtension<ET>,
+    ET::CustomNode: PDFNodeLike<ET>,
+{
+    for n in nodes {
+        match n {
+            HNode::Custom(n) => {
+                if let Some(PDFNode::XImage(img)) = n.as_pdf_mut() {
+                    let width = img.width.unwrap_or_else(|| img.width());
+                    let height = img.height.unwrap_or_else(|| img.height());
+                    img.width = Some(width.scale_float(scale.into()));
+                    img.height = Some(height.scale_float(scale.into()));
+                }
+            }
+            HNode::Box(TeXBox::H { children, info, .. }) => {
+                simplify_h(children, scale);
+                scale_info_h(info, scale);
+            }
+            HNode::Box(TeXBox::V { children, info, .. }) => {
+                simplify_v(children, scale);
+                scale_info_v(info, scale);
+            }
+            _ => (),
+        }
+    }
+}
+fn scale_info_h<ET: EngineTypes>(info: &mut HBoxInfo<ET>, scale: f32) {
+    match info {
+        HBoxInfo::HBox {
+            scaled,
+            assigned_width,
+            assigned_height,
+            assigned_depth,
+            moved_left,
+            raised,
+            computed_width,
+            computed_height,
+            computed_depth,
+        } => {
+            match scaled {
+                ToOrSpread::Spread(s) => *s = s.scale_float(scale.into()),
+                ToOrSpread::To(s) => *s = s.scale_float(scale.into()),
+                _ => (),
+            }
+            if let Some(v) = assigned_width {
+                *v = v.scale_float(scale.into());
+            }
+            if let Some(v) = assigned_height {
+                *v = v.scale_float(scale.into());
+            }
+            if let Some(v) = assigned_depth {
+                *v = v.scale_float(scale.into());
+            }
+            if let Some(v) = moved_left {
+                *v = v.scale_float(scale.into());
+            }
+            if let Some(v) = raised {
+                *v = v.scale_float(scale.into());
+            }
+            *computed_width = Once::new();
+            *computed_height = Once::new();
+            *computed_depth = Once::new();
+        }
+        _ => (),
+    }
+}
+fn scale_info_v<ET: EngineTypes>(info: &mut VBoxInfo<ET>, scale: f32) {
+    match info {
+        VBoxInfo::VBox {
+            scaled,
+            assigned_width,
+            assigned_height,
+            assigned_depth,
+            moved_left,
+            raised,
+            computed_width,
+            computed_height,
+            computed_depth,
+        }
+        | VBoxInfo::VTop {
+            scaled,
+            assigned_width,
+            assigned_height,
+            assigned_depth,
+            moved_left,
+            raised,
+            computed_width,
+            computed_height,
+            computed_depth,
+        } => {
+            match scaled {
+                ToOrSpread::Spread(s) => *s = s.scale_float(scale.into()),
+                ToOrSpread::To(s) => *s = s.scale_float(scale.into()),
+                _ => (),
+            }
+            if let Some(v) = assigned_width {
+                *v = v.scale_float(scale.into());
+            }
+            if let Some(v) = assigned_height {
+                *v = v.scale_float(scale.into());
+            }
+            if let Some(v) = assigned_depth {
+                *v = v.scale_float(scale.into());
+            }
+            if let Some(v) = moved_left {
+                *v = v.scale_float(scale.into());
+            }
+            if let Some(v) = raised {
+                *v = v.scale_float(scale.into());
+            }
+            *computed_width = Once::new();
+            *computed_height = Once::new();
+            *computed_depth = Once::new();
+        }
+        _ => (),
+    }
+}
+
+fn simplifyable_v<ET: EngineTypes>(nodes: &[VNode<ET>]) -> bool
+where
+    ET::Extension: PDFExtension<ET>,
+    ET::CustomNode: PDFNodeLike<ET>,
+{
+    nodes.iter().all(|n| match n {
+        VNode::Custom(n) if let Some(n) = n.as_pdf() => match n {
+            PDFNode::PDFMatrix { .. } => false,
+            _ => true,
+        },
+        VNode::Box(TeXBox::H { children, .. }) => simplifyable_h(children),
+        VNode::Box(TeXBox::V { children, .. }) => simplifyable_v(children),
+        VNode::VFil
+        | VNode::VFill
+        | VNode::VFilneg
+        | VNode::VKern(_)
+        | VNode::VSkip(_)
+        | VNode::Vss
+        | VNode::Mark(_, _)
+        | VNode::Penalty(_) => true,
+        _ => false,
+    })
+}
+
+fn simplify_v<ET: EngineTypes>(nodes: &mut [VNode<ET>], scale: f32)
+where
+    ET::Extension: PDFExtension<ET>,
+    ET::CustomNode: PDFNodeLike<ET>,
+{
+    for n in nodes {
+        match n {
+            VNode::Custom(n) => {
+                if let Some(PDFNode::XImage(img)) = n.as_pdf_mut() {
+                    let width = img.width.unwrap_or_else(|| img.width());
+                    let height = img.height.unwrap_or_else(|| img.height());
+                    img.width = Some(width.scale_float(scale.into()));
+                    img.height = Some(height.scale_float(scale.into()));
+                }
+            }
+            VNode::Box(TeXBox::H { children, .. }) => simplify_h(children, scale),
+            VNode::Box(TeXBox::V { children, .. }) => simplify_v(children, scale),
+            _ => (),
+        }
+    }
 }
 
 pub fn pdfsetmatrix<ET: EngineTypes>(
@@ -1445,7 +1700,7 @@ const PRIMITIVE_TOKS: &[&str] = &["pdfpageresources"];
 pub fn register_pdftex_primitives<E: TeXEngine>(engine: &mut E)
 where
     <E::Types as EngineTypes>::Extension: PDFExtension<E::Types>,
-    <E::Types as EngineTypes>::CustomNode: From<PDFNode<E::Types>>,
+    <E::Types as EngineTypes>::CustomNode: PDFNodeLike<E::Types>,
     <E::Types as EngineTypes>::File: FileWithMD5,
     <E::Types as EngineTypes>::Font: FontWithLpRp,
 {

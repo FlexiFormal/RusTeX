@@ -138,14 +138,24 @@ impl Stomach<Types> for RusTeXStomach {
                 if data.page_contains_boxes
                     && data.pagetotal > <Types as EngineTypes>::Dim::from_sp(6553600 * 5)
                 {
-                    do_shipout(engine, penalty.or(Some(-10000)), |_| ())?;
-                    engine.stomach.data_mut().page_contains_boxes = true;
+                    let pg = std::mem::replace(
+                        &mut data.pagegoal,
+                        <Types as EngineTypes>::Dim::from_sp(i32::MAX / 2),
+                    );
+                    do_shipout(engine, penalty.or(Some(-1000)), |_| ())?;
+                    let data = engine.stomach.data_mut();
+                    data.page_contains_boxes = true;
+                    data.pagegoal = pg;
                     Ok(())
                 } else if penalty.is_some() {
-                    do_shipout(engine, penalty, |data| {
-                        data.page
-                            .push(VNode::VSkip(Skip::new(Dim32(655360), None, None)))
-                    })
+                    do_shipout(
+                        engine,
+                        penalty,
+                        |_| (), /*|data| {
+                                    data.page
+                                        .push(VNode::VSkip(Skip::new(Dim32(655360), None, None)))
+                                }*/
+                    )
                 } else {
                     Ok(())
                 }

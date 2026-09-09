@@ -1,3 +1,8 @@
+#![allow(
+    clippy::missing_errors_doc,
+    clippy::needless_pass_by_value,
+    clippy::missing_panics_doc
+)]
 use super::primitives::*;
 use crate::commands::methods::{END_TEMPLATE, END_TEMPLATE_ROW, IfxCmd, MacroParser};
 use crate::commands::{
@@ -222,7 +227,7 @@ pub fn parshape_set<ET: EngineTypes>(
     tk: ET::Token,
     globally: bool,
 ) -> TeXResult<(), ET> {
-    let len = engine.read_int(false, &tk)?.into();
+    let len = engine.read_int(true, &tk)?.into();
     if len < 0 {
         return engine.general_error(format!("Illegal parshape length {len}"));
     }
@@ -230,7 +235,7 @@ pub fn parshape_set<ET: EngineTypes>(
     for _ in 0..len {
         let a = engine.read_dim(false, &tk)?;
         let b = engine.read_dim(false, &tk)?;
-        shape.push((a, b))
+        shape.push((a, b));
     }
     engine.state.set_parshape(engine.aux, shape, globally);
     Ok(())

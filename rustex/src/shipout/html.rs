@@ -20,6 +20,40 @@ use tex_engine::tex::numerics::{Dim32, TeXDimen};
 use tex_engine::utils::HMap;
 use tex_glyphs::fontstyles::FontModifier;
 
+macro_rules! dims {
+    ($base:expr; wd:$wd:ident $(ht:$ht:ident)? $(dp:$dp:ident)? $(to:$to:ident)? ) => {
+        if $wd.is_some() {
+            dims!(concat!($base," rustex-scalewidth"); $(ht:$ht)? $(dp:$dp)? $(to:$to)?)
+        } else {
+            dims!($base; $(ht:$ht)? $(dp:$dp)? $(to:$to)?)
+        }
+    };
+    ($base:expr; ht:$ht:ident $(dp:$dp:ident)? $(to:$to:ident)? ) => {
+        if $ht.is_some() {
+            dims!(concat!($base," rustex-with-ht"); $(dp:$dp)? $(to:$to)?)
+        } else {
+            dims!($base; $(dp:$dp)? $(to:$to)?)
+        }
+    };
+    ($base:expr; dp:$dp:ident $(to:$to:ident)? ) => {
+        if $dp.is_some() {
+            dims!(concat!($base," rustex-with-dp"); $(to:$to)?)
+        } else {
+            dims!($base; $(to:$to)?)
+        }
+    };
+    ($base:expr; to:$to:ident ) => {
+        if $to.is_some() {
+            concat!($base," rustex-with-to")
+        } else {
+            $base
+        }
+    };
+    ($base:expr ) => {
+        $base
+    };
+}
+
 #[derive(Default)]
 pub enum ImageOptions {
     #[default]
@@ -35,6 +69,7 @@ pub struct CompilationDisplay<'a, 'b> {
     pub(crate) color: PDFColor,
     pub(crate) font: Font,
     pub(crate) in_link: bool,
+    pub(crate) in_svg: bool,
     pub(crate) font_data: &'a HMap<Box<str>, FontData>,
     pub(crate) attrs: VecMap<Cow<'static, str>, Cow<'static, str>>,
     pub(crate) styles: VecMap<Cow<'static, str>, Cow<'static, str>>,
@@ -125,7 +160,7 @@ macro_rules! node {
         #[allow(unused_macros)]
         macro_rules! width {
             ($v:expr) => {
-                if $v == 0 {style!("max-width"="0");} else if $v != $self.width {
+                if $v == 0 {style!("max-width"="0");style!("min-width"="0");} else if $v != $self.width {
                     needs_span = Some($self.width);
                     let pctg = $v as f64 / ($self.width as f64);
                     $self.width = $v;
@@ -642,7 +677,7 @@ impl CompilationDisplay<'_, '_> {
                 node!(self !<div class="rustex-hrule" style:{
                 height!(Self::dim_to_string(ht));
                 match width {
-                    None => style!("min-width"="100%"),
+                    None => {style!("min-width"="100%");style!("max-width"="100%");},
                     Some(w) => style!("--rustex-scale-width"=(w.0 as f32) / (self.width as f32))
                 }
             }{node!(self !<div style:{
@@ -651,7 +686,7 @@ impl CompilationDisplay<'_, '_> {
                 if let Some(b) = bottom {
                     style!("margin-bottom"=Self::dim_to_string(b));
                 }
-            }/>)}/>);
+            }/>);}/>);
                 Ok(())
             }
             ShipoutNodeV::Paragraph {
@@ -672,23 +707,28 @@ impl CompilationDisplay<'_, '_> {
                     0 => todo!(),
                     _ => "rustex-paragraph rustex-withwidth",
                 };
-                node!(self <div class=cls;ref=sref style:{
-                    if !left_skip.is_zero() {
-                        style!("margin-left"=Self::dim_to_string(left_skip.base))
-                    }
-                    if !right_skip.is_zero() {
-                        style!("margin-right"=Self::dim_to_string(right_skip.base))
-                    }
-                    match alignment {
-                        Alignment::L => {style!("text-align"="left");style!("text-align-last"="left");},
-                        Alignment::C => {style!("text-align"="center");style!("text-align-last"="center");},
-                        Alignment::R => {style!("text-align"="right");style!("text-align-align"="right");},
-                        _ => ()
-                    }
-                    width!(*width);
-                }{for c in children {
-                    self.do_h(c,true,false)?
-                }}/>);
+                node!(self <div class=cls;ref=sref
+                    "data-rustex-leftskip"=Self::dim_to_string(left_skip.base);
+                    "data-rustex-rightskip"=Self::dim_to_string(right_skip.base);
+                    "data-rustex-width"=Self::dim_to_string(*width);
+                    style:{
+                        if !left_skip.is_zero() {
+                            style!("margin-left"=Self::dim_to_string(left_skip.base))
+                        }
+                        if !right_skip.is_zero() {
+                            style!("margin-right"=Self::dim_to_string(right_skip.base))
+                        }
+                        match alignment {
+                            Alignment::L => {style!("text-align"="left");style!("text-align-last"="left");},
+                            Alignment::C => {style!("text-align"="center");style!("text-align-last"="center");},
+                            Alignment::R => {style!("text-align"="right");style!("text-align-align"="right");},
+                            _ => ()
+                        }
+                        width!(*width);
+                    }{for c in children {
+                        self.do_h(c,true,false)?;
+                    }}
+                />);
                 self.indent -= 1;
                 Ok(())
             }
@@ -900,7 +940,7 @@ impl CompilationDisplay<'_, '_> {
                 sref,
                 children,
                 ..
-            } => self.math_list(display, sref, children),
+            } => self.math_list(*display, sref, children),
 
             ShipoutNodeH::Img(img) => {
                 self.had_ink = true;
@@ -970,34 +1010,73 @@ impl CompilationDisplay<'_, '_> {
         }
     }
 
+    #[allow(clippy::ref_option)]
     fn math_list(
         &mut self,
-        display: &Option<(Margin, Margin)>,
+        display: Option<(Margin, Margin)>,
         sref: &SourceRef,
         children: &[ShipoutNodeM],
     ) -> std::fmt::Result {
-        if children.len() == 1 {
-            if let Some((sref, width, children, ..)) = children.iter().find_map(|e| {
-                if let ShipoutNodeM::VCenter {
-                    sref,
-                    width,
-                    children,
-                    uses_font,
-                    uses_color,
-                } = e
-                {
-                    Some((sref, width, children, uses_font, uses_color))
-                } else {
-                    None
-                }
-            }) {
-                let oldwd = self.width;
-                node!(self <div style:{
-                    if display.is_some() {
-                        style!("display"="flex");
-                    } else {
-                        style!("display"="inline-flex");
+        if children.len() == 1
+            && let Some(ShipoutNodeM::VCenter {
+                sref,
+                width,
+                children,
+                uses_font,
+                uses_color,
+            }) = children.first()
+        {
+            let oldwd = self.width;
+            macro_rules! insert_width {
+                () => {
+                    if self.in_svg {
+                        match *width {
+                            0 => {
+                                style!("max-width" = "0");
+                                style!("min-width" = "0");
+                            }
+                            x if x > 0 => {
+                                self.width = *width;
+                                let wd = Self::dim_to_string(*width);
+                                style!("width" = wd);
+                                style!("--rustex-curr-width" = wd);
+                                style!("--rustex-this-width" = wd);
+                            }
+                            _ => (),
+                        }
                     }
+                };
+            }
+            if display.is_some() {
+                node!(self <div class="rustex-vcenter-display"
+                    style:{insert_width!()}
+                    {
+                    node!(self <div class="rustex-vcenter" ref=sref {
+                        for c in children {
+                            self.do_v(c,false)?;
+                        }
+                    } />);
+                }/>);
+            } else {
+                node!(self <div class="rustex-vcenter" ref=sref
+                    style:{insert_width!()}
+                {
+                    for c in children {
+                        self.do_v(c,false)?;
+                    }
+                } />);
+            }
+            self.width = oldwd;
+            return Ok(());
+
+            /*
+            let oldwd = self.width;
+            node!(self <div style:{
+                if display.is_some() {
+                    style!("display"="flex");
+                } else {
+                    style!("display"="inline-flex");
+                }
                 match *width {
                     0 => style!("width"="0"),
                     x if x > 0 => {
@@ -1019,13 +1098,14 @@ impl CompilationDisplay<'_, '_> {
                         for c in children {
                             self.do_v(c,false)?;
                         }
-                    } />)
+                    } />);
                 }/>);
             }/>);
-                self.width = oldwd;
-                return Ok(());
-            }
+            self.width = oldwd;
+            return Ok(());
+            */
         }
+
         let inner = move |s: &mut Self| {
             //s.f.write_str("​");
             node!(s <math class="rustex-math" ref=sref {
@@ -1373,7 +1453,7 @@ impl CompilationDisplay<'_, '_> {
                     Some(o) => {
                         node!(self <mo "lspace"="0"; "rspace"="0"; "data-rustex-font"=font.filename();"data-rustex-glyph"=idx.to_string(); class=Self::cls(o); "stretchy"="false"; {Display::fmt(&Escaped(&char.into()), self.f)?}/>);
                     }
-                };
+                }
                 Ok(())
             }
             ShipoutNodeM::Glyph {
@@ -1790,6 +1870,8 @@ impl CompilationDisplay<'_, '_> {
         children: &Vec<ShipoutNodeSVG>,
     ) -> std::fmt::Result {
         self.had_ink = true;
+        let in_svg = self.in_svg;
+        self.in_svg = true;
         node!(self <div class="rustex-svg" {node!(self <svg ref=sref
             "width"=Self::dim_to_string(maxx - minx);
             "height"=Self::dim_to_string(maxy - miny);
@@ -1800,10 +1882,11 @@ impl CompilationDisplay<'_, '_> {
                 Self::dim_to_num(maxy - miny)
             );{node!(self !<g "transform"=format_args!("translate(0,{})",Self::dim_to_num(maxy + miny)); {
                 for c in children {
-                    self.do_svg_node(c)?
+                    self.do_svg_node(c)?;
                 }
             }/>);}
-        />)}/>);
+        />);}/>);
+        self.in_svg = in_svg;
         Ok(())
     }
 
@@ -1850,16 +1933,20 @@ impl CompilationDisplay<'_, '_> {
                 let ht = info.computed_height().map(|d| d.0).unwrap_or_default()
                     + info.assigned_depth().map(|d| d.0).unwrap_or_default();
                 self.do_indent()?;
+                //let oldwd = self.width;
+                //self.width = wd;
                 node!(self !<foreignObject class="rustex-foreign"
-                style:"width"=Self::dim_to_string(wd);
-                style:"max-height"=Self::dim_to_string(ht);
-                style:"min-height"=Self::dim_to_string(ht);
-                style:"height"=Self::dim_to_string(ht);
-                style:"translate"=format_args!("0 {}",Self::dim_to_string(-ht));
-                {node!(self <div
-                    {self.do_hbox(sref,info,true,children)?;}
-                />)}
-            />);
+                    style:"width"=Self::dim_to_string(wd);
+                    //style:"--rustex-curr-width"=Self::dim_to_string(wd);
+                    style:"max-height"=Self::dim_to_string(ht);
+                    style:"min-height"=Self::dim_to_string(ht);
+                    style:"height"=Self::dim_to_string(ht);
+                    style:"translate"=format_args!("0 {}",Self::dim_to_string(-ht));
+                    {node!(self <div
+                        {self.do_hbox(sref,info,true,children)?;}
+                    />);}
+                />);
+                //self.width = oldwd;
                 Ok(())
             }
             _ => todo!("{c:?}"),
@@ -2004,17 +2091,7 @@ impl CompilationDisplay<'_, '_> {
             Ok(())
         })
          */
-        let cls = if ass_width.is_some_and(|w| w != 0) {
-            if ass_height.is_some() || ass_dp.is_some() {
-                "rustex-hbox-outer rustex-scalewidth rustex-dims"
-            } else {
-                "rustex-hbox-outer rustex-scalewidth"
-            }
-        } else if ass_height.is_some() || ass_dp.is_some() {
-            "rustex-hbox-outer rustex-dims"
-        } else {
-            "rustex-hbox-outer"
-        };
+        let cls = dims!("rustex-hbox-outer"; wd:ass_width ht:ass_height dp:ass_dp to:to);
         self.moveraise(info.moved_left(), info.raised(), move |slf| {
             node!(slf <div class=cls; ref=sref
                 ?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
@@ -2154,11 +2231,8 @@ impl CompilationDisplay<'_, '_> {
             }
         })
          */
-        let cls = if ass_height.is_some() || ass_dp.is_some() {
-            "rustex-vbox-outer rustex-dims"
-        } else {
-            "rustex-vbox-outer"
-        };
+
+        let cls = dims!("rustex-vbox-outer"; ht:ass_height dp:ass_dp to:to);
         self.moveraise(info.moved_left(), info.raised(), move |slf| {
             node!(slf <div class=cls; ref=sref
                 ?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
@@ -2174,6 +2248,9 @@ impl CompilationDisplay<'_, '_> {
                     }
                     if let Some(dp) = ass_dp {
                         style!("--rustex-dp"=Self::dim_to_string(dp));
+                    }
+                    if let Some(to) = to {
+                        style!("--rustex-to"=Self::dim_to_string(to));
                     }
                 }
                 {
@@ -2192,9 +2269,9 @@ impl CompilationDisplay<'_, '_> {
                                     style!("margin-right"=Self::dim_to_string(wd));
                                 }
                             }
-                            if let Some(ht) = to {
+                            /*if let Some(ht) = to {
                                 height!(Self::dim_to_string(ht));
-                            }
+                            }*/
                         }
                         {
                             for c in children {
@@ -2313,8 +2390,9 @@ impl CompilationDisplay<'_, '_> {
                }
            })
         */
+        let cls = dims!("rustex-vtop-outer"; ht:ass_height dp:ass_dp to:to);
         self.moveraise(info.moved_left(), info.raised(), move |slf| {
-            node!(slf <div class="rustex-vtop-outer" ref=sref
+            node!(slf <div class=cls; ref=sref
                 ?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
                 ?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
                 ?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
@@ -2322,8 +2400,32 @@ impl CompilationDisplay<'_, '_> {
                 ?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
                 ?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
                 ?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
+                style:{
+                    if let Some(ht) = ass_height {
+                        style!("--rustex-ht"=Self::dim_to_string(ht));
+                    }
+                    if let Some(dp) = ass_dp {
+                        style!("--rustex-dp"=Self::dim_to_string(dp));
+                    }
+                    if let Some(to) = to {
+                        style!("--rustex-to"=Self::dim_to_string(to));
+                    }
+                    if ass_height.is_some() || ass_dp.is_some() || to.is_some() {
+                        if let Some(oht) = orig_height {
+                            style!("--rustex-ht-computed"=Self::dim_to_string(oht));
+                        }
+                        if let Some(odp) = orig_dp {
+                            style!("--rustex-dp-computed"=Self::dim_to_string(odp));
+                        }
+                    }
+                }
                 {
-                    node!(slf <div class="rustex-vtop"
+                    let cls = if ass_width.is_some() {
+                        "rustex-vtop rustex-scalewidth"
+                    } else {
+                        "rustex-vtop"
+                    };
+                    node!(slf <div class=cls;
                         style:{
                             if let Some(wd) = ass_width {
                                 if wd >= 0 {

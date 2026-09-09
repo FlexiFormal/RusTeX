@@ -1,0 +1,64 @@
+\documentclass{article}
+\input{preamble.pre}
+\begin{document}
+
+\def\mymath{\alpha + \mathop{\red\int}_{t=1}^\infty \mathop{\blue\sum}_{x=0}^N f(t,x)^t_x
+  \alpha + \overbrace{\mathop{\red\int}_{t=1}^\infty \left\{\underbrace{\mathop{\blue\sum}_{x=0}^N f(t,x)^t_x}_{\text{where }f\colon A\to B}\right.}^{=0} }
+
+\block{\$ in Para}{
+  \showpar{$\mymath$}
+}
+\block{\$\$ in Para}{
+  \showpar{$$\mymath$$}
+}
+
+\block{\cs{[}...\cs{]} in Para}
+\showpar{\[\mymath\]}
+
+\block{\$ in V}{
+  $\mymath$\par
+  \noindent $\mymath$
+}
+\block{\cs{[} in V}{
+  \[\mymath\]
+}
+
+\block{Composed Symbols}{
+  \def\forkindep{\mathrel{\raise0.2ex\hbox{\ooalign{%
+    \hidewidth$\vert$\hidewidth\cr\raise-0.9ex\hbox{$\smile$}}}}} 
+  \[\Longrightarrow\qquad A \forkindep_C B \qquad
+    A \mathrel{\raise0.2ex\hbox{\ooalign{%
+      \hidewidth$\vert$\hidewidth\cr\hbox{$\smile$}}}}_C B
+  \]
+}
+
+\block{Symbol classes}{
+  \noindent \hbox to50pt{mathbin} $a\mathbin{x}a$ \par 
+  \noindent \hbox to50pt{mathrel} $a\mathrel{x}a$ \par
+  \noindent \hbox to50pt{mathop} $a\mathop{x}a$ \par
+  \noindent \hbox to50pt{mathord} $a\mathord{x}a$ \par
+  \noindent \hbox to50pt{mathpunct} $a\mathpunct{x}a$ \par
+  \noindent \hbox to50pt{mathinner} $a\mathinner{x}a$ \par
+  \noindent \hbox to50pt{mathopen} $a\mathopen{x}a$ \par
+  \noindent \hbox to50pt{mathclose} $a\mathclose{x}a$ \par
+  $$a\mathrel{\mathord{=}\mathord{=}}b$$
+  $$a\mathrel{==}b$$
+  $$a == b$$
+}
+
+\block{\cs{vphantom}}{
+  \[ \left\{ \vphantom{2^{2^{2}}} \right\} 2^{2^{2}} \]
+}
+
+\block{\cs{scaling}}{
+  \[ \mathrm{max}\left\{ \frac AB \right\} := \begin{cases}A & \text{if }B <: A, \\ B & \text{if }A <: B, \\ \text{undefined} & \text{otherwise.}\end{cases} \]
+  \[ \mathrm{max}\left\{ \vphantom{\frac AB} \right. \frac AB \left. \vphantom{\frac AB} \right\} := \begin{cases}A & \text{if }B <: A, \\ B & \text{if }A <: B, \\ \text{undefined} & \text{otherwise.}\end{cases} \]
+}
+\block{\$\cs{vbox}\$ in H}{%
+  \showh{$ \alpha \showv{\hbox{Box Content}} \beta$}%
+}
+\block{\$\cs{vtop}\$ in H}{%
+  \showh{$ \alpha \showt{\hbox{Box Content}} \beta$}%
+}
+
+\end{document}

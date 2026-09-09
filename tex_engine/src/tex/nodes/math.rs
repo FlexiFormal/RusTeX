@@ -859,11 +859,12 @@ impl<ET: EngineTypes> NodeTrait<ET> for MathNucleus<ET, MathFontStyle<ET>> {
                     .iter()
                     .map(|c| c.height() + c.depth())
                     .sum::<ET::Dim>()
-                    + -children
-                        .iter()
-                        .last()
-                        .map(|c| c.depth())
-                        .unwrap_or_default()
+                    .scale_float(0.5)
+                /*+ -children
+                .iter()
+                .last()
+                .map(|c| c.depth())
+                .unwrap_or_default()*/
             }
         }
     }
@@ -907,11 +908,19 @@ impl<ET: EngineTypes> NodeTrait<ET> for MathNucleus<ET, MathFontStyle<ET>> {
             MathNucleus::Radical { inner, .. } => {
                 inner.iter().map(|c| c.depth()).max().unwrap_or_default()
             }
-            MathNucleus::VCenter { children, .. } => children
-                .iter()
-                .last()
-                .map(|c| c.depth())
-                .unwrap_or_default(),
+            MathNucleus::VCenter { children, .. } =>
+            /*children
+            .iter()
+            .last()
+            .map(|c| c.depth())
+            .unwrap_or_default(),*/
+            {
+                children
+                    .iter()
+                    .map(|c| c.height() + c.depth())
+                    .sum::<ET::Dim>()
+                    .scale_float(0.5)
+            }
         }
     }
 

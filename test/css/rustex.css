@@ -1,8 +1,7 @@
+/* TODO
+    transform -> hbox to 0pt -> image [hskip] -> set height/width directly
+*/
 @import url("https://fonts.cdnfonts.com/css/latin-modern-math");
-
-/* ------------------------------------------------------------------------------------------------------------------ */
-/* ----------------------------------------------------- CSS -------------------------------------------------------- */
-/* ------------------------------------------------------------------------------------------------------------------ */
 
 :root {
     /* made up numbers to be replaced */
@@ -39,17 +38,7 @@
     max-width: var(--rustex-curr-width);
     --rustex-curr-width: var(--rustex-this-width);
 }
-.rustex-scalewidth {
-    --rustex-this-width: calc(
-        var(--rustex-curr-width) * var(--rustex-scale-width)
-    );
-    min-width: var(--rustex-this-width);
-    max-width: var(--rustex-this-width);
-}
-.rustex-setwidth {
-    display: contents;
-    --rustex-curr-width: var(--rustex-this-width);
-}
+
 
 .rustex-body {
     max-width: calc(var(--rustex-page-width) * 1px);
@@ -100,110 +89,19 @@
 .rustex-paragraph {
     text-align: justify;
     white-space: normal;
+    text-align-last: left;
+    hyphens:auto;
+    text-wrap: pretty;
     display: block;
-    /*margin-top: auto;*/
+    margin-top: auto;
+    line-height:1.3;
 }
 .rustex-parindent {
     display: inline-block;
 }
 
-/* ---------------------------------------------------- Boxes ------------------------------------------------------- */
+/* ----------------------------------------------------- Rules ------------------------------------------------------- */
 
-.rustex-space-in-hbox {
-    display: inline-block;
-    line-height: 0;
-    &:before {
-        content: " ";
-    }
-}
-
-.rustex-box-vhc,
-.rustex-box-hhc {
-    width: fit-content;
-    align-items: last baseline;
-    flex-direction: row;
-}
-
-.rustex-box-hh,
-.rustex-box-vh {
-    flex-direction: row;
-    white-space: pre;
-    width: min-content;
-    height: min-content;
-    align-items: last baseline;
-    overflow: visible;
-    text-align: left;
-    vertical-align: baseline;
-    justify-content: start;
-}
-
-.rustex-box-hh,
-.rustex-box-hhc {
-    display: inline-flex;
-}
-.rustex-box-vh,
-.rustex-box-vhc {
-    display: flex;
-}
-
-.rustex-box-hv,
-.rustex-box-vv,
-.rustex-box-ht,
-.rustex-box-vt {
-    flex-direction: column;
-    height: min-content;
-    white-space: collapse;
-}
-.rustex-vbox-to {
-    display: flex;
-    flex-direction: column;
-    > .rustex-paragraph {
-        margin-top: auto;
-    }
-}
-
-.rustex-box-after-v {
-    margin-top: auto;
-    height: 0;
-    display: block;
-}
-
-.rustex-box-hv,
-.rustex-box-ht {
-    display: inline-flex;
-    width: fit-content;
-}
-.rustex-box-vv,
-.rustex-box-vt {
-    display: flex;
-    width: 100%;
-}
-
-.rustex-box-hv,
-.rustex-box-vv {
-    vertical-align: bottom;
-}
-.rustex-box-ht,
-.rustex-box-vt {
-    vertical-align: top;
-    position: relative;
-}
-
-.rustex-vcenter {
-    display: block;
-    width: 100%;
-    height: min-content;
-    white-space: initial;
-    > div {
-        height: min-content;
-        width: min-content;
-        display: inline-flex;
-        flex-direction: column;
-        vertical-align: middle;
-    }
-}
-
-/* ---------------------------------------------------- Rules ------------------------------------------------------- */
 
 .rustex-vrule {
     display: inline-block;
@@ -228,13 +126,38 @@
     white-space: initial;
     min-width: calc(var(--rustex-curr-width) * var(--rustex-scale-width));
     max-width: calc(var(--rustex-curr-width) * var(--rustex-scale-width));
+    width: calc(var(--rustex-curr-width) * var(--rustex-scale-width));
     > * {
         display: block;
         width: 100%;
     }
 }
 
-/* --------------------------------------------------- Spacing ------------------------------------------------------ */
+/* A "framed box" (mdframed and similar: a package draws its border/background by placing
+   fixed-size vrule-container elements - full-height side rules, thin top/bottom rules, a
+   background fill - as hbox siblings of the real content, all sized from TeX's own reliable,
+   already-baked numbers) shares ONE baseline across that whole hbox, exactly as any other
+   TeX hbox does - which is why this file otherwise leaves alignment at the default baseline.
+   But the content sibling here is typically a vbox wrapping a paragraph, and unlike the
+   simple rule elements (which have no real baseline of their own - by design, only their own
+   size matters), the content's EXPOSED baseline is native-detected from whatever's actually
+   inside it. That native detection has no reason to land where TeX's own (asserted, but not
+   communicated to CSS - no rustex-with-ht/with-dp here) height/depth split for this content
+   box intended: it's often close for a single line of plain text (the common case this
+   mechanism already handles fine) but can be off by a lot once the content is anything less
+   trivial (a display-math formula's own internal baseline; a nested \vcenter'd box) - visibly
+   shoving the content up or down against the border and even overflowing it. Since the
+   fixed-size rule elements deliberately carry no baseline of their own, and mdframed-style
+   packages default to equal top/bottom inner margins, centering the content vertically
+   against the row (ignoring baseline entirely for this one sibling) reproduces the correct,
+   evenly-padded placement without needing the generator to communicate an exact height/depth
+   split for every possible kind of framed content. */
+.rustex-hbox:has(> .rustex-hbox-outer .rustex-vrule-container) > .rustex-vbox-outer {
+    align-self: center;
+}
+
+/* ----------------------------------------------------- Glue ------------------------------------------------------- */
+
 
 .rustex-hskip,
 .rustex-hkern {
@@ -268,7 +191,680 @@
     margin-bottom: auto;
 }
 
+/* ----------------------------------------------------- Boxes ------------------------------------------------------- */
+
+.rustex-space-in-hbox {
+    display: inline-block;
+    min-width: 0.2em;
+}
+
+.rustex-raise {
+    display: inline-flex;
+    flex-direction: inherit;
+    bottom: var(--rustex-raise);
+    margin-top: var(--rustex-raise);
+    margin-bottom: calc(-1 * var(--rustex-raise));
+    position: relative;
+}
+
+.rustex-moveleft {
+    display: inline-flex;
+    flex-direction: inherit;
+    position: relative;
+    margin-left: calc(-1 * var(--rustex-moveleft));
+}
+
+.rustex-hbox-outer, .rustex-vbox-outer, .rustex-vtop-outer {
+    display:inline-block;
+    width:min-content;
+    margin-bottom:0.1lh;
+}
+.rustex-hbox-outer {
+    align-items: first baseline;
+}
+
+.rustex-hbox, .rustex-vbox, .rustex-vtop {
+    display:flex;
+    width:min-content;
+    height:auto;
+}
+
+.rustex-hbox {
+    flex-direction: row;
+    white-space: nowrap;
+    align-items:baseline;
+    line-height: 1;
+
+    /* Only actual TeX glue (a fixed \hskip/\kern, one side pinned by the generator's own
+       inline style, or the interword space between two words) is stretchable - a plain box
+       between two pieces of glue is rigid and must never absorb slack itself, exactly as
+       already noted for vbox/vtop's "to" spacing ("a plain sequence of boxes has no
+       stretchable glue between them"). Scoping this margin:auto default to just the glue-
+       bearing classes (rather than every child) keeps that true for hbox too: previously ANY
+       child - including a real nested box - picked up margin:auto from here, so a box sitting
+       next to a \hss-like glue (one real case: an itemize custom label, built as a fixed-
+       width box containing a zero-width \hbox holding the label text) could absorb part of
+       that glue's own stretch on the box's OWN margins, splitting slack that TeX would have
+       put entirely into the glue and leaving the box's content anchored in the wrong place. */
+    & > :is(.rustex-hskip, .rustex-hkern, .rustex-space-in-hbox),
+    & > .rustex-setwidth > :is(.rustex-hskip, .rustex-hkern, .rustex-space-in-hbox) {
+        margin-right: auto;
+        margin-left: auto;
+    }
+    /*min-height: 0;*/
+}
+
+.rustex-vbox-outer {
+    display: inline-flex;
+    align-items: last baseline;
+}
+.rustex-vtop-outer {
+    display: inline-flex;
+    align-items: first baseline;
+}
+
+.rustex-vbox, .rustex-vtop {
+    flex-direction: column;
+}
+
+
+/* ------------------------------------------ Height/Depth overrides ------------------------------------------------ */
+/* rustex-with-ht / rustex-with-dp / rustex-with-to are present independently, iff the TeX
+   source actually asserted that dimension (\ht0=, \dp0=, or a to/spread target) - never for
+   a box's natural (glyph-derived, thus unreliable-in-HTML) size. A box carrying none of them
+   is left entirely to the pre-existing native-baseline handling below. The struts these add
+   are generated content, not markup: an ascent strut when height is asserted, a descent
+   strut when depth is asserted, each reading the value straight off the wrapper's own
+   custom property. */
+.rustex-with-ht::before {
+    content: "";
+    display: inline-block;
+    width: 0;
+    height: var(--rustex-ht);
+}
+/* vbox's reference point is its LAST item, so unlike vtop it can't rely on native detection
+   even for a bare "to" (no \ht0=) - something has to establish the line-top a top-anchor
+   needs. \ht0=, when present, already does via the strut above; a bare "to" has no such
+   value, so approximate one from --rustex-to itself (to = height+depth, and depth is
+   usually small next to a stretched-to-fit total, so to alone is a reasonable stand-in for
+   height here) - scoped to vbox only, and only when \ht0= is absent, so it never competes
+   with the real strut above. */
+.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht)::before {
+    content: "";
+    display: inline-block;
+    width: 0;
+    height: var(--rustex-to);
+}
+.rustex-with-dp::after {
+    content: "";
+    display: inline-block;
+    width: 0;
+    height: 0;
+    vertical-align: calc(-1 * var(--rustex-dp));
+}
+
+:is(.rustex-hbox-outer, .rustex-vbox-outer, .rustex-vtop-outer):is(.rustex-with-ht, .rustex-with-dp, .rustex-with-to) {
+    display: inline-block;
+    white-space: nowrap;
+}
+/* hbox content always shares a real, single baseline with the struts by construction (it's
+   either plain text or another baseline-bearing box), so default vertical-align:baseline is
+   correct unconditionally - no top/bottom switch needed here. A box that's ALSO width-scaled
+   (rustex-scalewidth) gets an extra .rustex-setwidth (display:contents) layer between the
+   outer wrapper and .rustex-hbox for the width cascade - display:contents only affects box
+   generation, not the DOM parent/child the ">" combinator matches against, so both direct
+   and setwidth-nested positions need covering here (mirrors the existing glue-margin rule's
+   own "& > *, & > .rustex-setwidth > *" pattern). Deliberately NOT scoped to .rustex-with-to
+   here (unlike the combined selector above, and unlike vbox/vtop's own with-to handling) -
+   for hbox, "to" only ever drives WIDTH (via rustex-scalewidth, entirely separate from this
+   height/baseline machinery), so a bare "to" hbox (no ht, no dp) has no strut to share a line
+   with in the first place. Forcing it into this same inline-formatting-context anyway (as an
+   earlier version of this rule did) came at a real cost: ANY element that lays out inline-
+   level children this way gets a browser-synthesized "strut" - an invisible placeholder sized
+   from the container's own font metrics - even when the real content measures 0px on its own,
+   inflating a genuinely empty (or just short) box's height for no TeX-faithful reason. Leaving
+   a bare-"to" hbox's child at its default display:flex (same as a fully undecorated hbox) side-
+   steps the strut entirely: a block-level flex child never sits in an inline formatting context,
+   so no strut is ever synthesized, and the wrapper's own baseline (exposed to whatever ancestor
+   context - flex-row sibling or plain paragraph prose - actually needs it) still resolves
+   correctly, via the same mechanism already relied on for every plain undecorated hbox: a block
+   container's baseline is its last in-flow child's baseline, independent of line boxes. This
+   fix is thus exact for the whole bare-"to" hbox case, not merely the empty one - and unlike a
+   line-height or font-size reset, it has no font-metric dependency at all to be independent of. */
+.rustex-hbox-outer:is(.rustex-with-ht, .rustex-with-dp) > .rustex-hbox,
+.rustex-hbox-outer:is(.rustex-with-ht, .rustex-with-dp) > .rustex-setwidth > .rustex-hbox {
+    display: inline-flex;
+    vertical-align: baseline;
+}
+/* Above, real content shares one line with the struts, and baseline alignment splits ascent
+   and depth independently - but each side is only a MINIMUM: real content bigger than the
+   assigned value wins a max() against its strut, so the wrapper's exposed size can end up
+   BIGGER than what was actually assigned (confirmed: a natural, un-overridden box nested
+   inside one of these can be far taller than the assigned ht+dp, and its real size leaks
+   through). TeX has no such minimum - the declared ht/dp is authoritative regardless of the
+   box's real content, which is exactly why an overfull box can overlap whatever precedes it
+   in the PDF. Reproducing that means PINNING the exposed size instead of merely asserting it:
+   when both \ht0= and \dp0= are asserted (the case with room to actually overflow - a lone
+   \ht0= or \dp0= still relies on the other side deferring to native, so it keeps using the
+   shared-line struts above), take the real content out of the competition entirely via
+   position:absolute, anchored so its own natural reference point (bottom, approximating its
+   baseline - the same small residual-depth approximation already accepted elsewhere) lands
+   exactly at the assigned reference. The struts, now uncontested on the shared line, then
+   settle to exactly ht+dp with nothing left to out-compete them - and because they're what the
+   surrounding paragraph text actually measures (real content is absented from that
+   competition, not merely resized), the ht/dp SPLIT they expose outward is exact too: dp
+   correctly reads as depth (pushing whatever follows down, confirmed against hboxes.tex's
+   "Box" case) and an overfull box's real content correctly overlaps whatever precedes it
+   (confirmed against hboxes.tex's vbox-in-hbox case, and against the PDF - this overlap is
+   TeX's real, correct rendering of an overfull box, not a bug). Scoped to boxes that are
+   ALSO width-scaled (rustex-scalewidth) - the only case this problem is a validated,
+   necessary fix for - since taking content out of flow loses its natural width contribution,
+   which scalewidth already replaces with an explicit one; a naturally-sized box asserting
+   both ht and dp with real content bigger than the assignment is a real gap but untested.
+
+   TRIED AND REVERTED (again): replacing this with an inline-flex COLUMN wrapper (real content
+   kept in normal flow as a single flex item, height:ht+dp pinning the wrapper directly,
+   justify-content:flex-end bottom-anchoring the item) to drop the rustex-scalewidth
+   requirement - confirmed this DOES fix a real, separate bug (a naturally-sized, non-
+   scalewidth \pdfmatrix-scaled formula box ballooning past its assigned size, live in a real
+   document) without needing scalewidth's substitute width. But it throws away the struts,
+   so the wrapper's exposed baseline reverts to native detection off the bottom-anchored real
+   content - and since content sits flush at the box's bottom, nearly all of ht+dp reads as
+   pure ascent to the surrounding text, not split ht-above/dp-below. Confirmed as a real
+   regression on both existing cases at once: "Box"'s depth stopped pushing the next line
+   down, and the vbox-in-hbox's overlap with the preceding line - CORRECT, TeX-matching
+   behavior, not the bug it was mistaken for - disappeared, because the wrapper's exposed size
+   no longer floats free of content's real position the way the strut version does. Pinning
+   total size and exposing a correct, content-independent ht/dp split are, once again, not
+   simultaneously achievable without either discarding real content's own flow contribution
+   (position:absolute - width-losing, hence scalewidth-scoped) or something the generator would
+   need to help with. Left as position:absolute above; the non-scalewidth gap stays open. */
+.rustex-hbox-outer.rustex-with-ht.rustex-with-dp.rustex-scalewidth {
+    position: relative;
+}
+.rustex-hbox-outer.rustex-with-ht.rustex-with-dp.rustex-scalewidth > .rustex-hbox,
+.rustex-hbox-outer.rustex-with-ht.rustex-with-dp.rustex-scalewidth > .rustex-setwidth > .rustex-hbox {
+    position: absolute;
+    bottom: var(--rustex-dp);
+    left: 0;
+}
+/* TRIED, THEN REVERTED AGAIN: a hard height:calc(ht+dp) cap on the non-scalewidth case
+   (mirroring vbox's own with-ht mechanism), scoped to :not(.rustex-scalewidth) so it left the
+   struts/shared-line mechanism above untouched. Fixed the isolated ballooning measurement
+   (a live \pdfmatrix-scaled formula box's wrapper pinned to its assigned 82.66px instead of
+   ballooning to 106.95px) and passed a full corpus regression with zero pixel difference
+   anywhere else - but did NOT actually resolve the visual issue in the real document it was
+   pulled from. That live document is a multiple-hundred-page PDF this project can't easily
+   extract a minimal case from, so the mismatch between the isolated fix working and the real
+   page not improving is unresolved - current suspicion is the root cause sits in the
+   generator (not this stylesheet) and produces a different, not-yet-identified shape in the
+   real document than the one debug.html was built to reproduce. Left as position:absolute
+   above, unmodified; the non-scalewidth gap stays open pending generator-side investigation. */
+
+/* vbox/vtop content is a multi-row stack, not a single baseline - its OWN exposed baseline
+   is a derived concept (native flex first/last-child detection) that only happens to be
+   correct when nothing was overridden. For vbox, EITHER \ht0= or "to" moves the reference
+   point away from the natural last-item baseline: \vbox to H fixes depth at the natural
+   last-item depth and derives height from H, so it's a height-side operation too, even
+   though it never touches \ht0 directly - each gets top-anchored, using whichever strut
+   applies (the real one from \ht0=, or the --rustex-to approximation above when \ht0= is
+   absent). A bare \dp0= (no \ht0=, no "to") is the only case left to native detection.
+   vtop never needs any of this: its reference point is already the FIRST item, which native
+   detection gives it for free regardless of \ht0=/"to"/\dp0=. */
+:is(.rustex-vbox-outer, .rustex-vtop-outer).rustex-with-ht > :is(.rustex-vbox, .rustex-vtop),
+:is(.rustex-vbox-outer, .rustex-vtop-outer).rustex-with-ht > .rustex-setwidth > :is(.rustex-vbox, .rustex-vtop),
+.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht) > .rustex-vbox,
+.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht) > .rustex-setwidth > .rustex-vbox {
+    display: inline-flex;
+    vertical-align: top;
+}
+/* \ht0= is authoritative regardless of real content size, same as the hbox case above - but
+   here the wrapper can't just take its content out of flow to pin that (no explicit width
+   mechanism backs every with-ht vbox/vtop the way rustex-scalewidth backs the hbox fix, and
+   absolutely positioning the child would silently drop its natural min-content width too).
+   Giving the OUTER itself an explicit height instead sidesteps that: children stay in normal
+   flow (so width:min-content still measures them correctly) but the box's own contribution to
+   the surrounding flow is pinned to ht(+dp), while overflow:visible (the default) still lets
+   real content that's taller than the assignment spill past the bottom edge instead of
+   inflating it - reproducing TeX's overfull-box overlap without disturbing width at all. When
+   \dp0= isn't also asserted, the natural last-row depth this collapses away is the same small,
+   glyph-derived residual the project already treats as an acceptable approximation elsewhere. */
+.rustex-vbox-outer.rustex-with-ht {
+    height: calc(var(--rustex-ht) + var(--rustex-dp, 0px));
+}
+/* A negative \ht0= means this box's own top edge sits BELOW its reference point (height is
+   how far above; negative is below) - real ink is still drawn at its own natural size,
+   unmoved, so the box's content needs to start rendering that far past the reference point
+   instead of flush with it. CSS can't express a negative height (clamped to 0, same as
+   negative width elsewhere in this file) and vertical-align:top alone only ever pushes
+   content to a line's top, never past it - so nothing currently moves content down for this
+   case, which is why a negative \ht0= currently does nothing controlled. Shifting the content
+   down by exactly |ht| via margin-top reproduces the real placement: max(0, -ht) is 0 whenever
+   ht is zero or positive (no-op, the overwhelmingly common case), and exactly |ht| only when
+   ht is negative. Applies equally to vtop - both share the same vertical-align:top bucket
+   above, and vtop's reference point (the first row's own natural baseline) is just as
+   unmoved by a negative \ht0= as vbox's is. */
+:is(.rustex-vbox-outer, .rustex-vtop-outer).rustex-with-ht > :is(.rustex-vbox, .rustex-vtop),
+:is(.rustex-vbox-outer, .rustex-vtop-outer).rustex-with-ht > .rustex-setwidth > :is(.rustex-vbox, .rustex-vtop) {
+    margin-top: max(0px, calc(-1 * var(--rustex-ht)));
+}
+/* A bare "to" (no \ht0=) uses --rustex-to as its ascent strut too (see that strut's own
+   comment above), so a negative "to" needs the exact same push-down as a negative \ht0= does,
+   for the same reason. min-height (used elsewhere for "to") doesn't need the same treatment:
+   a negative minimum is already trivially satisfied by any real (non-negative) natural size,
+   so clamping it to 0 changes nothing there - it's only the strut's role as a stand-in for
+   ascent that breaks for a negative value. */
+.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht) > .rustex-vbox,
+.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht) > .rustex-setwidth > .rustex-vbox {
+    margin-top: max(0px, calc(-1 * var(--rustex-to)));
+}
+/* Unlike \ht0=, a bare "to" has no explicit height pinning the OUTER - its auto-height is
+   left to the natural max(strut, content) competition, which is what already gives it exactly
+   `to` in the underfull case (strut wins) with no rule needed. But that same freedom is why
+   margin-top alone did nothing for a negative "to" tried first: with no fixed boundary to
+   overflow past, the pushed-down content just enlarges the auto-computed boundary right along
+   with it - invisible when this box shares an hbox row with other, differently-sized content
+   (something else there already sets the row's height via its own max()), but very visible
+   when it sits directly inline in running prose with nothing to compete against, where its
+   own auto-height IS the line's height (confirmed: exactly this showed up as an extra gap
+   pushing the next paragraph line down, which the PDF doesn't have). Pinning height here fixes
+   that the same way \ht0= is already pinned, and doesn't cost the overfull-paragraph case
+   its "grows freely" look: with vertical-align:top and overflow visible either way, overfull
+   content was never actually clipped - it either enlarged the outer's auto-height before, or
+   overflows past the pinned height now, and both render the same, uncropped paragraph. */
+.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht) {
+    height: max(0px, var(--rustex-to));
+}
+/* \dp0= on a "to" vbox (no \ht0=) needs its own pin, same idea as the plain with-ht+with-dp
+   case above but built from --rustex-to instead of --rustex-ht - and unlike vtop's version of
+   this same combination (see its own comment, below), vbox can't just ignore --rustex-to for
+   the total: a vtop's ascent is always the first row's own natural height, independent of "to"
+   entirely, so only \dp0= matters there. A vbox's reference point is its LAST row, so \dp0=
+   only ever replaces the DEPTH half of the split - "to" already forced the box's total ht+dp
+   to a real, reliable, non-glyph-derived number at pack time (using whatever the natural last-
+   item depth was then), and only that depth portion needs replacing now, not the whole total.
+   The natural depth being replaced is itself the same small, glyph-derived residual the plain
+   with-ht case above already collapses away rather than tracking exactly (vbox has no
+   generator-supplied --rustex-dp-computed the way vtop does, precisely because it's normally
+   negligible enough not to bother) - so max(0, to) + dp overshoots the true total by that same
+   small, already-accepted amount instead of the alternative this rule replaces: dropping the
+   override's extra depth entirely, silently keeping the pre-override total forever regardless
+   of how much bigger \dp0= actually asked for (confirmed: this pin now measures identically,
+   htdp vs todp, for both the standalone-hbox and in-paragraph shapes - the ~3.75pt overshoot is
+   the only expected difference, both are NOT expected to be exactly pixel-identical since
+   htdp's ht is an independently-asserted 50pt while todp's real, unchanged ht is 50pt minus
+   that same small natural residual).
+   A negative --rustex-dp added on top of a positive "to" is a real, valid TeX combination
+   (\dp0= and "to" are independent), and without a floor the sum could go negative and get
+   silently clamped to 0 by the browser - discarding the box's whole ascent instead of just
+   shrinking it, the same failure mode the bare-to and bare-dp rules elsewhere in this section
+   already guard against explicitly. The outer max(0px, ...) here does the same for the combined
+   total; no corpus case actually combines a "to" vbox with a negative \dp0= to exercise this
+   guard, so it's defensive rather than confirmed against a real example. */
+.rustex-vbox-outer.rustex-with-to.rustex-with-dp:not(.rustex-with-ht) {
+    height: max(0px, calc(max(0px, var(--rustex-to)) + var(--rustex-dp)));
+}
+.rustex-vtop-outer.rustex-with-ht.rustex-with-dp {
+    height: calc(var(--rustex-ht) + var(--rustex-dp));
+}
+/* vtop only: unlike vbox, \ht0= alone reassigns just the height/depth SPLIT point (still the
+   first item's own size unless overridden) - the natural depth past that point ("the rest of
+   the box") is NOT a small residual here the way it is for vbox or for a single hbox row; it's
+   usually most of the box, and no CSS-only measurement of it exists (every shared-line strut
+   tried here either lost it to a max() or required duplicating the real content). --rustex-
+   dp-computed is the one case in this file where that's worth spending a real, generator-
+   supplied number on rather than an approximation or a CSS trick: it's exactly the vtop's own
+   natural depth (unaffected by the \ht0= override, so still meaningful even after it), handed
+   over precisely because nothing on the CSS side can derive it. */
+.rustex-vtop-outer.rustex-with-ht:not(.rustex-with-dp):not(.rustex-with-to) {
+    height: calc(var(--rustex-ht) + var(--rustex-dp-computed, 0px));
+}
+.rustex-vbox-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to) > .rustex-vbox,
+.rustex-vbox-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to) > .rustex-setwidth > .rustex-vbox {
+    display: inline-flex;
+    vertical-align: bottom;
+}
+/* A bottom-anchored vbox's own content competes for "line height" using its FULL natural
+   size (ascent+depth together, since that's what "bottom" alignment contributes) - so a
+   same-line depth strut only wins when it happens to exceed that whole natural size, which
+   is rarely true. This is why a same-line strut works for hbox (real content there is
+   baseline-anchored, so its ascent/depth already split independently) but not here.
+   padding-bottom on the OUTER wrapper sidesteps this: it extends the wrapper's own box
+   (used by an ancestor vlist for stacking) without touching the wrapper's exposed baseline,
+   which stays governed purely by where the content (thus the reference point) naturally
+   sits. Scoped to the same bare-\dp0= case as the bottom-anchor above - once content is
+   top-anchored (ht and/or to present), the numeric ::after strut composes correctly on its
+   own, no workaround needed. */
+.rustex-vbox-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to) {
+    padding-bottom: var(--rustex-dp);
+}
+.rustex-vbox-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to)::after {
+    content: none;
+}
+/* A negative \dp0= means the reference point (still the natural bottom of the content, unmoved
+   - \dp0= doesn't touch that any more than a positive one does) has MORE reserved below it
+   than there really is - i.e. less than zero. padding can't go negative any more than width or
+   height can (same browser clamp everywhere in this file), so the positive case above still
+   works but a negative one is inert. margin has no such floor: min(0px, dp) is 0 whenever dp is
+   zero or positive (the padding-bottom above already handles that case; this stays a pure
+   no-op alongside it) and exactly dp - negative, pulling whatever follows back up into this
+   box's own tail end - only when dp is negative. */
+.rustex-vbox-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to) {
+    margin-bottom: min(0px, var(--rustex-dp));
+}
+.rustex-vtop-outer:is(.rustex-with-dp, .rustex-with-to):not(.rustex-with-ht) > .rustex-vtop,
+.rustex-vtop-outer:is(.rustex-with-dp, .rustex-with-to):not(.rustex-with-ht) > .rustex-setwidth > .rustex-vtop {
+    display: inline-flex;
+    vertical-align: baseline;
+}
+/* A bare \dp0= on a vtop (no \ht0=, no "to") keeps its ascent from native detection above (h1,
+   the first row's own height - correct and untouched here), but depth is a different story
+   than vbox's: sharing the line via vertical-align:baseline lets real content contribute its
+   OWN depth too, so a same-line depth strut only wins the max() when \dp0= is bigger than the
+   real (usually substantial, "everything past the first row") natural depth - the reverse of
+   vbox, where the natural depth being negligible made this a non-issue. Unlike the vbox fix,
+   padding-bottom can't sidestep it here by simply adding \dp0= on the side: that only works
+   when what's being added on top of is itself negligible, and a vtop's natural depth isn't.
+   Taking the depth-bearing rows out of flow (this file's usual move for exactly this shape of
+   problem) doesn't work either - confirmed empirically: with more than one row after the
+   first, each needs the others' heights to place itself, which is the same forbidden
+   glyph-derived number one level removed. Pinning the wrapper's own height instead sidesteps
+   both: real content stays in normal flow (so width:min-content still measures it correctly),
+   and while we still don't have h1 as a real number, 1lh (one line-height - a font-metric
+   quantity, not a glyph-derived one, and the browser's own value rather than anything TeX
+   computed) stands in for it. It isn't exact - h1 is a box's ascent alone, while 1lh also
+   covers a line's descent and leading - so this overshoots the true value by roughly that
+   difference. Accepted as the same kind of small residual the project already tolerates
+   elsewhere, since the alternative it replaces was unboundedly wrong (depth silently reverting
+   to the natural value whenever \dp0= was smaller than it), not just imprecise. */
+.rustex-vtop-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to) {
+    height: calc(var(--rustex-dp) + 1lh);
+}
+.rustex-vtop-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to)::after {
+    content: none;
+}
+/* \dp0= on a "to" vtop (no \ht0=) is the same problem again, one layer down: \dp0= replaces
+   whatever depth the "to" construction produced, same as it replaces a natural depth above -
+   "to" only ever shapes the box's OWN internal content (further down, min-height still does
+   that, so an underfull "to" still visibly leaves its unfillable gap inside), it doesn't touch
+   what the box reports externally once \dp0= overrides that report. So this pins the wrapper's
+   height exactly like the bare-\dp0= case, deliberately ignoring --rustex-to for the total -
+   ascent is still just h1 (1lh standing in for it, same small residual as above), and whatever
+   the "to"-built content actually measures now plays the bare-\dp0= case's "real content"
+   role, overflowing past the pinned boundary if it's bigger, same overfull-box overlap. */
+.rustex-vtop-outer.rustex-with-dp.rustex-with-to:not(.rustex-with-ht) {
+    height: calc(var(--rustex-dp) + 1lh);
+}
+.rustex-vtop-outer.rustex-with-dp.rustex-with-to:not(.rustex-with-ht)::after {
+    content: none;
+}
+/* A bare "to" vtop (no \ht0=, no \dp0=) needs the same outer pin as the two cases above, for
+   the same reason: the current auto-height + inner-min-height combo only ever grows to fit
+   (it happily reaches "to" or more, but has no way to shrink to a negative one - min-height
+   simply clamps to 0 and stops mattering, same dead end noted for margin-top above). Unlike
+   those two cases though, this one needs no 1lh stand-in: for a vtop, ht+dp always equals the
+   asserted "to" exactly (same total a same-content \vbox to would produce; only the ht/dp
+   SPLIT point moves to the first item's own height), so pinning height directly to
+   --rustex-to is exact, not approximate - h1 cancels out of ht+dp on its own. No margin-top
+   push is needed either: unlike \vbox, whose ascent for a bare "to" comes ONLY from the
+   to-valued ::before strut above (and so breaks the same way \ht0= breaks when negative), a
+   vtop's ascent is always the first row's own native baseline regardless of "to" - nothing
+   here depends on --rustex-to being non-negative to keep working. */
+.rustex-vtop-outer.rustex-with-to:not(.rustex-with-ht):not(.rustex-with-dp) {
+    height: max(0px, var(--rustex-to));
+}
+
+/* "to" sizes the real content (min-height, not height, so an overfull box still grows
+   freely) independently of where the anchor sits - so this composes correctly even when
+   rustex-with-ht is ALSO present (a "to" box later reassigned via \ht0=): content keeps its
+   to-built size, only the anchor moves. No justify-content override: real rows should stay
+   packed at their natural, compact size (default flex-start) with any slack landing after
+   them, NOT spread across the interior gaps - a plain sequence of boxes has no stretchable
+   glue between them (baselineskip is normally rigid), so TeX itself can't distribute slack
+   there either; it just leaves a leftover, unfillable gap after the natural content. (A
+   paragraph is a real exception - \parskip before it IS stretchable - but that's a distinct,
+   not-yet-handled case, not the general rule.) */
+.rustex-vtop-outer.rustex-with-to > .rustex-vtop,
+.rustex-vtop-outer.rustex-with-to > .rustex-setwidth > .rustex-vtop,
+.rustex-vbox-outer.rustex-with-to > .rustex-vbox,
+.rustex-vbox-outer.rustex-with-to > .rustex-setwidth > .rustex-vbox {
+    min-height: var(--rustex-to);
+}
+
+.rustex-vcenter-display {
+    display:block;
+    width: var(--rustex-this-width);
+    max-width: var(--rustex-this-width);
+    min-width: var(--rustex-this-width);
+    & > .rustex-vcenter {
+        margin-left: auto;
+        margin-right: auto;
+    }
+}
+
+.rustex-vcenter {
+    height: min-content;
+    width: min-content;
+    display: inline-flex;
+    flex-direction: column;
+    vertical-align: middle;
+    /*
+    display: block;
+    width: 100%;
+    height: min-content;
+    white-space: initial;
+    > div {
+        height: min-content;
+        width: min-content;
+        display: inline-flex;
+        flex-direction: column;
+        vertical-align: middle;
+    }
+    */
+}
+/* \vcenter's real reference point is the axis (roughly, the vertical center of the box), not a
+   baseline - vertical-align:middle above is how this file expresses that, but it only ever
+   takes effect on an element sitting directly in a normal inline formatting context (a real
+   line box). A vcenter box is always generated as .rustex-hbox > .rustex-vcenter (the box
+   model wraps every box's content in an hbox/vbox pair, unconditionally) - and .rustex-hbox is
+   itself always a flex container, where vertical-align on a flex ITEM (.rustex-vcenter here)
+   is simply ignored. So in every case in this corpus, vertical-align:middle above is inert
+   dead code; what actually needs "middle" behavior is the OUTER box - the .rustex-hbox itself
+   - at the point where IT sits in a normal inline formatting context, e.g. as a sibling of
+   another such box directly inside a .rustex-paragraph (two minipages side by side, both
+   defaulting to TeX's \vcenter-like [c] alignment: confirmed live, a plain-text minipage and an
+   \includegraphics-only minipage side by side - one all real baselines, the other a replaced
+   element whose only "baseline" is its own bottom edge - is the sharpest case, and the default
+   align-items:baseline this file otherwise relies on for real hboxes drags the text minipage's
+   first line all the way down to the image's bottom edge, exactly the max()/baseline-donation
+   problem documented elsewhere in this file, here caused by an image with no real baseline
+   rather than an overfull box). Scoped to :has(> .rustex-vcenter:only-child) so this only
+   overrides the default baseline for a box that IS, in its entirety, a \vcenter - an ordinary
+   hbox with real content alongside other real content keeps sharing the line's actual
+   baseline, untouched.
+   Known-imprecise, not chased: CSS "middle" puts an inline box's center at baseline + half the
+   PARENT's x-height, not exactly on the baseline - but a real \vcenter's reference point (both
+   minipages here have original-height == original-depth, the [c]/\vcenter signature) sits
+   exactly ON the baseline, half an x-height lower than CSS gives it (~3px at this font size).
+   Two vcenters sharing a line only see this as a common offset (their centers still line up
+   with each other, confirmed above), so it's invisible without real baseline-sharing text on
+   the same line - no corpus case exercises that yet. Also unreached by this rule (no corpus
+   case either): a vcenter that shares its .rustex-hbox with sibling boxes (:only-child requires
+   it to be the row's sole content), and one whose .rustex-hbox-outer carries with-to/with-ht/
+   with-dp (that keeps the outer at inline-block/the hbox at plain flex - never inline-flex - so
+   this vertical-align never gets the chance to apply regardless of :only-child). */
+.rustex-hbox:has(> .rustex-vcenter:only-child) {
+    vertical-align: middle;
+}
+
+.rustex-setwidth {
+    display: contents;
+    --rustex-curr-width: var(--rustex-this-width);
+}
+
+.rustex-scalewidth {
+    --rustex-this-width: calc(
+        var(--rustex-curr-width) * var(--rustex-scale-width)
+    );
+    width: var(--rustex-this-width);
+    max-width: var(--rustex-this-width);
+    min-width: var(--rustex-this-width);
+}
+/* \wd0= (or a negative "to"/"spread") can assign a box a NEGATIVE width - real in TeX: the
+   box's own ink still draws at its natural size, but the point right after it moves
+   backward, so following content overlaps it. width/min-width/max-width can't express that -
+   browsers clamp a negative computed length to 0 - which is exactly right for the box's OWN
+   size (0 is what "ink renders, but claims no horizontal space" needs), but on its own it
+   drops the backward pull entirely, leaving the negative width silently inert. margin-right
+   is the one box-model property browsers don't clamp: adding the (negative) target width
+   there pulls whatever follows back by exactly that amount, same as the negative-margin trick
+   the old generator used to do this itself. min(0px, --rustex-this-width) keeps this a no-op
+   whenever the width is zero or positive (0 either way), so it only ever engages for the
+   negative case - nothing here changes for the overwhelmingly common positive-width path. */
+.rustex-scalewidth {
+    margin-right: min(0px, var(--rustex-this-width));
+}
+/* KNOWN GAP, not yet fixable from CSS alone: the pull-back above lives on whichever element
+   actually carries .rustex-scalewidth - for a \wd0= reassignment that's the OUTER wrapper
+   itself, so the negative margin already sits where anything AFTER the wrapper needs it. A
+   "to" hbox puts .rustex-scalewidth on the INNER .rustex-hbox instead (so the outer stays
+   free for the ht/dp strut-sharing machinery above), and a negative margin on that inner box
+   only pulls back content sharing its OWN containing block - which, since the inner is the
+   outer's sole child, never reaches anything outside the outer wrapper itself (confirmed
+   empirically: the inner's margin-right computes to the full negative value, but whatever
+   comes right after the OUTER sits flush against its un-pulled-back edge regardless).
+   Repeating the same min(0px, ...) pull-back directly on the outer would close that gap the
+   same way vbox/vtop's own negative-to fixes do - but unlike vbox/vtop, which set --rustex-to
+   as a real custom property on their own outer wrapper, this generator never emits --rustex-to
+   (or --rustex-scale-width) as a style property anywhere on a "to" hbox's OUTER, only as
+   data-rustex-to (a diagnostic attribute, not a CSS value) - so var(--rustex-to) here has
+   nothing to read (confirmed: computes to the empty string) and a rule using it would be
+   silently inert. attr() can't substitute for it either (tried directly: attr(data-rustex-to
+   px) in a margin value doesn't parse in current Chrome - typed attr() outside the content
+   property isn't there yet). Closing this needs the generator to hand the outer that same
+   value it already computes for the inner - e.g. also writing --rustex-scale-width (or
+   --rustex-to) into the outer's own style, mirroring vbox/vtop's existing convention - which
+   is a small, precedented addition (same shape as --rustex-ht-computed/--rustex-dp-computed
+   earlier), not a CSS-only fix. */
+/* A to-box whose content starts with infinite-stretch glue (\hss content, e.g. an itemize
+   custom label built as \hbox to \labelwidth{\hss #1}) puts ALL of its slack into that one
+   glue item, right-anchoring the content against the box's own right edge - so when the
+   content is too wide to fit, TeX has nowhere to grow it but backward, past the box's LEFT
+   edge. The default flex-start packing used everywhere else in this file anchors content at
+   the box's LEFT edge instead, which is right for the (overwhelmingly common) case of NO
+   leading stretch, but overflows the WRONG way here: content grows past the box's right edge
+   and into whatever follows, instead of spilling left into the box's own margin - confirmed
+   against quirks.tex's custom-\item labels, where the PDF has the label's ink ending flush
+   with the box's right edge and starting further left than the box itself, and the un-
+   patched CSS instead starts flush at the box's left edge and runs past its right edge into
+   the body text. justify-content:flex-end reverses that (content packs to the row's end;
+   overflow, if any, spills off the start instead) and is otherwise inert whenever content
+   fits - so this only needs to apply to boxes that actually open with that kind of glue.
+   The one place this leading glue is visible from is the DOM: this generator expresses \hss
+   as a normal glue element - not a distinct one, like the dedicated (and, in this project's
+   generated output so far, apparently unused) .rustex-hss class below - whose OWN inline
+   style spells out margin-right:auto rather than a fixed value the way ordinary \hskip/\kern
+   glue does. Matching that inline-style substring is the only CSS-visible signal for "this
+   box's content should right-anchor," but it's also the only rule in this file keyed off
+   inline-style text rather than a class - a dedicated generator-emitted marker (e.g. a class
+   on the box itself, or actually using .rustex-hss/.rustex-hfil for this glue) would be a
+   more robust, less incidental way to carry the same signal, and is worth doing instead of
+   this if the generator can be touched.
+   The bug this fixes isn't specific to "to" boxes - a plain \wd0=Npt reassignment produces
+   the exact same fixed-width-plus-leading-\hss shape (a box whose declared width comes from
+   .rustex-scalewidth rather than a to/spread target), and would overflow the same wrong way.
+   That shape currently places .rustex-scalewidth on the OUTER wrapper itself rather than on
+   an inner .rustex-hbox (unlike the to-box case above), so it needs its own branch below
+   rather than reusing the one above unchanged; the [style*=...] check also accepts an
+   optional space after the colon, since nothing here guarantees the generator never adds one.
+   Confirmed empirically inert for every \hbox to/spread/\wd0= construct in hboxes.tex,
+   vboxes.tex and quirks.tex that DOESN'T open with such glue, including the ones that use
+   .rustex-scalewidth on the outer wrapper without any leading stretch - none of them match
+   any branch here, so none of them see any change from adding it. Not yet handled: a
+   trailing or double-sided \hss (\hbox to N{text\hss} or \hbox to N{\hss text\hss}, for
+   flush-left-overflow-right or centered-overflow-both-ways) - no example of either exists
+   in this project's generated output to verify a fix against, and flush-left-overflow-right
+   is already what the default (no rule) produces, so only the centered case is a real gap. */
+.rustex-hbox-outer.rustex-with-to
+    > .rustex-hbox.rustex-scalewidth:has(
+        > .rustex-hskip:first-child:is([style*="margin-right:auto"], [style*="margin-right: auto"])
+    ),
+.rustex-hbox-outer.rustex-with-to
+    > .rustex-setwidth
+    > .rustex-hbox.rustex-scalewidth:has(
+        > .rustex-hskip:first-child:is([style*="margin-right:auto"], [style*="margin-right: auto"])
+    ),
+.rustex-hbox-outer.rustex-scalewidth
+    > .rustex-setwidth
+    > .rustex-hbox:has(
+        > .rustex-hskip:first-child:is([style*="margin-right:auto"], [style*="margin-right: auto"])
+    ) {
+    justify-content: flex-end;
+}
+
+/* Prevent line breaks before/after hboxes where changing the display-value is harmless.
+   Excludes rustex-with-to for the same reason the with-ht/with-dp shared-line rule already
+   does (see its own comment, above the Math section): a bare "to" hbox has no strut to share
+   a line with (to only ever drives width for hbox), so forcing it - and its child - into an
+   inline formatting context anyway synthesizes a browser strut from the surrounding
+   paragraph's own font metrics even when real content measures near-0, inflating a box that
+   should be near-empty. Confirmed live: a with-to (no ht, no dp) wrapper sitting directly in a
+   paragraph, immediately after this paragraph's own (harmless, correctly-inlined) indent box,
+   picked up exactly this phantom inflation - the missing exclusion here, not present on the
+   otherwise-identical with-ht/with-dp rule, was the one place this class of box could still
+   reach an inline formatting context unnecessarily. */
+.rustex-paragraph > .rustex-hbox-outer:not(:is(.rustex-with-ht)):not(:is(.rustex-with-dp)):not(:is(.rustex-with-to)),
+.rustex-paragraph > .rustex-setwidth > .rustex-hbox-outer:not(:is(.rustex-with-ht)):not(:is(.rustex-with-dp)):not(:is(.rustex-with-to)) {
+    display:inline;
+    & > .rustex-hbox, & > .rustex-setwidth > .rustex-hbox {
+        display:inline-flex;
+    }
+}
+/* NOT FIXED (CSS can't fix this): a paragraph's leading (zero-size) indent box, when the very
+   next thing is display math (always display:block, breaking the inline flow), ends up alone
+   on its own anonymous line - and even though it's visually empty, CSS still gives that line a
+   height from the paragraph's own line-height/font-size strut, a phantom empty line with no
+   TeX equivalent. Tried forcing empty boxes to display:block/height:0 to remove it, gated on
+   "no real visible content" - first via data-rustex-original-height/-depth (diagnostic-only,
+   NOT emitted outside debug builds - unusable), then via excluding boxes that contain any of
+   this generator's known content-bearing wrappers (.rustex-contents, math, rules, images).
+   Both are unsound: real text from a plain \hbox{...} (e.g. hboxes.tex's "Box"/"Content") is
+   emitted as a bare, unwrapped text node directly inside .rustex-hbox, not wrapped in
+   .rustex-contents or any other selectable marker - CSS has no way to test "does this element
+   contain a non-whitespace text node" at all, so no content-based selector can ever
+   distinguish that case from genuine emptiness. Confirmed the phantom line's actual visual
+   impact is small (a few px difference in an already-approximate mdframed centering, per the
+   align-self:center rule above, which doesn't depend on this) - not worth the risk of forcing
+   real running text onto its own line throughout any paragraph that happens to precede display
+   math. Left unfixed. */
+/* A vbox's own reference point is its LAST row's baseline (see the vbox-outer note above) -
+   but when that last row is a paragraph ending in display math, native baseline detection
+   (a block container's baseline is its last in-flow child's baseline, recursively - see the
+   bare-"to" hbox note above) drills all the way down into the math's OWN internal baseline,
+   which sits well above the paragraph's bottom edge. TeX, meanwhile, computes this vbox's
+   depth as a real, reliable (non-glyph, purely structural) number: a vbox's depth is just the
+   depth of its very last constituent BOX, or 0 if the last thing is glue - and a display
+   environment's own trailing \belowdisplayskip is exactly such trailing glue, so depth here
+   is genuinely (and correctly) ~0 in the common case. Native detection ignoring that and
+   using the math's internal baseline instead makes the whole vbox get baseline-aligned (by
+   whatever ancestor context needs its baseline - e.g. a frame construction's own border/
+   background elements, sized from TeX's own numbers) far too high relative to its real
+   content, which then visibly sits too low against that border/background and can overflow
+   past it. Appending a same-baseline-group, zero-size closing strut after the last paragraph
+   forces the vbox's own exposed last baseline back to its own bottom margin edge - matching
+   the depth~0 TeX computes - without touching how any OTHER vbox (one that doesn't end in
+   display math, where native detection already works) resolves its baseline. */
+.rustex-vbox:has(> .rustex-paragraph:last-child > .rustex-display:last-child),
+.rustex-vbox:has(> .rustex-paragraph:last-child > .rustex-setwidth > .rustex-display:last-child) {
+    &::after {
+        content: "";
+        display: block;
+        height: 0;
+    }
+}
+
 /* ----------------------------------------------------- Math ------------------------------------------------------- */
+
 
 .rustex-math {
     line-height: inherit;
@@ -290,75 +886,49 @@
 }
 
 .rustex-math-op {
-    &:has(+ .rustex-math-ord) {
+    &:has(+ .rustex-math-ord),
+    &:has(+ mrow:first-child:is(.rustex-math-ord)),
+    &:has(+ mrow:has(+ mrow:first-child:is(.rustex-math-ord))) {
         padding-right: 0.15em;
     }
 }
 .rustex-math-ord,
 .rustex-math-open,
 .rustex-math-close {
-    + .rustex-math-op {
+    & + .rustex-math-op, & + .rustex-math-bin {
         padding-left: 0.15em;
     }
-    + .rustex-math-bin {
-        padding-left: 0.15em;
-    }
-    + .rustex-math-rel {
+    & + .rustex-math-rel {
         padding-left: 0.2em;
     }
 }
 
 .rustex-math-bin {
-    &:has(+ .rustex-math-ord) {
-        padding-right: 0.15em;
-    }
-    &:has(+ .rustex-math-rel) {
-        padding-right: 0.15em;
-    }
-    &:has(+ .rustex-math-op) {
-        padding-right: 0.15em;
-    }
-    &:has(+ .rustex-math-open) {
-        padding-right: 0.15em;
-    }
-    &:has(+ .rustex-math-close) {
-        padding-right: 0.15em;
-    }
+    &:has(+ .rustex-math-ord),
+    &:has(+ .rustex-math-rel),
+    &:has(+ .rustex-math-op),
+    &:has(+ .rustex-math-close),
     &:has(+ .rustex-math-punct) {
         padding-right: 0.15em;
     }
 
-    + .rustex-math-op {
-        padding-left: 0.15em;
-    }
-    + .rustex-math-rel {
+    & + .rustex-math-op,
+    & + .rustex-math-rel {
         padding-left: 0.2em;
     }
 }
 .rustex-math-rel {
-    &:has(+ .rustex-math-ord) {
-        padding-right: 0.2em;
-    }
-    &:has(+ .rustex-math-bin) {
-        padding-right: 0.2em;
-    }
-    &:has(+ .rustex-math-op) {
-        padding-right: 0.2em;
-    }
-    &:has(+ .rustex-math-open) {
-        padding-right: 0.2em;
-    }
-    &:has(+ .rustex-math-close) {
-        padding-right: 0.2em;
-    }
+    &:has(+ .rustex-math-ord),
+    &:has(+ .rustex-math-bin),
+    &:has(+ .rustex-math-op),
+    &:has(+ .rustex-math-open),
+    &:has(+ .rustex-math-close),
     &:has(+ .rustex-math-punct) {
         padding-right: 0.2em;
     }
 
-    + .rustex-math-op {
-        padding-left: 0.15em;
-    }
-    + .rustex-math-bin {
+    & + .rustex-math-op,
+    & + .rustex-math-bin {
         padding-left: 0.15em;
     }
 }
@@ -404,8 +974,9 @@
     text-align: center;
     display: block;
     align-self: center;
-    width: 100%;
-    min-width: 100%;
+    width:min-content;
+    margin-left:auto;
+    margin-right:auto;
 }
 
 .rustex-math-escape {
@@ -419,6 +990,7 @@
         writing-mode: initial;
     }
 }
+
 
 /* --------------------------------------------------- Tables ------------------------------------------------------- */
 
@@ -461,24 +1033,6 @@
 
 /* --------------------------------------------------- Others ------------------------------------------------------- */
 
-.rustex-raise {
-    display: inline-flex;
-    flex-direction: inherit;
-    white-space: initial;
-    bottom: var(--rustex-raise);
-    margin-top: var(--rustex-raise);
-    margin-bottom: calc(-1 * var(--rustex-raise));
-    position: relative;
-}
-
-.rustex-moveleft {
-    display: inline-flex;
-    flex-direction: inherit;
-    white-space: initial;
-    position: relative;
-    margin-left: calc(-1 * var(--rustex-moveleft));
-}
-
 .rustex-foreign {
     display: flex;
     white-space: initial;
@@ -492,7 +1046,7 @@
         justify-content: center;
         align-content: center;
         flex-wrap: wrap;
-        line-height: 1;
+        /*line-height: 1;*/
         > * {
             text-align: initial;
         }

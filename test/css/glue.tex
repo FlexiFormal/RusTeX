@@ -1,0 +1,58 @@
+\documentclass{article}
+\input{preamble.pre}
+\begin{document}
+    
+\section{Skips, Fills and Kerns}
+
+\block{\cs{hfil}, \cs{hfill}, \cs{hss}}{
+\showhto{200pt}{ \showhinner{Foo} \cs{hss} \hss }
+\showhto{200pt}{ \hss \cs{hss} \showhinner{Foo} \cs{hss} \hss }
+\showhto{200pt}{ \hss \cs{hss} \showhinner{Foo} \cs{hss} }
+\showhto{200pt}{ \showhinner{Foo} \cs{hfil} \hfil }
+\showhto{200pt}{ \hss \cs{hss} \showhinner{Foo} \cs{hfil} \hfil }
+\showhto{200pt}{ \hfill \cs{hfill} \showhinner{Foo} \cs{hss} \hss }
+\showhto{200pt}{ \hfill \cs{hfill} \showhinner{Foo} \cs{hfil} \hfil }
+\showhto{200pt}{ \hfill \cs{hfill} \showhinner{Foo} }
+}
+\conclude{\cs{hfil}$=$\cs{hss}; \cs{hfill}$>$\cs{hfil}}
+
+\block{\cs{vfil}, \cs{vfill}, \cs{vss}}{\showh{
+  \showvto{150pt}{ \showvinner{\hbox{Foo}}  \hbox{\cs{vss}} \vss }
+  \hskip20pt
+  \showvto{150pt}{ \vss \hbox{\cs{vss}} \showvinner{\hbox{Foo}} \hbox{\cs{vss}} \vss }
+  \hskip20pt
+  \showvto{150pt}{ \vss \hbox{\cs{vss}} \showvinner{\hbox{Foo}} }
+  \hskip20pt
+  \showvto{150pt}{ \vss \hbox{\cs{vss}} \showvinner{\hbox{Foo}} \hbox{\cs{vfil}} \vfil }
+  \hskip20pt
+  \showvto{150pt}{ \vss \hbox{\cs{vss}} \showvinner{\hbox{Foo}} \hbox{\cs{vfill}} \vfill }
+  \hskip20pt
+  \showvto{150pt}{ \vfill \hbox{\cs{vfill}} \showvinner{\hbox{Foo}} \hbox{\cs{vfil}} \vfil }
+}}
+\conclude{Analogously: \cs{vfil}$=$\cs{vss}; \cs{vfill}$>$\cs{vfil}}
+\pagebreak
+
+\block{\cs{hskip}, \cs{mskip}, \cs{hkern}, \cs{mkern}}{
+  \showh{\cs{hskip 20pt}\hskip 20ptfoo\hskip 40pt\cs{hskip 40pt}}
+  \showh{\cs{mskip 36mu}$\mskip 36mu \hbox{foo} \mskip 72mu$\cs{mskip 72mu}}
+  \showh{\cs{kern{ }{ }20pt}\kern 20ptfoo\kern40pt\cs{kern{ }{ }40pt}}
+  \showh{\cs{mkern 36mu}$\mkern 36mu \hbox{foo} \mkern 72mu$\cs{mkern 72mu}}
+}
+\block{\cs{vskip}, \cs{kern}}{\showh{%
+  \showv{\hbox{\cs{vskip 20pt}}\vskip 20pt\hbox{foo}\vskip 40pt\hbox{\cs{vskip 40pt}}}%
+  \hskip 20pt
+  \showv{\hbox{\cs{kern 20pt}}\kern 20pt\hbox{foo}\kern 40pt\hbox{\cs{kern 40pt}}}%
+}}
+
+\block{Negative Skips}{
+  \begin{itemize}
+    \item \cs{hskip} Foo\hskip-15ptFoo
+    \item \cs{mskip} $ \hbox{Foo} \mskip -27mu \hbox{Foo} $
+    \item \cs{vskip} \vtop{ \showt{ \hbox{Foo} } \vskip-34pt \showt{ \hbox{Foo} } }
+    \item \cs{vskip} \vbox{ \showv{ \hbox{Foo} } \vskip-34pt \showv{ \hbox{Foo} } }
+    \item ...
+    \item \cs{vskip} \vbox{ \showv{ \hbox{Foo} } \vskip-50pt \showv{ \hbox{Foo} } }
+    \item ...
+  \end{itemize}
+}
+\end{document}

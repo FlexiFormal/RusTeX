@@ -1,0 +1,77 @@
+\documentclass[11pt]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[ngerman]{babel}
+\usepackage{multicol,stex}
+
+\countdef\fontcounter240
+\countdef\fontlinecounter239
+\countdef\fontcolcounter238
+
+\def\testfont#1{
+	\font\testfontfont=#1\relax
+	\font\originalfont=\fontname\font\relax
+	\fontcounter=0
+	\ifstexhtml
+		\halign{##\hskip1cm\relax &\texttt{>>}##\texttt{<<}\cr%
+			\testfontloop%
+		}
+	\else
+		\begin{multicols}{3}
+		\halign{##\hskip1cm\relax &\texttt{>>}##\texttt{<<}\cr%
+			\testfontloop%
+		}
+		\end{multicols}
+	\fi
+}
+
+\def\testfontloop{%
+  \the\fontcounter &\testfontfont\char\fontcounter\originalfont%
+  \global\advance\fontcounter1\relax\expandafter\cr%
+  \ifnum\fontcounter>255\else\expandafter\testfontloop\fi\crcr
+}
+
+\def\testfonttable#1{%
+	\font\testfontfont=#1\relax
+	\font\originalfont=\fontname\font\relax
+	\fontcounter=0
+	\fontlinecounter=0
+	\fontcolcounter=0
+	\begin{tabular}{r|cccccccccccccccc}
+			\_x\_ & 0 & 1 & 2 & 3 & 4 & 5 & 6 & 7 & 8 & 9 & A & B & C & D & E & F\\\hline
+			\relax\testtablefontloop
+	\end{tabular}
+}
+
+\def\godohex{%
+	\ifcase\fontlinecounter\relax
+		0 \or 1 \or 2 \or 3 \or 4 \or 5 \or 6 \or 7 \or 8 \or 9%
+		\or A \or B \or C \or D \or E \else F \fi
+}
+
+\def\myamp{&}
+\def\mycr{\\}
+
+\protected\def\testtablefontloop{%
+	\message{^^JHere: \the\fontcounter, \the\fontlinecounter, \the\fontcolcounter^^J}%
+  \ifnum\fontcounter>255\relax\else
+  		\ifnum\fontcolcounter=0\relax
+  			\godohex x \myamp%
+  		\fi
+  		\testfontfont\char\fontcounter\originalfont
+  		\global\advance\fontcounter by 1\relax
+  		\global\advance\fontcolcounter by 1\relax
+  		\ifnum\fontcolcounter=16\relax
+			\global\fontcolcounter=0\relax
+			\global\advance\fontlinecounter by 1\relax
+  			\expandafter\expandafter\expandafter\mycr
+  		\else
+  			\expandafter\expandafter\expandafter\myamp%
+  		\fi
+  		\expandafter\testtablefontloop
+	\fi
+}
+
+\begin{document}
+	\testfonttable{lmmi10}
+\end{document}

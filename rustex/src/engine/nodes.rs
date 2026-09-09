@@ -4,7 +4,7 @@ use crate::utils::{VecMap, VecSet};
 use tex_engine::commands::primitives::PRIMITIVES;
 use tex_engine::engine::state::State;
 use tex_engine::engine::stomach::methods::ParLineSpec;
-use tex_engine::pdflatex::nodes::PDFNode;
+use tex_engine::pdflatex::nodes::{PDFNode, PDFNodeLike};
 use tex_engine::tex::nodes::boxes::TeXBox;
 use tex_engine::tex::nodes::{CustomNodeTrait, NodeTrait, NodeType};
 use tex_engine::tex::numerics::{Dim32, Skip};
@@ -78,6 +78,20 @@ pub enum RusTeXNode {
     InvisibleEnd,
     AnnotEnd(SRef),
     Literal(String),
+}
+impl PDFNodeLike<Types> for RusTeXNode {
+    fn as_pdf(&self) -> Option<&PDFNode<Types>> {
+        match self {
+            Self::PDFNode(n) => Some(n),
+            _ => None,
+        }
+    }
+    fn as_pdf_mut(&mut self) -> Option<&mut PDFNode<Types>> {
+        match self {
+            Self::PDFNode(n) => Some(n),
+            _ => None,
+        }
+    }
 }
 impl CustomNodeTrait<Types> for RusTeXNode {}
 impl NodeTrait<Types> for RusTeXNode {
