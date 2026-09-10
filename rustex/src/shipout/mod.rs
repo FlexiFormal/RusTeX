@@ -241,6 +241,23 @@ impl<Mode: VLike> Shipout<'_, '_, Mode> {
                                 state.do_hlist(&mut children.into())
                             })
                             .map_err(|_| None)?,
+                        b @ TeXBox::H {
+                            info: HBoxInfo::ParLine { spec, .. },
+                            start,
+                            end,
+                            ..
+                        } => {
+                            let specs = vec![spec];
+                            children.prefix(vec![VNode::Box(b)]);
+                            self.do_par(
+                                children,
+                                specs,
+                                start,
+                                end,
+                                LineSkip::default(),
+                                Skip::default(),
+                            )?;
+                        }
                         TeXBox::H {
                             info: HBoxInfo::HAlignRow,
                             children,

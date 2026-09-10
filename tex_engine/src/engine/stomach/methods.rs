@@ -1081,7 +1081,7 @@ pub fn vsplit_roughly<ET: EngineTypes>(
 }
 
 /// Specification of a (target)line in a paragraph
-#[derive(Debug, Clone, Eq, PartialEq)]
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
 pub struct ParLineSpec<ET: EngineTypes> {
     /// `\leftskip`
     pub leftskip: Skip<ET::Dim>,

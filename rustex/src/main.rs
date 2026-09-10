@@ -273,7 +273,7 @@ fn temp_test() {
     let ret = RusTeXEngine::do_file(
         //"/home/jazzpirate/work/MathHub/courses/UMR/GdMA/course/source/course/sec/Vorwort.de.tex",
         //"/home/jazzpirate/work/MathHub/Papers/25-CICM-MathMap/source/paper.tex",
-        "/home/jazzpirate/work/MathHub/courses/FAU/AI/course/source/course/sec/concept.en.tex",
+        "/home/jazzpirate/work/MathHub/smglom/theocs/source/examples/ex-derivation-tree.en.tex",
         //"/home/jazzpirate/work/MathHub/FTML/math/source/test.tex",
         //"/home/jazzpirate/work/Software/FlexiFormal/RusTeX/test/tmptest.tex",
         Settings {
