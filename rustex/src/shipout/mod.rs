@@ -1104,6 +1104,10 @@ fn get_page_inner(children: Vec<VNode<Types>>) -> VNodes {
         if matches!(c, VNode::Custom(RusTeXNode::PageBegin)) {
             break;
         }
+        if matches!(c, VNode::Custom(RusTeXNode::ParagraphBegin { .. })) {
+            redo.push(c);
+            break;
+        }
         unpack(c, &mut list, &mut redo, false);
     }
     while let Some(c) = list.next() {
@@ -1115,6 +1119,10 @@ fn get_page_inner(children: Vec<VNode<Types>>) -> VNodes {
     let mut redo = Vec::new();
     while let Some(c) = list.next_back() {
         if matches!(c, VNode::Custom(RusTeXNode::PageEnd)) {
+            break;
+        }
+        if matches!(c, VNode::Custom(RusTeXNode::ParagraphEnd)) {
+            redo.push(c);
             break;
         }
         unpack(c, &mut list, &mut redo, true);
