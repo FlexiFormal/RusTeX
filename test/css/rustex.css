@@ -1031,6 +1031,11 @@
     grid-column: span var(--rustex-align-num);
 }
 
+/* CHECK THIS! */
+.rustex-halign-cell > .rustex-vtop-outer {
+    margin-bottom:1lh;
+}
+
 /* --------------------------------------------------- Others ------------------------------------------------------- */
 
 .rustex-foreign {

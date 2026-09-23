@@ -5,6 +5,13 @@
 \usepackage{mdframed,varwidth}
 \begin{document}
 
+\begin{itemize}
+    \item \noindent\setbox0\vbox{%
+        \hsize=0.8\hsize%
+        \paragraph{This is a test} \lorem%
+    } \hbox to 0.8\hsize{\vtop{\box0}}
+\end{itemize}
+
 \hbox{lorem}
 \hbox{\hbox to \textwidth{}}
 \vbox to 0pt{
