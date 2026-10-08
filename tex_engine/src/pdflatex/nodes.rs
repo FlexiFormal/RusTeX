@@ -792,9 +792,9 @@ pub struct PDFCatalog {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 #[allow(non_snake_case)]
 pub struct PDFColor {
-    R: u8,
-    G: u8,
-    B: u8,
+    pub R: u8,
+    pub G: u8,
+    pub B: u8,
 }
 impl PDFColor {
     pub fn black() -> Self {

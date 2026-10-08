@@ -2111,6 +2111,9 @@ impl CompilationDisplay<'_, '_> {
                     if let Some(dp) = ass_dp {
                         style!("--rustex-dp"=Self::dim_to_string(dp));
                     }
+                    if let Some(to) = to {
+                        style!("--rustex-to"=Self::dim_to_string(to));
+                    }
                 }
                 {
                     let cls = if to.is_some() {"rustex-hbox rustex-scalewidth"} else {"rustex-hbox"};
@@ -2251,6 +2254,14 @@ impl CompilationDisplay<'_, '_> {
                     }
                     if let Some(to) = to {
                         style!("--rustex-to"=Self::dim_to_string(to));
+                    }
+                    if ass_height.is_some() || ass_dp.is_some() || to.is_some() {
+                        if let Some(oht) = orig_height {
+                            style!("--rustex-ht-computed"=Self::dim_to_string(oht));
+                        }
+                        if let Some(odp) = orig_dp {
+                            style!("--rustex-dp-computed"=Self::dim_to_string(odp));
+                        }
                     }
                 }
                 {

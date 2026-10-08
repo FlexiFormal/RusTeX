@@ -1,4 +1,5 @@
 pub(crate) mod annotations;
+pub mod colors;
 pub(crate) mod html;
 pub(crate) mod state;
 pub(crate) mod utils;
