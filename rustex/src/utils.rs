@@ -3,7 +3,24 @@ use std::fmt::{Debug, Formatter};
 use std::ops::{Add, AddAssign};
 use tex_engine::tex::numerics::{Dim32, Skip, StretchShrink};
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq, Eq)]
+#[repr(u8)]
+pub(crate) enum FlexMagnitude {
+    Fixed = 0,
+    Fil = 1,
+    Fill = 2,
+    Filll = 3,
+}
+impl PartialOrd for FlexMagnitude {
+    #[inline]
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        let s = *self as u8;
+        let o = *other as u8;
+        s.partial_cmp(&o)
+    }
+}
+
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub(crate) enum Flex {
     Fixed(i32),
     Fil(i32),
@@ -12,14 +29,36 @@ pub(crate) enum Flex {
 }
 impl Default for Flex {
     fn default() -> Self {
-        Flex::Fixed(0)
+        Self::Fixed(0)
     }
 }
 impl Flex {
-    fn is_zero(&self) -> bool {
+    pub const fn is_zero(self) -> bool {
+        matches!(self, Self::Fixed(0))
+    }
+    pub const fn magnitude(self) -> FlexMagnitude {
         match self {
-            Flex::Fixed(0) => true,
-            _ => false,
+            Self::Fixed(_) => FlexMagnitude::Fixed,
+            Self::Fil(_) => FlexMagnitude::Fil,
+            Self::Fill(_) => FlexMagnitude::Fill,
+            Self::Filll(_) => FlexMagnitude::Filll,
+        }
+    }
+}
+impl PartialOrd for Flex {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        use std::cmp::Ordering as O;
+        match (self, other) {
+            (Self::Fixed(a), Self::Fixed(b)) => a.partial_cmp(b),
+            (Self::Fixed(_), _) => Some(O::Less),
+            (_, Self::Fixed(_)) => Some(O::Greater),
+            (Self::Fil(a), Self::Fil(b)) => a.partial_cmp(b),
+            (Self::Fil(_), _) => Some(O::Less),
+            (_, Self::Fil(_)) => Some(O::Greater),
+            (Self::Fill(a), Self::Fill(b)) => a.partial_cmp(b),
+            (Self::Fill(_), _) => Some(O::Less),
+            (_, Self::Fill(_)) => Some(O::Greater),
+            (Self::Filll(a), Self::Filll(b)) => a.partial_cmp(b),
         }
     }
 }
@@ -27,27 +66,27 @@ impl Add for Flex {
     type Output = Self;
     fn add(self, other: Self) -> Self {
         match (self, other) {
-            (Flex::Fixed(a), Flex::Fixed(b)) => Flex::Fixed(a + b),
-            (Flex::Fil(a), Flex::Fil(b)) => Flex::Fil(a + b),
-            (Flex::Fill(a), Flex::Fill(b)) => Flex::Fill(a + b),
-            (Flex::Filll(a), Flex::Filll(b)) => Flex::Filll(a + b),
-            (Flex::Fixed(_), Flex::Fil(b)) => Flex::Fil(b),
-            (Flex::Fil(a), Flex::Fixed(_)) => Flex::Fil(a),
-            (Flex::Fixed(_) | Flex::Fil(_), Flex::Fill(b)) => Flex::Fill(b),
-            (Flex::Fill(a), Flex::Fixed(_) | Flex::Fil(_)) => Flex::Fill(a),
-            (_, Flex::Filll(b)) => Flex::Filll(b),
-            (Flex::Filll(a), _) => Flex::Filll(a),
+            (Self::Fixed(a), Self::Fixed(b)) => Self::Fixed(a + b),
+            (Self::Fil(a), Self::Fil(b)) => Self::Fil(a + b),
+            (Self::Fill(a), Self::Fill(b)) => Self::Fill(a + b),
+            (Self::Filll(a), Self::Filll(b)) => Self::Filll(a + b),
+            (Self::Fixed(_), Self::Fil(b)) => Self::Fil(b),
+            (Self::Fil(a), Self::Fixed(_)) => Self::Fil(a),
+            (Self::Fixed(_) | Self::Fil(_), Self::Fill(b)) => Self::Fill(b),
+            (Self::Fill(a), Self::Fixed(_) | Self::Fil(_)) => Self::Fill(a),
+            (_, Self::Filll(b)) => Self::Filll(b),
+            (Self::Filll(a), _) => Self::Filll(a),
         }
     }
 }
 impl From<StretchShrink<Dim32>> for Flex {
     fn from(ss: StretchShrink<Dim32>) -> Self {
         match ss {
-            StretchShrink::Dim(d) => Flex::Fixed(d.0),
-            StretchShrink::Fil(d) if d != 0 => Flex::Fil(d),
-            StretchShrink::Fill(d) if d != 0 => Flex::Fill(d),
-            StretchShrink::Filll(d) if d != 0 => Flex::Filll(d),
-            _ => Flex::Fixed(0),
+            StretchShrink::Dim(d) => Self::Fixed(d.0),
+            StretchShrink::Fil(d) if d != 0 => Self::Fil(d),
+            StretchShrink::Fill(d) if d != 0 => Self::Fill(d),
+            StretchShrink::Filll(d) if d != 0 => Self::Filll(d),
+            _ => Self::Fixed(0),
         }
     }
 }
@@ -70,35 +109,35 @@ impl Debug for Margin {
     }
 }
 impl Margin {
-    pub(crate) fn fil() -> Self {
+    pub(crate) const fn fil() -> Self {
         Self {
             base: 0,
-            stretch: Flex::Fil(1),
+            stretch: Flex::Fil(65536),
             shrink: Flex::Fixed(0),
         }
     }
-    pub(crate) fn fill() -> Self {
+    pub(crate) const fn fill() -> Self {
         Self {
             base: 0,
-            stretch: Flex::Fill(1),
+            stretch: Flex::Fill(65536),
             shrink: Flex::Fixed(0),
         }
     }
-    pub(crate) fn filll() -> Self {
+    /*pub(crate) const fn filll() -> Self {
         Self {
             base: 0,
             stretch: Flex::Filll(1),
             shrink: Flex::Fixed(0),
         }
-    }
-    pub(crate) fn ss() -> Self {
+    }*/
+    pub(crate) const fn ss() -> Self {
         Self {
             base: 0,
-            stretch: Flex::Fil(1),
-            shrink: Flex::Fil(1),
+            stretch: Flex::Fil(65536),
+            shrink: Flex::Fil(65536),
         }
     }
-    pub(crate) fn is_zero(&self) -> bool {
+    pub(crate) const fn is_zero(&self) -> bool {
         self.base == 0 && self.stretch.is_zero() && self.shrink.is_zero()
     }
 }
@@ -141,7 +180,7 @@ impl AddAssign for Margin {
     }
 }
 
-#[derive(Clone, Debug, PartialEq)]
+#[derive(Clone, Debug, PartialEq, Eq)]
 pub struct VecSet<K: PartialEq> {
     pub inner: Vec<K>,
 }

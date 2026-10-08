@@ -1,0 +1,62 @@
+\documentclass{stex}
+\usepackage[dvipsnames,svgnames,x11names,HTML]{xcolor}
+
+\ExplSyntaxOn
+% \rgbtohex{0.2,0.5,0.8}  ->  3380CC
+\cs_new:Npn \rgbtohex #1
+  { \exp_after:wN \__rgbhex_split:w #1 \q_stop }   % also accepts a macro holding the triple
+
+\cs_new:Npn \__rgbhex_split:w #1 , #2 , #3 \q_stop
+  { \__rgbhex_byte:n {#1} \__rgbhex_byte:n {#2} \__rgbhex_byte:n {#3} }
+
+% scale, round, then hand the resulting integer to the formatter
+\cs_new:Npn \__rgbhex_byte:n #1
+  { \exp_args:Nf \__rgbhex_fmt:n { \fp_eval:n { round(255 * (#1)) } } }
+  
+\cs_new:Npn \__rgbhex_byte_only:n #1 { \__rgbhex_byte_only_i:w #1; } 
+\cs_new:Npn \__rgbhex_byte_only_i:w #1,#2,#3; {\fp_eval:n { round(255 * #1) },\fp_eval:n { round(255 * #2) },\fp_eval:n { round(255 * #3) } }
+
+% zero-pad to two hex digits
+\cs_new:Npn \__rgbhex_fmt:n #1
+  { \int_compare:nNnT {#1} < { 16 } { 0 } \int_to_Hex:n {#1} }
+\ExplSyntaxOff
+
+\def\doclr#1{%
+	\hbox{\textcolor{#1}{#1}}%
+	\bgroup
+		\expandafter\def\csname xcolor@\endcsname##1##2##3##4{##4}%
+		\immediate\write\colorfloatfile{#1=  \csname exp_args:Ne\expandafter\endcsname\csname __rgbhex_byte_only:n\endcsname{\csname \string\color @#1\endcsname};}%
+		\immediate\write\colorhexfile{--rustex-color-#1:\csname c_hash_str\endcsname\csname exp_args:Ne\endcsname\rgbtohex{\csname \string\color @#1\endcsname};}%
+	\egroup
+}
+\def\processcolors#1{\bgroup
+	\subsection*{#1}
+	\def\ProvidesFile##1[##2]{}
+	\def\DefineNamedColor##1##2##3##4{\doclr{##2}}
+	\def\pcsi##1,##2;##3\pcsifinish{\doclr{##1}\csname tl_if_empty:nF\endcsname{##3}{\pcsi ##3\pcsifinish}}
+	\def\preparecolorset##1##2##3##4{\pcsi ##4 ;\pcsifinish}
+	\input{#1}
+\egroup}
+\newwrite\colorfloatfile
+\immediate\openout\colorfloatfile=colors.fp
+\newwrite\colorhexfile
+\immediate\openout\colorhexfile=colors.hex
+\begin{document}
+	\message{^^J\expandafter\meaning\csname @declaredcolor\endcsname^^J^^J}
+	\message{^^J\expandafter\meaning\csname XC@declaredc@lor\endcsname^^J^^J}
+	\message{^^J\expandafter\meaning\csname \string\color @lightgray\endcsname^^J^^J}
+
+
+	\doclr{red}
+	\doclr{green}
+	\doclr{blue}
+	\doclr{cyan}
+	\doclr{magenta}
+	\doclr{yellow}
+	\doclr{black}\doclr{gray}
+	\doclr{white}\doclr{darkgray}\doclr{lightgray}\doclr{brown}\doclr{lime}\doclr{olive}\doclr{orange}\doclr{pink}
+	\doclr{purple}\doclr{teal}\doclr{violet}
+	\processcolors{graphics/dvipsnam.def}
+	\processcolors{svgnam.def}
+	\processcolors{x11nam.def}
+\end{document}

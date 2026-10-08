@@ -1,0 +1,77 @@
+\documentclass{article}
+\input{preamble.pre}
+\begin{document}
+
+% Negative dimensions directly in a vertical list: unlike inside an hbox row or a paragraph
+% line (where other material keeps the line's own height/depth >= 0), a negative total here
+% pulls the following material up.
+\block{Negative in vertical list}{
+    \lorem\par
+    \showvwith{}{-20pt}{}{\hbox{Content}}
+    \lorem\par
+    \showvwith{}{}{-20pt}{\hbox{Content}}
+    \lorem\par
+    \showvto{-20pt}{\hbox{Content}}
+    \lorem\par
+    \showvwith{}{-20pt}{5pt}{\hbox{Content}}
+    \lorem\par
+}
+
+\block{Negative vtop/hbox in vertical list}{
+    \lorem\par
+    \showtwith{}{-20pt}{}{\hbox{Content}}
+    \lorem\par
+    \showtwith{}{}{-20pt}{\hbox{Content}}
+    \lorem\par
+    \showhwith{}{-10pt}{}{Content}
+    \lorem\par
+    \showhwith{}{}{-10pt}{Content}
+    \lorem\par
+}
+
+\pagebreak
+
+% The last row of a vbox determines its natural depth. With \ht0= or "to" the CSS has to
+% approximate that depth (it uses one text line's descent), so these vary what the last item
+% is: a rule (depth 0), a box with a large depth, trailing glue (depth 0). The blue brackets
+% sit on the enclosing hbox's baseline.
+\block{Last item: rule}{
+    \showh{\boxwith{}{50pt}{}{\vbox{\hbox{Content}\kern3pt\hrule height2pt}}}
+    \showh{\setbox0\vbox to 50pt{\hbox{Content}\kern3pt\hrule height2pt}\box0}
+    \showh{\setbox0\vbox to 50pt{\hbox{Content}\kern3pt\hrule height2pt}\dp0=10pt\box0}
+}
+\block{Last item: deep box}{
+    \showh{\boxwith{}{50pt}{}{\vbox{\hbox{Content}\hbox{\vrule height5pt depth20pt width20pt}}}}
+    \showh{\setbox0\vbox to 50pt{\hbox{Content}\hbox{\vrule height5pt depth20pt width20pt}}\box0}
+    \showh{\setbox0\vbox to 50pt{\hbox{Content}\hbox{\vrule height5pt depth20pt width20pt}}\dp0=10pt\box0}
+}
+\block{Last item: glue}{
+    \showh{\boxwith{}{50pt}{}{\vbox{\hbox{Content}\vskip5pt}}}
+    \showh{\setbox0\vbox to 50pt{\hbox{Content}\vskip5pt}\box0}
+    \showh{\setbox0\vbox to 50pt{\hbox{Content}\vskip5pt}\dp0=10pt\box0}
+}
+
+\block{VBox to with negative depth}{
+    \showh{\setbox0\vbox to 50pt{\showvinner{\hbox{Content}}}\dp0=-10pt\box0}
+    \noindent\showpar{\setbox0\vbox to 50pt{\showvinner{\hbox{Content}}}\dp0=-10pt\box0}
+}
+
+\pagebreak
+
+% A lone \ht0= or \dp0= SMALLER than the content: the box must claim only the asserted amount
+% on that side, so neighbouring lines move closer and the content overlaps them.
+\block{HBox height/depth smaller than content}{
+    \showh{\showhwith{}{2pt}{}{\vrule height20pt depth5pt width5pt Content}}
+    \showh{\showhwith{}{}{1pt}{\vrule height5pt depth20pt width5pt Content}}
+    \noindent\showpar{\showhwith{}{2pt}{}{\vrule height20pt depth5pt width5pt Content}}
+    \noindent\showpar{\showhwith{}{}{1pt}{\vrule height5pt depth20pt width5pt Content}}
+}
+
+% Asserted boxes nested in asserted boxes, inside a paragraph.
+\block{Nested}{
+    \noindent\showpar{\showhwith{}{5pt}{2pt}{\showvwith{}{40pt}{}{\hbox{Content}}}}
+    \noindent\showpar{\showhwith{}{30pt}{}{\showtwith{}{}{40pt}{\hbox{Content}}}}
+    \showh{\showvwith{}{40pt}{10pt}{\showh{\showvto{30pt}{\hbox{Content}}}}}
+}
+
+\end{document}

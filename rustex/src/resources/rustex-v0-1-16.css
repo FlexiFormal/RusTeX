@@ -130,52 +130,50 @@
     }
 }
 
-/* A "framed box" (mdframed et al) shares ONE baseline across that whole hbox */
 .rustex-hbox:has(> .rustex-hbox-outer .rustex-vrule-container) > .rustex-vbox-outer {
     align-self: center;
 }
 
 /* ----------------------------------------------------- Glue ------------------------------------------------------- */
 
-
-.rustex-hskip,
-.rustex-hkern {
-    display: inline-block;
-}
-.rustex-vskip,
-.rustex-vkern {
-    display: block;
+.rustex-hskip, .rustex-vskip, .rustex-space-in-hbox {
+    pointer-events: none;
 }
 
-.rustex-vss {
-    display: block;
-    margin-top: auto;
-    margin-bottom: auto;
+.rustex-space-in-hbox {
+    --rustex-skip-base: 0.3333em;
+    --rustex-skip-stretch: 2.5;
+    --rustex-skip-shrink: 1.6667;
 }
-.rustex-hss {
+.rustex-hskip, .rustex-space-in-hbox {
     display: inline-block;
-    margin-left: auto;
-    margin-right: auto;
+    margin-left: var(--rustex-skip-base, 0px);
 }
-.rustex-hfil,
-.rustex-hfill {
-    display: inline-block;
-    margin-left: auto;
-    margin-right: auto;
-}
-.rustex-vfil,
-.rustex-vfill {
+.rustex-vskip {
     display: block;
-    margin-top: auto;
-    margin-bottom: auto;
+    margin-top: var(--rustex-skip-base, 0px);
+}
+
+:is(.rustex-hbox, .rustex-halign-cell) > :is(.rustex-hskip, .rustex-space-in-hbox),
+:is(.rustex-hbox, .rustex-halign-cell) > .rustex-setwidth > :is(.rustex-hskip, .rustex-space-in-hbox) {
+    margin-left: -100000px;
+    flex-grow: var(--rustex-skip-stretch, 0);
+    flex-shrink: var(--rustex-skip-shrink, 0);
+    flex-basis: calc(var(--rustex-skip-base, 0px) + 100000px);
+    width: calc(var(--rustex-skip-base, 0px) + 100000px);
+    min-width: calc(var(--rustex-skip-base, 0px) - var(--rustex-skip-shrink, 0) * 1px + 100000px);
+}
+:is(.rustex-vbox, .rustex-vtop) > .rustex-vskip,
+:is(.rustex-vbox, .rustex-vtop) > .rustex-setwidth > .rustex-vskip {
+    margin-top: -100000px;
+    flex-grow: var(--rustex-skip-stretch, 0);
+    flex-shrink: var(--rustex-skip-shrink, 0);
+    flex-basis: calc(var(--rustex-skip-base, 0px) + 100000px);
+    height: calc(var(--rustex-skip-base, 0px) + 100000px);
+    min-height: calc(var(--rustex-skip-base, 0px) - var(--rustex-skip-shrink, 0) * 1px + 100000px);
 }
 
 /* ----------------------------------------------------- Boxes ------------------------------------------------------- */
-
-.rustex-space-in-hbox {
-    display: inline-block;
-    min-width: 0.2em;
-}
 
 .rustex-raise {
     display: inline-flex;
@@ -196,10 +194,6 @@
 .rustex-hbox-outer, .rustex-vbox-outer, .rustex-vtop-outer {
     display:inline-block;
     width:min-content;
-    margin-bottom:0.1lh;
-}
-.rustex-hbox-outer {
-    align-items: first baseline;
 }
 
 .rustex-hbox, .rustex-vbox, .rustex-vtop {
@@ -213,13 +207,6 @@
     white-space: nowrap;
     align-items:baseline;
     line-height: 1;
-
-    /* glue in hboxes */
-    & > :is(.rustex-hskip, .rustex-hkern, .rustex-space-in-hbox),
-    & > .rustex-setwidth > :is(.rustex-hskip, .rustex-hkern, .rustex-space-in-hbox) {
-        margin-right: auto;
-        margin-left: auto;
-    }
 }
 
 .rustex-vbox-outer {
@@ -238,131 +225,115 @@
 
 /* ------------------------------------------ Height/Depth overrides ------------------------------------------------ */
 
-.rustex-with-ht::before {
-    content: "";
-    display: inline-block;
-    width: 0;
-    height: var(--rustex-ht);
+.rustex-hbox-outer:is(.rustex-with-ht, .rustex-with-dp) {
+    display: inline-flex;
+    align-items: baseline;
 }
-/* vbox's reference point is its LAST item, so unlike vtop it can't rely on native detection
-   even for a bare "to" (no \ht0=) - something has to establish the line-top a top-anchor
-   needs. */
-.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht)::before {
+:is(.rustex-hbox-outer, .rustex-vbox-outer, .rustex-vtop-outer).rustex-with-ht::before {
     content: "";
-    display: inline-block;
-    width: 0;
-    height: var(--rustex-to);
-}
-.rustex-with-dp::after {
-    content: "";
-    display: inline-block;
     width: 0;
     height: 0;
-    vertical-align: calc(-1 * var(--rustex-dp));
+    flex-shrink: 0;
+    order: -1;
+    margin-top: max(0px, var(--rustex-ht));
+    margin-bottom: -100000px;
+}
+:is(.rustex-hbox-outer, .rustex-vbox-outer, .rustex-vtop-outer).rustex-with-dp::after {
+    content: "";
+    width: 0;
+    height: 0;
+    flex-shrink: 0;
+    margin-top: -100000px;
+    margin-bottom: var(--rustex-dp);
 }
 
-:is(.rustex-hbox-outer, .rustex-vbox-outer, .rustex-vtop-outer):is(.rustex-with-ht, .rustex-with-dp, .rustex-with-to) {
-    display: inline-block;
-    white-space: nowrap;
+.rustex-hbox-outer.rustex-with-ht > .rustex-hbox,
+.rustex-hbox-outer.rustex-with-ht > .rustex-setwidth > .rustex-hbox {
+    margin-top: -100000px;
+}
+.rustex-hbox-outer.rustex-with-dp > .rustex-hbox,
+.rustex-hbox-outer.rustex-with-dp > .rustex-setwidth > .rustex-hbox {
+    margin-bottom: -100000px;
 }
 
-.rustex-hbox-outer:is(.rustex-with-ht, .rustex-with-dp) > .rustex-hbox,
-.rustex-hbox-outer:is(.rustex-with-ht, .rustex-with-dp) > .rustex-setwidth > .rustex-hbox {
-    display: inline-flex;
-    vertical-align: baseline;
+.rustex-vbox-outer:is(.rustex-with-ht, .rustex-with-to) > .rustex-vbox,
+.rustex-vbox-outer:is(.rustex-with-ht, .rustex-with-to) > .rustex-setwidth > .rustex-vbox,
+.rustex-vtop-outer.rustex-with-ht > .rustex-vtop,
+.rustex-vtop-outer.rustex-with-ht > .rustex-setwidth > .rustex-vtop {
+    align-self: flex-start;
+    margin-bottom: -100000px;
+}
+.rustex-vbox-outer.rustex-with-dp > .rustex-vbox,
+.rustex-vbox-outer.rustex-with-dp > .rustex-setwidth > .rustex-vbox,
+.rustex-vtop-outer.rustex-with-dp > .rustex-vtop,
+.rustex-vtop-outer.rustex-with-dp > .rustex-setwidth > .rustex-vtop {
+    margin-bottom: -100000px;
 }
 
-.rustex-hbox-outer.rustex-with-ht.rustex-with-dp.rustex-scalewidth {
-    position: relative;
+.rustex-vbox-outer.rustex-with-to > .rustex-vbox,
+.rustex-vbox-outer.rustex-with-to > .rustex-setwidth > .rustex-vbox {
+    height: calc(max(0px, var(--rustex-to)) + var(--rustex-dp-computed, 0px));
 }
-.rustex-hbox-outer.rustex-with-ht.rustex-with-dp.rustex-scalewidth > .rustex-hbox,
-.rustex-hbox-outer.rustex-with-ht.rustex-with-dp.rustex-scalewidth > .rustex-setwidth > .rustex-hbox {
-    position: absolute;
-    bottom: var(--rustex-dp);
-    left: 0;
-}
-
-:is(.rustex-vbox-outer, .rustex-vtop-outer).rustex-with-ht > :is(.rustex-vbox, .rustex-vtop),
-:is(.rustex-vbox-outer, .rustex-vtop-outer).rustex-with-ht > .rustex-setwidth > :is(.rustex-vbox, .rustex-vtop),
-.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht) > .rustex-vbox,
-.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht) > .rustex-setwidth > .rustex-vbox {
-    display: inline-flex;
-    vertical-align: top;
+.rustex-vtop-outer.rustex-with-to > .rustex-vtop,
+.rustex-vtop-outer.rustex-with-to > .rustex-setwidth > .rustex-vtop {
+    height: max(0px, var(--rustex-to));
 }
 
-.rustex-vbox-outer.rustex-with-ht {
-    height: calc(var(--rustex-ht) + var(--rustex-dp, 0px));
-}
-
-:is(.rustex-vbox-outer, .rustex-vtop-outer).rustex-with-ht > :is(.rustex-vbox, .rustex-vtop),
-:is(.rustex-vbox-outer, .rustex-vtop-outer).rustex-with-ht > .rustex-setwidth > :is(.rustex-vbox, .rustex-vtop) {
+.rustex-vbox-outer.rustex-with-ht > .rustex-vbox,
+.rustex-vbox-outer.rustex-with-ht > .rustex-setwidth > .rustex-vbox,
+.rustex-vtop-outer.rustex-with-ht > .rustex-vtop,
+.rustex-vtop-outer.rustex-with-ht > .rustex-setwidth > .rustex-vtop {
     margin-top: max(0px, calc(-1 * var(--rustex-ht)));
 }
-
+.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht) > .rustex-vbox,
+.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht) > .rustex-setwidth > .rustex-vbox {
+    margin-top: max(0px, calc(-1 * var(--rustex-to)));
+}
+.rustex-vbox-outer.rustex-with-ht > .rustex-vbox,
+.rustex-vbox-outer.rustex-with-ht > .rustex-setwidth > .rustex-vbox,
+.rustex-vtop-outer.rustex-with-ht > .rustex-vtop,
+.rustex-vtop-outer.rustex-with-ht > .rustex-setwidth > .rustex-vtop {
+    margin-top: max(0px, calc(-1 * var(--rustex-ht)));
+}
 .rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht) > .rustex-vbox,
 .rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht) > .rustex-setwidth > .rustex-vbox {
     margin-top: max(0px, calc(-1 * var(--rustex-to)));
 }
 
-.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht) {
-    height: max(0px, var(--rustex-to));
+.rustex-vbox-outer.rustex-with-to:not(.rustex-with-ht)::before {
+    content: "";
+    width: 0;
+    height: 0;
+    flex-shrink: 0;
+    order: -1;
+    margin-top: max(0px, var(--rustex-to));
+    margin-bottom: -100000px;
 }
 
-.rustex-vbox-outer.rustex-with-to.rustex-with-dp:not(.rustex-with-ht) {
-    height: max(0px, calc(max(0px, var(--rustex-to)) + var(--rustex-dp)));
-}
-.rustex-vtop-outer.rustex-with-ht.rustex-with-dp {
-    height: calc(var(--rustex-ht) + var(--rustex-dp));
-}
-
-.rustex-vtop-outer.rustex-with-ht:not(.rustex-with-dp):not(.rustex-with-to) {
-    height: calc(var(--rustex-ht) + var(--rustex-dp-computed, 0px));
-}
-.rustex-vbox-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to) > .rustex-vbox,
-.rustex-vbox-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to) > .rustex-setwidth > .rustex-vbox {
-    display: inline-flex;
-    vertical-align: bottom;
+.rustex-vbox-outer:is(.rustex-with-ht, .rustex-with-to):not(.rustex-with-dp)::after {
+    content: "";
+    width: 0;
+    height: 0;
+    flex-shrink: 0;
+    margin-top: -100000px;
+    margin-bottom: var(--rustex-dp-computed, 0px);
 }
 
-.rustex-vbox-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to) {
-    padding-bottom: var(--rustex-dp);
-}
-.rustex-vbox-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to)::after {
-    content: none;
+.rustex-vtop-outer.rustex-with-to:not(.rustex-with-ht):not(.rustex-with-dp) > .rustex-vtop,
+.rustex-vtop-outer.rustex-with-to:not(.rustex-with-ht):not(.rustex-with-dp) > .rustex-setwidth > .rustex-vtop {
+    margin-bottom: min(0px, var(--rustex-to));
 }
 
-.rustex-vbox-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to) {
-    margin-bottom: min(0px, var(--rustex-dp));
+.rustex-vtop-outer.rustex-with-ht:not(.rustex-with-dp)::after {
+    content: "";
+    width: 0;
+    height: 0;
+    flex-shrink: 0;
+    margin-top: -100000px;
+    margin-bottom: var(--rustex-dp-computed, 0px);
 }
-.rustex-vtop-outer:is(.rustex-with-dp, .rustex-with-to):not(.rustex-with-ht) > .rustex-vtop,
-.rustex-vtop-outer:is(.rustex-with-dp, .rustex-with-to):not(.rustex-with-ht) > .rustex-setwidth > .rustex-vtop {
-    display: inline-flex;
-    vertical-align: baseline;
-}
-
-.rustex-vtop-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to) {
-    height: calc(var(--rustex-dp) + 1lh);
-}
-.rustex-vtop-outer.rustex-with-dp:not(.rustex-with-ht):not(.rustex-with-to)::after {
-    content: none;
-}
-
-.rustex-vtop-outer.rustex-with-dp.rustex-with-to:not(.rustex-with-ht) {
-    height: calc(var(--rustex-dp) + 1lh);
-}
-.rustex-vtop-outer.rustex-with-dp.rustex-with-to:not(.rustex-with-ht)::after {
-    content: none;
-}
-
-.rustex-vtop-outer.rustex-with-to:not(.rustex-with-ht):not(.rustex-with-dp) {
-    height: max(0px, var(--rustex-to));
-}
-
-.rustex-vtop-outer.rustex-with-to > .rustex-vtop,
-.rustex-vtop-outer.rustex-with-to > .rustex-setwidth > .rustex-vtop,
-.rustex-vbox-outer.rustex-with-to > .rustex-vbox,
-.rustex-vbox-outer.rustex-with-to > .rustex-setwidth > .rustex-vbox {
-    min-height: var(--rustex-to);
+.rustex-vtop-outer.rustex-with-ht.rustex-with-to:not(.rustex-with-dp)::after {
+    margin-bottom: calc(var(--rustex-to) - var(--rustex-ht-computed, 0px));
 }
 
 .rustex-vcenter-display {
@@ -377,15 +348,21 @@
 }
 
 .rustex-vcenter {
-    height: min-content;
+    display: inline-grid;
+    grid-template-columns: 0 auto;
     width: min-content;
-    display: inline-flex;
-    flex-direction: column;
-    vertical-align: middle;
-}
-
-.rustex-hbox:has(> .rustex-vcenter:only-child) {
-    vertical-align: middle;
+    height: min-content;
+    & > * {
+        grid-column: 2;
+    }
+    &::before {
+        content: "";
+        grid-column: 1;
+        grid-row: 1 / span 1000;
+        align-self: center;
+        height: 0;
+        margin-top: 0.5em;
+    }
 }
 
 .rustex-setwidth {
@@ -406,21 +383,8 @@
     margin-right: min(0px, var(--rustex-this-width));
 }
 
-.rustex-hbox-outer.rustex-with-to
-    > .rustex-hbox.rustex-scalewidth:has(
-        > .rustex-hskip:first-child:is([style*="margin-right:auto"], [style*="margin-right: auto"])
-    ),
-.rustex-hbox-outer.rustex-with-to
-    > .rustex-setwidth
-    > .rustex-hbox.rustex-scalewidth:has(
-        > .rustex-hskip:first-child:is([style*="margin-right:auto"], [style*="margin-right: auto"])
-    ),
-.rustex-hbox-outer.rustex-scalewidth
-    > .rustex-setwidth
-    > .rustex-hbox:has(
-        > .rustex-hskip:first-child:is([style*="margin-right:auto"], [style*="margin-right: auto"])
-    ) {
-    justify-content: flex-end;
+.rustex-hbox-outer.rustex-with-to {
+    margin-right: min(0px, var(--rustex-to));
 }
 
 .rustex-paragraph > .rustex-hbox-outer:not(:is(.rustex-with-ht)):not(:is(.rustex-with-dp)):not(:is(.rustex-with-to)),
@@ -431,13 +395,12 @@
     }
 }
 
-.rustex-vbox:has(> .rustex-paragraph:last-child > .rustex-display:last-child),
-.rustex-vbox:has(> .rustex-paragraph:last-child > .rustex-setwidth > .rustex-display:last-child) {
-    &::after {
-        content: "";
-        display: block;
-        height: 0;
-    }
+.rustex-paragraph:has(> .rustex-display:last-child, > .rustex-setwidth:last-child > .rustex-display:last-child)::after,
+.rustex-paragraph:has(> .rustex-display:first-child, > .rustex-setwidth:first-child > .rustex-display:first-child)::before {
+    content: "\200B";
+    display: block;
+    font-size: 0;
+    line-height: 0;
 }
 
 /* ----------------------------------------------------- Math ------------------------------------------------------- */
@@ -454,14 +417,13 @@
     }
 }
 
-/*
 .rustex-math-ord,
 .rustex-math-open,
 .rustex-math-close,
 .rustex-math-cramped {
-
+    /*padding-left: 0;
+    padding-right: 0;*/
 }
-*/
 
 .rustex-math-op {
     &:has(+ .rustex-math-ord),
@@ -629,6 +591,7 @@
         justify-content: center;
         align-content: center;
         flex-wrap: wrap;
+        /*line-height: 1;*/
         > * {
             text-align: initial;
         }

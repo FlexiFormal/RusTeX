@@ -1,0 +1,29 @@
+\documentclass{article}
+\input{preamble.pre}
+\begin{document}
+
+% A box whose last item is a paragraph ending in display math has depth 0 in TeX (the display
+% is followed by \belowdisplayskip glue), so its reference point is its very bottom.
+\block{VBox ending in display, in H}{
+    \showh{\showv{\hsize=200pt\noindent\lorem $$a+b=c$$}}
+}
+\block{VBox ending in display, in paragraph}{
+    \noindent\showpar{\showv{\hsize=200pt\noindent\lorem $$a+b=c$$}}
+}
+\block{VBox with text after the display, in H}{
+    \showh{\showv{\hsize=200pt\noindent\lorem $$a+b=c$$ \lorem}}
+}
+\block{Bare vbox ending in display (no brace row), in H}{
+    \showh{\vbox{\hsize=200pt\noindent\lorem $$a+b=c$$}}
+}
+
+% A vtop's reference point is its first item's baseline; when the first item is display math
+% (\noindent$$ makes no empty line), the first item is \abovedisplayskip glue, so ht = 0.
+\block{VTop starting with display, in H}{
+    \showh{\vtop{\hsize=200pt\noindent$$a+b=c$$ \lorem}}
+}
+\block{VTop starting with text then display, in H}{
+    \showh{\vtop{\hsize=200pt\noindent\lorem $$a+b=c$$}}
+}
+
+\end{document}

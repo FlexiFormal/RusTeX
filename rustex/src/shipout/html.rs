@@ -70,6 +70,7 @@ pub struct CompilationDisplay<'a, 'b> {
     pub(crate) font: Font,
     pub(crate) in_link: bool,
     pub(crate) in_svg: bool,
+    pub(crate) in_word: bool,
     pub(crate) font_data: &'a HMap<Box<str>, FontData>,
     pub(crate) attrs: VecMap<Cow<'static, str>, Cow<'static, str>>,
     pub(crate) styles: VecMap<Cow<'static, str>, Cow<'static, str>>,
@@ -606,20 +607,42 @@ impl CompilationDisplay<'_, '_> {
                 }
                 Ok(())
             }
-            ShipoutNodeV::KernSkip(m) => {
+            ShipoutNodeV::KernSkip(Margin {
+                base,
+                stretch,
+                shrink,
+            }) => {
+                node!(self <div class="rustex-vskip" style: {
+                    if *base != 0 {
+                        style!("--rustex-skip-base"=Self::dim_to_string(*base));
+                    }
+                    if !stretch.is_zero() {
+                        match *stretch {
+                            Flex::Fixed(s) => style!("--rustex-skip-stretch"=f64::from(s) / 65_536.0 * 1.5),
+                            Flex::Fil(a) | Flex::Fill(a) | Flex::Filll(a) => style!("--rustex-skip-stretch"=f64::from(a) * 10_000.0 / 65_536.0)
+                        }
+                    }
+                    if !shrink.is_zero() {
+                        match *shrink {
+                            Flex::Fixed(s) => style!("--rustex-skip-shrink"=f64::from(s) / 65_536.0 * 1.5),
+                            Flex::Fil(a) | Flex::Fill(a) | Flex::Filll(a) => style!("--rustex-skip-shrink"=f64::from(a) * 10_000.0/ 65_536.0)
+                        }
+                    }
+                }/>);
+                /*
                 //if self.had_ink => {
                 node!(self !<div class="rustex-vskip" style:{
-                if m.base.is_positive() {
-                    style!("min-height"=Self::dim_to_string(m.base));
-                } else {
-                    style!("margin-bottom"=Self::dim_to_string(m.base));
-                }
-                match m.stretch {
-                    Flex::Fil(_) | Flex::Fill(_) | Flex::Filll(_) =>
-                        style!("margin-top"="auto"),
-                    _ => ()
-                }
-            }/>);
+                    if m.base.is_positive() {
+                        style!("min-height"=Self::dim_to_string(m.base));
+                    } else {
+                        style!("margin-bottom"=Self::dim_to_string(m.base));
+                    }
+                    match m.stretch {
+                        Flex::Fil(_) | Flex::Fill(_) | Flex::Filll(_) =>
+                            style!("margin-top"="auto"),
+                        _ => ()
+                    }
+                }/>);
                 match m.stretch {
                     Flex::Fill(_) => {
                         node!(self !<div class="rustex-vskip" style:"margin-top"="auto";/>);
@@ -630,6 +653,7 @@ impl CompilationDisplay<'_, '_> {
                     }
                     _ => (),
                 }
+                 */
                 Ok(())
             }
             //ShipoutNodeV::KernSkip(_) => Ok(()),
@@ -713,10 +737,10 @@ impl CompilationDisplay<'_, '_> {
                     "data-rustex-width"=Self::dim_to_string(*width);
                     style:{
                         if !left_skip.is_zero() {
-                            style!("margin-left"=Self::dim_to_string(left_skip.base))
+                            style!("margin-left"=Self::dim_to_string(left_skip.base));
                         }
                         if !right_skip.is_zero() {
-                            style!("margin-right"=Self::dim_to_string(right_skip.base))
+                            style!("margin-right"=Self::dim_to_string(right_skip.base));
                         }
                         match alignment {
                             Alignment::L => {style!("text-align"="left");style!("text-align-last"="left");},
@@ -746,7 +770,7 @@ impl CompilationDisplay<'_, '_> {
                     {
                     node!(self <tbody {
                         for c in children {
-                            self.do_row(c)?
+                            self.do_row(c)?;
                         }
                     }/>);
                     }
@@ -783,7 +807,7 @@ impl CompilationDisplay<'_, '_> {
             ShipoutNodeH::Common(Common::Literal(s)) => self.f.write_str(s),
             ShipoutNodeH::Common(Common::WithLink { children, .. }) if self.in_link => {
                 for c in children {
-                    self.do_h(c, in_para, escape)?
+                    self.do_h(c, in_para, escape)?;
                 }
                 Ok(())
             }
@@ -812,20 +836,42 @@ impl CompilationDisplay<'_, '_> {
                 match n {
                     NumOrName::Name(s) => node!(self <a "id"=s;/>),
                     NumOrName::Num(n) => {
-                        node!(self <a "id"=format_args!("NUM_{}",n);/>)
+                        node!(self <a "id"=format_args!("NUM_{}",n);/>);
                     }
                 }
                 Ok(())
             }
-            ShipoutNodeH::KernSkip(m) => {
+            ShipoutNodeH::KernSkip(Margin {
+                base,
+                stretch,
+                shrink,
+            }) => {
+                node!(self <div class="rustex-hskip" style: {
+                    if *base != 0 {
+                        style!("--rustex-skip-base"=Self::dim_to_string(*base));
+                    }
+                    if !stretch.is_zero() {
+                        match *stretch {
+                            Flex::Fixed(s) => style!("--rustex-skip-stretch"=f64::from(s) / 65_536.0 * 1.5),
+                            Flex::Fil(a) | Flex::Fill(a) | Flex::Filll(a) => style!("--rustex-skip-stretch"=f64::from(a) * 10_000.0/ 65_536.0)
+                        }
+                    }
+                    if !shrink.is_zero() {
+                        match *shrink {
+                            Flex::Fixed(s) => style!("--rustex-skip-shrink"=f64::from(s) / 65_536.0 * 1.5),
+                            Flex::Fil(a) | Flex::Fill(a) | Flex::Filll(a) => style!("--rustex-skip-shrink"=f64::from(a) * 10_000.0/ 65_536.0)
+                        }
+                    }
+                }/>);
+                /*
                 node!(self <div class="rustex-hskip" style:{
-                style!("margin-left"=Self::dim_to_string(m.base));
-                match m.stretch {
-                    Flex::Fil(_) | Flex::Fill(_) | Flex::Filll(_) =>
-                        style!("margin-right"="auto"),
-                    _ => ()
-                }
-            }/>);
+                    style!("margin-left"=Self::dim_to_string(m.base));
+                    match m.stretch {
+                        Flex::Fil(_) | Flex::Fill(_) | Flex::Filll(_) =>
+                            style!("margin-right"="auto"),
+                        _ => ()
+                    }
+                }/>);
                 match m.stretch {
                     Flex::Fill(_) => {
                         node!(self <div class="rustex-hskip" style:"margin-right"="auto";/>);
@@ -836,6 +882,7 @@ impl CompilationDisplay<'_, '_> {
                     }
                     _ => (),
                 }
+                */
                 Ok(())
             }
             ShipoutNodeH::Common(Common::SVG {

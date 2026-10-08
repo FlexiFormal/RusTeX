@@ -218,9 +218,13 @@ impl<ET: EngineTypes> HBoxInfo<ET> {
             HBoxInfo::HBox {
                 assigned_width,
                 computed_width,
+                scaled,
                 ..
-            } => assigned_width
-                .unwrap_or_else(|| *computed_width.get_or_init(|| Self::width_inner(v))),
+            } => assigned_width.unwrap_or_else(|| match scaled {
+                ToOrSpread::None => *computed_width.get_or_init(|| Self::width_inner(v)),
+                ToOrSpread::To(d) => *d,
+                ToOrSpread::Spread(d) => *computed_width.get_or_init(|| Self::width_inner(v)) + *d,
+            }),
             HBoxInfo::ParLine { spec, .. } => {
                 spec.leftskip.base + spec.rightskip.base + spec.target
             }
@@ -484,18 +488,32 @@ impl<ET: EngineTypes> VBoxInfo<ET> {
             VBoxInfo::VBox {
                 assigned_height,
                 computed_height,
+                scaled,
                 ..
-            } => assigned_height
-                .unwrap_or_else(|| *computed_height.get_or_init(|| Self::height_inner(v))),
+            } => assigned_height.unwrap_or_else(|| match scaled {
+                ToOrSpread::None => *computed_height.get_or_init(|| Self::height_inner(v)),
+                ToOrSpread::To(d) => *d,
+                ToOrSpread::Spread(d) => {
+                    *computed_height.get_or_init(|| Self::height_inner(v)) + *d
+                }
+            }),
             VBoxInfo::VTop {
                 assigned_height,
                 computed_height,
+                scaled,
                 ..
-            } => assigned_height.unwrap_or_else(|| {
-                *computed_height.get_or_init(|| match v.first() {
+            } => assigned_height.unwrap_or_else(|| match scaled {
+                ToOrSpread::None => *computed_height.get_or_init(|| match v.first() {
                     Some(c @ VNode::Box(..)) => c.height(),
                     _ => ET::Dim::default(),
-                })
+                }),
+                ToOrSpread::To(d) => *d,
+                ToOrSpread::Spread(d) => {
+                    *computed_height.get_or_init(|| match v.first() {
+                        Some(c @ VNode::Box(..)) => c.height(),
+                        _ => ET::Dim::default(),
+                    }) + *d
+                }
             }),
         }
     }

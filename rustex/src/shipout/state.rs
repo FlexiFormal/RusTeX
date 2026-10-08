@@ -25,7 +25,7 @@ use tex_glyphs::glyphs::{Glyph, GlyphName};
 use crate::engine::nodes::LineSkip;
 use crate::shipout::annotations;
 use crate::shipout::utils::VNodes;
-use crate::utils::{Margin, VecMap, VecSet};
+use crate::utils::{Flex, FlexMagnitude, Margin, VecMap, VecSet};
 
 mod sealed {
     pub(crate) trait Sealed {}
@@ -185,23 +185,20 @@ pub(crate) enum ShipoutWrapper {
     None,
 }
 impl ShipoutWrapper {
-    fn kind(&self) -> Option<WrapperKind> {
+    const fn kind(&self) -> Option<WrapperKind> {
         match self {
-            ShipoutWrapper::Color(..) => Some(WrapperKind::Color),
-            ShipoutWrapper::Font(..) => Some(WrapperKind::Font),
-            ShipoutWrapper::Link(..) => Some(WrapperKind::Link),
-            ShipoutWrapper::Annotation { .. } => Some(WrapperKind::Annotation),
-            ShipoutWrapper::SVG { .. } => Some(WrapperKind::SVG),
-            ShipoutWrapper::Matrix { .. } => Some(WrapperKind::Matrix),
-            ShipoutWrapper::None => None,
+            Self::Color(..) => Some(WrapperKind::Color),
+            Self::Font(..) => Some(WrapperKind::Font),
+            Self::Link(..) => Some(WrapperKind::Link),
+            Self::Annotation { .. } => Some(WrapperKind::Annotation),
+            Self::SVG { .. } => Some(WrapperKind::SVG),
+            Self::Matrix { .. } => Some(WrapperKind::Matrix),
+            Self::None => None,
         }
     }
-    #[inline(always)]
+    #[inline]
     fn prec(&self) -> u8 {
-        match self.kind() {
-            Some(k) => k.prec(),
-            None => 255,
-        }
+        self.kind().map_or(255, WrapperKind::prec)
     }
     fn close_ii<Node: ShipoutNodeT>(
         self,
@@ -210,17 +207,17 @@ impl ShipoutWrapper {
         nodes: Vec<Node>,
     ) -> Result<Common<Node>, Vec<Node>> {
         match self {
-            ShipoutWrapper::Color(c) => Common::with_color(c, nodes),
-            ShipoutWrapper::Font(f) => Common::with_font(engine, fonts, f, nodes),
-            ShipoutWrapper::Link(href) => Ok(Common::with_link(href, nodes)),
-            ShipoutWrapper::Annotation {
+            Self::Color(c) => Common::with_color(c, nodes),
+            Self::Font(f) => Common::with_font(engine, fonts, f, nodes),
+            Self::Link(href) => Ok(Common::with_link(href, nodes)),
+            Self::Annotation {
                 attrs,
                 styles,
                 classes,
                 tag,
                 ..
             } => Ok(Common::with_annotation(attrs, styles, classes, tag, nodes)),
-            ShipoutWrapper::Matrix {
+            Self::Matrix {
                 scale,
                 rotate,
                 skewx,
@@ -237,8 +234,8 @@ impl ShipoutWrapper {
         nodes: Vec<ShipoutNodeSVG>,
     ) -> Result<ShipoutNodeSVG, Vec<ShipoutNodeSVG>> {
         match self {
-            ShipoutWrapper::SVG { tag, attrs } => Ok(ShipoutNodeSVG::svg_node(tag, attrs, nodes)),
-            _ => self.close_ii(engine, fonts, nodes).map(|e| e.into()),
+            Self::SVG { tag, attrs } => Ok(ShipoutNodeSVG::svg_node(tag, attrs, nodes)),
+            _ => self.close_ii(engine, fonts, nodes).map(Into::into),
         }
     }
     fn close_i(
@@ -248,57 +245,59 @@ impl ShipoutWrapper {
         nodes: ShipoutNodes,
         target: &mut ShipoutNodes,
     ) {
-        if nodes.is_empty()
+        if (nodes.is_empty()
             || (match &nodes {
                 ShipoutNodes::V(v) => v.iter().all(|n| matches!(n, ShipoutNodeV::KernSkip(_))),
                 _ => false,
-            })
-        {
-            match self.kind() {
+            }))
+            && matches!(
+                self.kind(),
                 Some(
                     WrapperKind::Color
-                    | WrapperKind::Annotation
-                    | WrapperKind::Font
-                    | WrapperKind::Link,
-                ) => return,
-                _ => (),
-            }
+                        | WrapperKind::Annotation
+                        | WrapperKind::Font
+                        | WrapperKind::Link,
+                )
+            )
+        {
+            return;
         }
+
         match (nodes, target) {
             (ShipoutNodes::V(nodes), ShipoutNodes::V(target)) => {
                 match self.close_ii(engine, fonts, nodes) {
                     Ok(r) => target.push(r.into()),
-                    Err(ls) => target.extend(ls.into_iter()),
+                    Err(ls) => target.extend(ls),
                 }
             }
             (ShipoutNodes::H(nodes), ShipoutNodes::H(target)) => {
                 match self.close_ii(engine, fonts, nodes) {
                     Ok(r) => target.push(r.into()),
-                    Err(ls) => target.extend(ls.into_iter()),
+                    Err(ls) => target.extend(ls),
                 }
             }
             (ShipoutNodes::HRow(nodes), ShipoutNodes::HRow(target)) => {
                 match self.close_ii(engine, fonts, nodes) {
                     Ok(r) => target.push(r.into()),
-                    Err(ls) => target.extend(ls.into_iter()),
+                    Err(ls) => target.extend(ls),
                 }
             }
             (ShipoutNodes::Math(nodes), ShipoutNodes::Math(target)) => {
                 match self.close_ii(engine, fonts, nodes) {
                     Ok(r) => target.push(r.into()),
-                    Err(ls) => target.extend(ls.into_iter()),
+                    Err(ls) => target.extend(ls),
                 }
             }
             (ShipoutNodes::Table(nodes), ShipoutNodes::Table(target)) => {
                 match self.close_ii(engine, fonts, nodes) {
                     Ok(r) => target.push(r.into()),
-                    Err(ls) => target.extend(ls.into_iter()),
+                    Err(ls) => target.extend(ls),
                 }
             }
             (ShipoutNodes::SVG(nodes), ShipoutNodes::SVG(target)) => {
                 match self.close_svg(engine, fonts, nodes) {
-                    Ok(r) => target.push(r.into()),
-                    Err(ls) => target.extend(ls.into_iter()),
+                    Ok(r) => target.push(r),
+                    Err(ls) => target.extend(ls),
                 }
             }
             _ => unreachable!(),
@@ -340,16 +339,13 @@ impl PartialEq<ShipoutWrapper> for WrapperKind {
 }
 impl PartialEq<Option<ShipoutWrapper>> for WrapperKind {
     fn eq(&self, other: &Option<ShipoutWrapper>) -> bool {
-        match other {
-            Some(other) => self == other,
-            None => false,
-        }
+        other.as_ref().map_or_default(|other| self == other)
     }
 }
 
 impl ShipoutWrapper {
-    fn is_none(&self) -> bool {
-        matches!(self, ShipoutWrapper::None)
+    const fn is_none(&self) -> bool {
+        matches!(self, Self::None)
     }
 
     fn close_all_svg(state: &mut Shipout<SVG>) {
@@ -384,24 +380,21 @@ impl ShipoutWrapper {
     pub(crate) fn close_all<Mode: ShipoutModeT>(state: &mut Shipout<Mode>) -> Vec<Self> {
         let mut reopen = Vec::new();
         loop {
-            match state.wrapper.kind() {
-                Some(_) => {
-                    let (nodes, mut wrapper) = state.previous.pop().unwrap();
-                    let nodes = std::mem::replace(
-                        &mut state.nodes,
-                        Mode::NodeType::get(nodes).unwrap_or_else(|| todo!()),
-                    );
-                    std::mem::swap(&mut state.wrapper, &mut wrapper);
-                    reopen.push(wrapper.clone());
-                    match wrapper.close_ii(state.engine, &mut state.top_state.font_data, nodes) {
-                        Ok(r) => state.nodes.push(r.into()),
-                        Err(ls) => state.nodes.extend(ls.into_iter()),
-                    }
+            if state.wrapper.kind().is_some() {
+                let (nodes, mut wrapper) = state.previous.pop().unwrap();
+                let nodes = std::mem::replace(
+                    &mut state.nodes,
+                    Mode::NodeType::get(nodes).unwrap_or_else(|| todo!()),
+                );
+                std::mem::swap(&mut state.wrapper, &mut wrapper);
+                reopen.push(wrapper.clone());
+                match wrapper.close_ii(state.engine, &mut state.top_state.font_data, nodes) {
+                    Ok(r) => state.nodes.push(r.into()),
+                    Err(ls) => state.nodes.extend(ls),
                 }
-                None => {
-                    reopen.reverse();
-                    return reopen;
-                }
+            } else {
+                reopen.reverse();
+                return reopen;
             }
         }
     }
@@ -478,7 +471,7 @@ pub(crate) struct Shipout<'a, 'b, Mode: ShipoutModeT> {
     pub(crate) state: Mode,
     pub(crate) previous: Vec<(ShipoutNodes, ShipoutWrapper)>,
 }
-impl<'a, 'b> Shipout<'a, 'b, Top> {
+impl Shipout<'_, '_, Top> {
     pub fn finalize(&mut self) -> Vec<ShipoutNodeV> {
         ShipoutWrapper::close_all(self);
         while matches!(self.nodes.last(), Some(ShipoutNodeV::KernSkip(_))) {
@@ -488,7 +481,7 @@ impl<'a, 'b> Shipout<'a, 'b, Top> {
     }
 }
 
-impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
+impl<Mode: ShipoutModeT> Shipout<'_, '_, Mode> {
     fn do_in<R, M: ShipoutModeT>(
         &mut self,
         new: impl FnOnce() -> M,
@@ -532,7 +525,99 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
         info: VBoxInfo<Types>,
         f: impl FnOnce(&mut Shipout<V>) -> Result<R, Option<VNode<Types>>>,
     ) -> Result<R, Option<VNode<Types>>> {
-        let (r, nodes, uses_color, uses_font) = self.do_in(|| V, f);
+        let (r, mut nodes, uses_color, uses_font) = self.do_in(|| V, f);
+
+        // remove unneeded skips -----------------------
+        let mut max_shrink = None::<(Vec<usize>, FlexMagnitude)>;
+        let mut max_stretch = None::<(Vec<usize>, FlexMagnitude)>;
+        let mut index = 0;
+        while index < nodes.len() {
+            let (prev, later) = nodes.split_at_mut(index);
+            let mut removes = Vec::new();
+
+            if let Some(ShipoutNodeV::KernSkip(Margin {
+                base,
+                stretch,
+                shrink,
+            })) = later.first_mut()
+            {
+                if !stretch.is_zero() {
+                    if let Some((v, max)) = &mut max_stretch {
+                        if *max == stretch.magnitude() {
+                            v.push(index);
+                        } else if *max < stretch.magnitude() {
+                            let old = std::mem::replace(v, vec![index]);
+                            *max = stretch.magnitude();
+                            for v in old {
+                                if let ShipoutNodeV::KernSkip(Margin {
+                                    base: oldbase,
+                                    stretch: oldstretch,
+                                    shrink,
+                                }) = &mut prev[v]
+                                {
+                                    *oldstretch = Flex::Fixed(0);
+                                    if shrink.is_zero() && *oldbase == 0 {
+                                        removes.push(v);
+                                    }
+                                }
+                            }
+                        } else {
+                            *stretch = Flex::Fixed(0);
+                            if shrink.is_zero() && *base == 0 {
+                                nodes.remove(index);
+                                continue;
+                            }
+                        }
+                    } else {
+                        max_stretch = Some((vec![index], stretch.magnitude()));
+                    }
+                }
+                if !shrink.is_zero() {
+                    if let Some((v, max)) = &mut max_shrink {
+                        if *max == shrink.magnitude() {
+                            v.push(index);
+                        } else if *max < shrink.magnitude() {
+                            let old = std::mem::replace(v, vec![index]);
+                            *max = shrink.magnitude();
+                            for v in old {
+                                if let ShipoutNodeV::KernSkip(Margin {
+                                    base: oldbase,
+                                    stretch,
+                                    shrink: oldshrink,
+                                }) = &mut nodes[v]
+                                {
+                                    *oldshrink = Flex::Fixed(0);
+                                    if stretch.is_zero() && *oldbase == 0 && !removes.contains(&v) {
+                                        removes.push(v);
+                                    }
+                                }
+                            }
+                        } else {
+                            *shrink = Flex::Fixed(0);
+                            if stretch.is_zero() && *base == 0 {
+                                removes.sort_unstable();
+                                nodes.remove(index);
+                                for r in removes.into_iter().rev() {
+                                    nodes.remove(r);
+                                    index -= 1;
+                                }
+                                continue;
+                            }
+                        }
+                    } else {
+                        max_shrink = Some((vec![index], shrink.magnitude()));
+                    }
+                }
+            }
+            removes.sort_unstable();
+            for r in removes.into_iter().rev() {
+                nodes.remove(r);
+                index -= 1;
+            }
+            index += 1;
+        }
+        // -------------------------------------------------------------
+
         self.nodes.push(
             Common::VBox {
                 sref: SourceRef::new(start, end, self.engine),
@@ -554,13 +639,105 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
         preskip: Option<Skip<Dim32>>,
         f: impl FnOnce(&mut Shipout<H>) -> Result<R, Option<HNode<Types>>>,
     ) -> Result<R, Option<HNode<Types>>> {
-        let (r, nodes, uses_color, uses_font) = self.do_in(|| H, f);
+        let (r, mut nodes, uses_color, uses_font) = self.do_in(|| H, f);
+
+        // remove unneeded skips -----------------------
+        let mut max_shrink = None::<(Vec<usize>, FlexMagnitude)>;
+        let mut max_stretch = None::<(Vec<usize>, FlexMagnitude)>;
+        let mut index = 0;
+        while index < nodes.len() {
+            let (prev, later) = nodes.split_at_mut(index);
+            let mut removes = Vec::new();
+
+            if let Some(ShipoutNodeH::KernSkip(Margin {
+                base,
+                stretch,
+                shrink,
+            })) = later.first_mut()
+            {
+                if !stretch.is_zero() {
+                    if let Some((v, max)) = &mut max_stretch {
+                        if *max == stretch.magnitude() {
+                            v.push(index);
+                        } else if *max < stretch.magnitude() {
+                            let old = std::mem::replace(v, vec![index]);
+                            *max = stretch.magnitude();
+                            for v in old {
+                                if let ShipoutNodeH::KernSkip(Margin {
+                                    base: oldbase,
+                                    stretch: oldstretch,
+                                    shrink,
+                                }) = &mut prev[v]
+                                {
+                                    *oldstretch = Flex::Fixed(0);
+                                    if shrink.is_zero() && *oldbase == 0 {
+                                        removes.push(v);
+                                    }
+                                }
+                            }
+                        } else {
+                            *stretch = Flex::Fixed(0);
+                            if shrink.is_zero() && *base == 0 {
+                                nodes.remove(index);
+                                continue;
+                            }
+                        }
+                    } else {
+                        max_stretch = Some((vec![index], stretch.magnitude()));
+                    }
+                }
+                if !shrink.is_zero() {
+                    if let Some((v, max)) = &mut max_shrink {
+                        if *max == shrink.magnitude() {
+                            v.push(index);
+                        } else if *max < shrink.magnitude() {
+                            let old = std::mem::replace(v, vec![index]);
+                            *max = shrink.magnitude();
+                            for v in old {
+                                if let ShipoutNodeH::KernSkip(Margin {
+                                    base: oldbase,
+                                    stretch,
+                                    shrink: oldshrink,
+                                }) = &mut nodes[v]
+                                {
+                                    *oldshrink = Flex::Fixed(0);
+                                    if stretch.is_zero() && *oldbase == 0 && !removes.contains(&v) {
+                                        removes.push(v);
+                                    }
+                                }
+                            }
+                        } else {
+                            *shrink = Flex::Fixed(0);
+                            if stretch.is_zero() && *base == 0 {
+                                removes.sort_unstable();
+                                nodes.remove(index);
+                                for r in removes.into_iter().rev() {
+                                    nodes.remove(r);
+                                    index -= 1;
+                                }
+                                continue;
+                            }
+                        }
+                    } else {
+                        max_shrink = Some((vec![index], shrink.magnitude()));
+                    }
+                }
+            }
+            removes.sort_unstable();
+            for r in removes.into_iter().rev() {
+                nodes.remove(r);
+                index -= 1;
+            }
+            index += 1;
+        }
+        // -------------------------------------------------------------
+
         self.nodes.push(
             Common::HBox {
                 sref: SourceRef::new(start, end, self.engine),
                 info,
                 children: nodes,
-                preskip: preskip.map(|r| r.into()),
+                preskip: preskip.map(Into::into),
                 uses_color,
                 uses_font,
             }
@@ -605,7 +782,7 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
 
     #[inline]
     pub(crate) fn push(&mut self, node: Mode::NodeType) {
-        self.nodes.push(node)
+        self.nodes.push(node);
     }
 
     pub(crate) fn open_link(&mut self, link: PDFStartLink<Types>) {
@@ -634,27 +811,27 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
         self.previous.push((
             Mode::NodeType::into_nodes(std::mem::take(&mut self.nodes)),
             oldwrap,
-        ))
+        ));
     }
     #[inline]
     pub(crate) fn close_link(&mut self) {
-        ShipoutWrapper::close(self, WrapperKind::Link)
+        ShipoutWrapper::close(self, WrapperKind::Link);
     }
 
     pub(crate) fn open_font(&mut self, font: Font, global: bool) {
         if global {
-            self.top_state.top_font = Some(font)
+            self.top_state.top_font = Some(font);
         } else {
             let oldwrap = std::mem::replace(&mut self.wrapper, ShipoutWrapper::Font(font));
             self.previous.push((
                 Mode::NodeType::into_nodes(std::mem::take(&mut self.nodes)),
                 oldwrap,
-            ))
+            ));
         }
     }
     #[inline]
     pub(crate) fn close_font(&mut self) {
-        ShipoutWrapper::close(self, WrapperKind::Font)
+        ShipoutWrapper::close(self, WrapperKind::Font);
     }
 
     pub(crate) fn open_annot(
@@ -678,12 +855,12 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
         self.previous.push((
             Mode::NodeType::into_nodes(std::mem::take(&mut self.nodes)),
             oldwrap,
-        ))
+        ));
     }
     #[inline]
-    pub(crate) fn close_annot(&mut self, end: SRef) {
+    pub(crate) fn close_annot(&mut self, _end: SRef) {
         // TODO: end
-        ShipoutWrapper::close(self, WrapperKind::Annotation)
+        ShipoutWrapper::close(self, WrapperKind::Annotation);
     }
 
     pub(crate) fn open_matrix(&mut self, scale: f32, rotate: f32, skewx: f32, skewy: f32) {
@@ -699,11 +876,11 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
         self.previous.push((
             Mode::NodeType::into_nodes(std::mem::take(&mut self.nodes)),
             oldwrap,
-        ))
+        ));
     }
     #[inline]
     pub(crate) fn close_matrix(&mut self) {
-        ShipoutWrapper::close(self, WrapperKind::Matrix)
+        ShipoutWrapper::close(self, WrapperKind::Matrix);
     }
 
     pub(crate) fn do_color(&mut self, act: ColorStackAction) {
@@ -716,7 +893,7 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
                     self.previous.push((
                         Mode::NodeType::into_nodes(std::mem::take(&mut self.nodes)),
                         oldwrap,
-                    ))
+                    ));
                 }
             }
             ColorStackAction::Push(idx, c) => {
@@ -743,7 +920,7 @@ impl<'a, 'b, Mode: ShipoutModeT> Shipout<'a, 'b, Mode> {
         }
     }
 }
-impl<'a, 'b, Mode: VLike> Shipout<'a, 'b, Mode> {
+impl<Mode: VLike> Shipout<'_, '_, Mode> {
     pub(crate) fn skipv(&mut self, skip: Margin) {
         if skip.is_zero() {
             return;
@@ -754,7 +931,7 @@ impl<'a, 'b, Mode: VLike> Shipout<'a, 'b, Mode> {
                 self.nodes.pop();
             }
         } else {
-            self.push(ShipoutNodeV::KernSkip(skip))
+            self.push(ShipoutNodeV::KernSkip(skip));
         }
     }
 
@@ -865,7 +1042,7 @@ impl<'a, 'b, Mode: HLike> Shipout<'a, 'b, Mode> {
                 self.nodes.pop();
             }
         } else {
-            self.push(ShipoutNodeH::KernSkip(skip))
+            self.push(ShipoutNodeH::KernSkip(skip));
         }
     }
 
@@ -942,8 +1119,100 @@ impl<'a, 'b> Shipout<'a, 'b, Row> {
         spans: u8,
         f: impl FnOnce(&mut Shipout<H>) -> Result<(), Option<HNode<Types>>>,
     ) -> Result<(), Option<HNode<Types>>> {
-        let (r, nodes, uses_color, uses_font) = self.do_in(|| H, f);
+        let (r, mut nodes, uses_color, uses_font) = self.do_in(|| H, f);
         self.state.num_cols += spans + 1;
+
+        // remove unneeded skips -----------------------
+        let mut max_shrink = None::<(Vec<usize>, FlexMagnitude)>;
+        let mut max_stretch = None::<(Vec<usize>, FlexMagnitude)>;
+        let mut index = 0;
+        while index < nodes.len() {
+            let (prev, later) = nodes.split_at_mut(index);
+            let mut removes = Vec::new();
+
+            if let Some(ShipoutNodeH::KernSkip(Margin {
+                base,
+                stretch,
+                shrink,
+            })) = later.first_mut()
+            {
+                if !stretch.is_zero() {
+                    if let Some((v, max)) = &mut max_stretch {
+                        if *max == stretch.magnitude() {
+                            v.push(index);
+                        } else if *max < stretch.magnitude() {
+                            let old = std::mem::replace(v, vec![index]);
+                            *max = stretch.magnitude();
+                            for v in old {
+                                if let ShipoutNodeH::KernSkip(Margin {
+                                    base: oldbase,
+                                    stretch: oldstretch,
+                                    shrink,
+                                }) = &mut prev[v]
+                                {
+                                    *oldstretch = Flex::Fixed(0);
+                                    if shrink.is_zero() && *oldbase == 0 {
+                                        removes.push(v);
+                                    }
+                                }
+                            }
+                        } else {
+                            *stretch = Flex::Fixed(0);
+                            if shrink.is_zero() && *base == 0 {
+                                nodes.remove(index);
+                                continue;
+                            }
+                        }
+                    } else {
+                        max_stretch = Some((vec![index], stretch.magnitude()));
+                    }
+                }
+                if !shrink.is_zero() {
+                    if let Some((v, max)) = &mut max_shrink {
+                        if *max == shrink.magnitude() {
+                            v.push(index);
+                        } else if *max < shrink.magnitude() {
+                            let old = std::mem::replace(v, vec![index]);
+                            *max = shrink.magnitude();
+                            for v in old {
+                                if let ShipoutNodeH::KernSkip(Margin {
+                                    base: oldbase,
+                                    stretch,
+                                    shrink: oldshrink,
+                                }) = &mut nodes[v]
+                                {
+                                    *oldshrink = Flex::Fixed(0);
+                                    if stretch.is_zero() && *oldbase == 0 && !removes.contains(&v) {
+                                        removes.push(v);
+                                    }
+                                }
+                            }
+                        } else {
+                            *shrink = Flex::Fixed(0);
+                            if stretch.is_zero() && *base == 0 {
+                                removes.sort_unstable();
+                                nodes.remove(index);
+                                for r in removes.into_iter().rev() {
+                                    nodes.remove(r);
+                                    index -= 1;
+                                }
+                                continue;
+                            }
+                        }
+                    } else {
+                        max_shrink = Some((vec![index], shrink.magnitude()));
+                    }
+                }
+            }
+            removes.sort_unstable();
+            for r in removes.into_iter().rev() {
+                nodes.remove(r);
+                index -= 1;
+            }
+            index += 1;
+        }
+        // -------------------------------------------------------------
+
         self.nodes.push(ShipoutNodeHRow::Cell {
             sref: SourceRef::new(start, end, self.engine),
             spans: spans + 1,

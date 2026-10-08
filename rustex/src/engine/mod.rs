@@ -166,6 +166,7 @@ impl Display for CompilationResult {
             indent: 0,
             in_link: false,
             in_svg: false,
+            in_word: false,
             attrs: VecMap::default(),
             styles: VecMap::default(),
             sourcerefs: self.sourcerefs,
