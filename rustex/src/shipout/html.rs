@@ -732,9 +732,10 @@ impl CompilationDisplay<'_, '_> {
                     _ => "rustex-paragraph rustex-withwidth",
                 };
                 node!(self <div class=cls;ref=sref
-                    "data-rustex-leftskip"=Self::dim_to_string(left_skip.base);
-                    "data-rustex-rightskip"=Self::dim_to_string(right_skip.base);
-                    "data-rustex-width"=Self::dim_to_string(*width);
+                    //"data-rustex-leftskip"=Self::dim_to_string(left_skip.base);
+                    //"data-rustex-rightskip"=Self::dim_to_string(right_skip.base);
+                    //"data-rustex-width"=Self::dim_to_string(*width)
+
                     style:{
                         if !left_skip.is_zero() {
                             style!("margin-left"=Self::dim_to_string(left_skip.base));
@@ -2141,13 +2142,13 @@ impl CompilationDisplay<'_, '_> {
         let cls = dims!("rustex-hbox-outer"; wd:ass_width ht:ass_height dp:ass_dp to:to);
         self.moveraise(info.moved_left(), info.raised(), move |slf| {
             node!(slf <div class=cls; ref=sref
-                ?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
-                ?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
-                ?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
-                ?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
-                ?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
-                ?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
-                ?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
+                //?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
+                //?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
+                //?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
+                //?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
+                //?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
+                //?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
+                //?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
                 style: {
                     if let Some(wd) = ass_width {
                         width!(wd);
@@ -2285,13 +2286,13 @@ impl CompilationDisplay<'_, '_> {
         let cls = dims!("rustex-vbox-outer"; ht:ass_height dp:ass_dp to:to);
         self.moveraise(info.moved_left(), info.raised(), move |slf| {
             node!(slf <div class=cls; ref=sref
-                ?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
-                ?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
-                ?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
-                ?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
-                ?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
-                ?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
-                ?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
+                //?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
+                //?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
+                //?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
+                //?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
+                //?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
+                //?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
+                //?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
                 style:{
                     if let Some(ht) = ass_height {
                         style!("--rustex-ht"=Self::dim_to_string(ht));
@@ -2451,13 +2452,13 @@ impl CompilationDisplay<'_, '_> {
         let cls = dims!("rustex-vtop-outer"; ht:ass_height dp:ass_dp to:to);
         self.moveraise(info.moved_left(), info.raised(), move |slf| {
             node!(slf <div class=cls; ref=sref
-                ?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
-                ?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
-                ?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
-                ?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
-                ?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
-                ?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
-                ?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
+                //?(ass_width.map(|d| ("data-rustex-assigned-width",Self::dim_to_string(d))))
+                //?(orig_width.map(|d| ("data-rustex-original-width",Self::dim_to_string(d))))
+                //?(ass_height.map(|d| ("data-rustex-assigned-height",Self::dim_to_string(d))))
+                //?(orig_height.map(|d| ("data-rustex-original-height",Self::dim_to_string(d))))
+                //?(ass_dp.map(|d| ("data-rustex-assigned-depth",Self::dim_to_string(d))))
+                //?(orig_dp.map(|d| ("data-rustex-original-depth",Self::dim_to_string(d))))
+                //?(to.map(|d| ("data-rustex-to",Self::dim_to_string(d))))
                 style:{
                     if let Some(ht) = ass_height {
                         style!("--rustex-ht"=Self::dim_to_string(ht));
