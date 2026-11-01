@@ -820,6 +820,7 @@ const PRIMITIVE_INTS: &[&str] = &[
     "savingvdiscards",
     "predisplaydirection",
     "interactionmode",
+    "TeXXeTstate",
 ];
 
 const PRIMITIVE_TOKS: &[&str] = &["everyeof"];
@@ -875,15 +876,20 @@ pub fn register_etex_primitives<E: TeXEngine>(engine: &mut E) {
 
     register_unexpandable(engine, "splitdiscards", CommandScope::Any, splitdiscards);
 
-    cmtodo!(engine, beginL);
-    cmtodo!(engine, beginR);
+    register_unexpandable(engine, "beginL", CommandScope::Any, |_, _| Ok(()));
+    register_unexpandable(engine, "beginR", CommandScope::Any, |_, _| Ok(()));
+    register_unexpandable(engine, "endL", CommandScope::Any, |_, _| Ok(()));
+    register_unexpandable(engine, "endR", CommandScope::Any, |_, _| Ok(()));
+    //cmtodo!(engine, beginL);
+    //cmtodo!(engine, beginR);
+    //cmtodo!(engine, TeXXeTstate);
     cmtodo!(engine, clubpenalties);
     cmtodo!(engine, currentifbranch);
     cmtodo!(engine, currentiflevel);
     cmtodo!(engine, currentiftype);
     cmtodo!(engine, displaywidowpenalties);
-    cmtodo!(engine, endL);
-    cmtodo!(engine, endR);
+    //cmtodo!(engine, endL);
+    //cmtodo!(engine, endR);
     cmtodo!(engine, gluetomu);
     cmtodo!(engine, interlinepenalties);
     cmtodo!(engine, lastlinefit);
@@ -896,7 +902,6 @@ pub fn register_etex_primitives<E: TeXEngine>(engine: &mut E) {
     cmtodo!(engine, showifs);
     cmtodo!(engine, showtokens);
     //cmtodo!(engine, splitdiscards);
-    cmtodo!(engine, TeXXeTstate);
     cmtodo!(engine, widowpenalties);
     /*
        register_int!(currentgrouplevel,engine,(e,c) => currentgrouplevel::<ET>(e,&c));

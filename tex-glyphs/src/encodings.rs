@@ -48,7 +48,7 @@ impl<S: AsRef<str>, F: FnMut(&str) -> S> FontInfoStore<S, F> {
     /// full file paths of files based on their names; the canonical
     /// implementation would be to call [`kpsewhich`](https://ctan.org/pkg/kpsewhich).
     pub fn new(get: F) -> Self {
-        let mut map = HMap::default();
+        let mut map = HMap::with_capacity_and_hasher(1024, rustc_hash::FxBuildHasher);
         parse_pdftex_map(&mut map);
         include!(concat!(env!("OUT_DIR"), "/codegen_patch.rs"));
 
@@ -294,19 +294,19 @@ fn parse_pdftex_map_line(st: &str) -> FontInfo {
         ($s:expr) => {
             let lc = $s.to_lowercase();
             if lc.contains("bol") {
-                styles.add(FontModifier::Bold);
+                styles = styles.add(FontModifier::Bold);
             }
             if lc.contains("ita") {
-                styles.add(FontModifier::Italic);
+                styles = styles.add(FontModifier::Italic);
             }
             if lc.contains("obl") {
-                styles.add(FontModifier::Oblique);
+                styles = styles.add(FontModifier::Oblique);
             }
             if lc.contains("-sc") {
-                styles.add(FontModifier::Capitals);
+                styles = styles.add(FontModifier::Capitals);
             }
             if lc.contains("blackboard") {
-                styles.add(FontModifier::Blackboard);
+                styles = styles.add(FontModifier::Blackboard);
             }
         };
     }
@@ -361,31 +361,31 @@ impl Display for DisplayEncoding<'_> {
         f.write_str("| `.tfm` name                          | Modifiers | Table (Optional)  | External Font (Optional)                                             |\n")?;
         f.write_str("|--------------------------------------|-----------|-------------------|----------------------------------------------------------------------|\n")?;
         write!(f, "| {} | ", self.enc.tfm_name)?;
-        if self.enc.styles.bold {
+        if self.enc.styles.has(FontModifier::Bold) {
             f.write_char('b')?;
         }
-        if self.enc.styles.italic {
+        if self.enc.styles.has(FontModifier::Italic) {
             f.write_char('i')?;
         }
-        if self.enc.styles.oblique {
+        if self.enc.styles.has(FontModifier::Oblique) {
             f.write_char('o')?;
         }
-        if self.enc.styles.sans_serif {
+        if self.enc.styles.has(FontModifier::SansSerif) {
             f.write_char('s')?;
         }
-        if self.enc.styles.monospaced {
+        if self.enc.styles.has(FontModifier::Monospaced) {
             f.write_char('m')?;
         }
-        if self.enc.styles.capitals {
+        if self.enc.styles.has(FontModifier::Capitals) {
             f.write_char('c')?;
         }
-        if self.enc.styles.script {
+        if self.enc.styles.has(FontModifier::Script) {
             f.write_char('S')?;
         }
-        if self.enc.styles.blackboard {
+        if self.enc.styles.has(FontModifier::Blackboard) {
             f.write_char('B')?;
         }
-        if self.enc.styles.fraktur {
+        if self.enc.styles.has(FontModifier::Fraktur) {
             f.write_char('f')?;
         }
         write!(f, " | {}_table | ", self.enc.tfm_name)?;

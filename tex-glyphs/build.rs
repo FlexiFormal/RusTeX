@@ -78,7 +78,7 @@ impl State {
     }
 }
 
-#[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
+#[derive(Copy, Clone, PartialEq, Eq, Default)]
 #[allow(clippy::struct_excessive_bools)]
 pub struct ModifierSeq {
     blackboard: bool,
@@ -90,6 +90,40 @@ pub struct ModifierSeq {
     italic: bool,
     oblique: bool,
     sans_serif: bool,
+}
+impl std::fmt::Debug for ModifierSeq {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("ModifierSeq::from_array([")?;
+        if self.blackboard {
+            f.write_str("FontModifier::Blackboard,")?;
+        }
+        if self.fraktur {
+            f.write_str("FontModifier::Fraktur,")?;
+        }
+        if self.script {
+            f.write_str("FontModifier::Script,")?;
+        }
+        if self.bold {
+            f.write_str("FontModifier::Bold,")?;
+        }
+        if self.capitals {
+            f.write_str("FontModifier::Capitals,")?;
+        }
+        if self.monospaced {
+            f.write_str("FontModifier::Monospaced,")?;
+        }
+        if self.italic {
+            f.write_str("FontModifier::Italic,")?;
+        }
+        if self.oblique {
+            f.write_str("FontModifier::Oblique,")?;
+        }
+        if self.sans_serif {
+            f.write_str("FontModifier::SansSerif,")?;
+        }
+
+        f.write_str("])")
+    }
 }
 
 #[derive(Clone, Debug)]

@@ -1068,6 +1068,7 @@ pub(crate) fn do_math_class<ET: EngineTypes>(
     cls: Option<MathClass>,
     in_token: &ET::Token,
 ) -> TeXResult<(), ET> {
+    let start = engine.mouth.current_sourceref();
     engine.read_char_or_math_group(
         in_token,
         |(), engine, mc| {
@@ -1086,14 +1087,33 @@ pub(crate) fn do_math_class<ET: EngineTypes>(
                 if children.len() == 1 {
                     let mut child = children.pop().unwrap_or_else(|| unreachable!());
                     if let Some(cls) = cls {
-                        if let MathNode::Atom(MathAtom {
+                        let nucleus = MathNucleus::Simple {
+                            cls,
+                            kernel: MathKernel::List {
+                                start,
+                                children: Box::new([child]),
+                                end: engine.mouth.current_sourceref(),
+                            },
+                            limits: None,
+                        };
+
+                        ET::Stomach::add_node_m(
+                            engine,
+                            MathNode::Atom(MathAtom {
+                                sub: None,
+                                sup: None,
+                                nucleus,
+                            }),
+                        );
+                        return Ok(());
+                        /*if let MathNode::Atom(MathAtom {
                             sub: None,
                             sup: None,
                             nucleus: MathNucleus::Simple { cls: ocls, .. },
                         }) = &mut child
                         {
                             *ocls = cls;
-                        }
+                        }*/
                     }
                     ET::Stomach::add_node_m(engine, child);
                     return Ok(());

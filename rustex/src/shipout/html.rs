@@ -396,6 +396,13 @@ impl CompilationDisplay<'_, '_> {
         let newd = self.font_data.get(self.font.filename()).unwrap();
         let oldcss = oldd.web.as_ref().map(|(_, c)| c.as_str());
         let newcss = newd.web.as_ref().map(|(_, c)| c.as_str());
+        if self.font_info {
+            style(
+                self,
+                "--rustex-font-name",
+                self.font.filename().to_string().into(),
+            )?;
+        }
         if oldcss != newcss
             && let Some(c) = newcss
         {
@@ -746,7 +753,7 @@ impl CompilationDisplay<'_, '_> {
                         match alignment {
                             Alignment::L => {style!("text-align"="left");style!("text-align-last"="left");},
                             Alignment::C => {style!("text-align"="center");style!("text-align-last"="center");},
-                            Alignment::R => {style!("text-align"="right");style!("text-align-align"="right");},
+                            Alignment::R => {style!("text-align"="right");style!("text-align-last"="right");},
                             _ => ()
                         }
                         width!(*width);

@@ -69,7 +69,7 @@ impl<C: Character, CS: CSName<C>, A: Clone> CSNameMap<C, CS, A> for HMap<CS, A> 
         self.remove(cs)
     }
     fn into_iter(self) -> impl Iterator<Item = (CS, A)> {
-        <HMap<CS, A> as IntoIterator>::into_iter(self)
+        <Self as IntoIterator>::into_iter(self)
     }
 }
 
@@ -120,7 +120,7 @@ impl<C: Character, A: Clone> CSNameMap<C, InternedCSName<C>, A> for CSNameVec<C,
         if self.0.len() <= idx {
             self.0.resize(idx + 1, None);
         }
-        std::mem::replace(&mut self.0[idx], Some(a))
+        self.0[idx].replace(a)
     }
     fn remove(&mut self, cs: &InternedCSName<C>) -> Option<A> {
         let idx = cs.0.get() as usize - 1;
@@ -129,9 +129,19 @@ impl<C: Character, A: Clone> CSNameMap<C, InternedCSName<C>, A> for CSNameVec<C,
         }
         self.0[idx].take()
     }
+    #[allow(clippy::cast_possible_truncation)]
     fn into_iter(self) -> impl Iterator<Item = (InternedCSName<C>, A)> {
         self.0.into_iter().enumerate().filter_map(|(i, x)| {
-            x.map(|x| ((NonZeroU32::new((i + 1) as u32).unwrap(), PhantomData), x))
+            x.map(|x| {
+                (
+                    (
+                        // SAFETY: _+1 > 0
+                        unsafe { NonZeroU32::new_unchecked((i + 1) as u32) },
+                        PhantomData,
+                    ),
+                    x,
+                )
+            })
         })
     }
 }
@@ -218,13 +228,13 @@ pub struct CSInterner<C: Character> {
 }
 impl<C: Character> CSInterner<C> {
     #[allow(dead_code)]
-    fn cap(&self) -> usize {
+    const fn cap(&self) -> usize {
         self.idx.len()
     }
     fn new() -> Self {
         let mut map: HMap<Box<[C]>, NonZeroU32> = HMap::default();
-        map.insert(Box::new([]), NonZeroU32::new(1).unwrap());
-        let mut r = CSInterner {
+        map.insert(Box::new([]), unsafe { NonZeroU32::new_unchecked(1) });
+        let mut r = Self {
             map,
             ls: Vec::new(),
             idx: vec![0],

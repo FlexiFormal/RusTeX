@@ -79,23 +79,23 @@ fn parse_dict_header(s: &mut Parser<'_>, mods: &mut ModifierSeq) -> bool {
                         || w.contains("Heavy")
                         || w.contains("bold")
                     {
-                        mods.add(crate::fontstyles::FontModifier::Bold);
+                        *mods = mods.add(crate::fontstyles::FontModifier::Bold);
                     }
                     if w.contains("SmallCaps") {
-                        mods.add(crate::fontstyles::FontModifier::Capitals);
+                        *mods = mods.add(crate::fontstyles::FontModifier::Capitals);
                     }
                     if w.contains("Italic") {
-                        mods.add(crate::fontstyles::FontModifier::Italic);
+                        *mods = mods.add(crate::fontstyles::FontModifier::Italic);
                     }
                     if w.contains("Oblique") {
-                        mods.add(crate::fontstyles::FontModifier::Oblique);
+                        *mods = mods.add(crate::fontstyles::FontModifier::Oblique);
                     }
                     continue;
                 }
                 if s.drop("/ItalicAngle") {
                     let i = s.read_digit();
                     if i != 0 && i >= 10 {
-                        mods.add(crate::fontstyles::FontModifier::Italic);
+                        *mods = mods.add(crate::fontstyles::FontModifier::Italic);
                     }
                     s.read_until_str(" def");
                     continue;

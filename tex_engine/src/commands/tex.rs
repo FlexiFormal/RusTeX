@@ -2116,7 +2116,7 @@ pub fn noindent<ET: EngineTypes>(
 ) -> TeXResult<(), ET> {
     if ET::Stomach::maybe_switch_mode(
         engine,
-        CommandScope::SwitchesToHorizontal,
+        CommandScope::SwitchesToHorizontalOrMath,
         tk,
         PRIMITIVES.noindent,
     )? {
@@ -2130,6 +2130,7 @@ pub fn noindent<ET: EngineTypes>(
                     children.pop();
                 }
             }
+            Some(NodeList::Math { .. }) => (),
             _ => unreachable!(),
         }
     }
@@ -4712,11 +4713,12 @@ pub fn register_tex_primitives<E: TeXEngine>(engine: &mut E) {
 
     cmstodos!(engine, noalign, omit, span);
 
+    register_unexpandable(engine, "scrollmode", CommandScope::Any, |_, _| Ok(()));
+    register_unexpandable(engine, "nonstopmode", CommandScope::Any, |_, _| Ok(()));
+    register_unexpandable(engine, "batchmode", CommandScope::Any, |_, _| Ok(()));
+
     cmtodos!(
         engine,
-        scrollmode,
-        nonstopmode,
-        batchmode,
         show,
         showbox,
         showthe,

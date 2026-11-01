@@ -25,6 +25,31 @@ pub enum FontModifier {
     SansSerif = 8,
 }
 
+bitflags::bitflags! {
+    /// A sequence of font modifiers, encoded as bitflags
+    #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
+    pub struct ModifierSeq: u16 {
+        /// Blackboard (e.g. `𝔸`)
+        const BLACKBOARD = 1;
+        /// Fraktur (e.g. `𝔄`)
+        const FRAKTUR = 1 << 1;
+        /// Script (e.g. `𝒜`)
+        const SCRIPT = 1 << 2;
+        /// Bold (e.g. `𝐀`)
+        const BOLD = 1 << 3;
+        /// Small capitals (e.g. `ᴀ` for `a`)
+        const CAPITALS = 1 << 4;
+        /// Monospaced (e.g. `𝙰`, which is distinct from `A`)
+        const MONOSPACED = 1 << 5;
+        /// Italic (e.g. `𝐴`)
+        const ITALIC = 1 << 6;
+        /// Oblique (e.g. `𝐴` - in unicode, italic and oblique are the same)
+        const OBLIQUE = 1 << 7;
+        /// Sans serif (e.g. `𝖠`, which is distinct from `A`)
+        const SANS_SERIF = 1 << 8;
+    }
+}
+/*
 /// A sequence of font modifiers, encoded as bitfields
 #[derive(Copy, Clone, Debug, PartialEq, Eq, Default)]
 #[allow(clippy::struct_excessive_bools)]
@@ -39,118 +64,81 @@ pub struct ModifierSeq {
     pub(crate) oblique: bool,
     pub(crate) sans_serif: bool,
 }
+*/
 impl ModifierSeq {
-    #[inline]
-    fn blackboard() -> Self {
-        Self {
-            blackboard: true,
-            ..Default::default()
-        }
-    }
-
-    #[inline]
-    fn fraktur() -> Self {
-        Self {
-            fraktur: true,
-            ..Default::default()
-        }
-    }
-
-    #[inline]
-    fn script() -> Self {
-        Self {
-            script: true,
-            ..Default::default()
-        }
-    }
-
-    #[inline]
-    fn bold() -> Self {
-        Self {
-            bold: true,
-            ..Default::default()
-        }
-    }
-
-    #[inline]
-    fn capitals() -> Self {
-        Self {
-            capitals: true,
-            ..Default::default()
-        }
-    }
-
-    #[inline]
-    fn monospaced() -> Self {
-        Self {
-            monospaced: true,
-            ..Default::default()
-        }
-    }
-
-    #[inline]
-    fn italic() -> Self {
-        Self {
-            italic: true,
-            ..Default::default()
-        }
-    }
-
-    #[inline]
-    fn oblique() -> Self {
-        Self {
-            oblique: true,
-            ..Default::default()
-        }
-    }
-
-    #[inline]
-    fn sans_serif() -> Self {
-        Self {
-            sans_serif: true,
-            ..Default::default()
-        }
-    }
-
-    /// And empty sequence of modifiers
+    /// Constructs a [`ModifierSeq`] from an Array of [`FontModifier`]s
     #[must_use]
-    #[inline]
-    pub fn empty() -> Self {
-        Self::default()
+    pub const fn from_array<const LEN: usize>(a: [FontModifier; LEN]) -> Self {
+        let mut ret = Self::empty();
+        let mut i = 0;
+        while i < LEN {
+            ret = ret.add(a[i]);
+            i += 1;
+        }
+        ret
     }
 
     /// Add a modifier to this sequence
-    pub fn add(&mut self, m: FontModifier) {
+    #[must_use]
+    pub const fn add(self, m: FontModifier) -> Self {
         match m {
-            FontModifier::Blackboard => self.blackboard = true,
-            FontModifier::Fraktur => self.fraktur = true,
-            FontModifier::Script => self.script = true,
-            FontModifier::Bold => self.bold = true,
-            FontModifier::Capitals => self.capitals = true,
-            FontModifier::Monospaced => self.monospaced = true,
-            FontModifier::Italic => self.italic = true,
-            FontModifier::Oblique => self.oblique = true,
-            FontModifier::SansSerif => self.sans_serif = true,
+            FontModifier::Blackboard => self.union(Self::BLACKBOARD),
+            FontModifier::Fraktur => self.union(Self::FRAKTUR),
+            FontModifier::Script => self.union(Self::SCRIPT),
+            FontModifier::Bold => self.union(Self::BOLD),
+            FontModifier::Capitals => self.union(Self::CAPITALS),
+            FontModifier::Monospaced => self.union(Self::MONOSPACED),
+            FontModifier::Italic => self.union(Self::ITALIC),
+            FontModifier::Oblique => self.union(Self::OBLIQUE),
+            FontModifier::SansSerif => self.union(Self::SANS_SERIF),
         }
     }
 
     /// Whether this sequence contains the given modifier
     #[must_use]
     #[inline]
-    pub const fn has(&self, m: FontModifier) -> bool {
+    pub const fn has(self, m: FontModifier) -> bool {
         match m {
-            FontModifier::Blackboard => self.blackboard,
-            FontModifier::Fraktur => self.fraktur,
-            FontModifier::Script => self.script,
-            FontModifier::Bold => self.bold,
-            FontModifier::Capitals => self.capitals,
-            FontModifier::Monospaced => self.monospaced,
-            FontModifier::Italic => self.italic,
-            FontModifier::Oblique => self.oblique,
-            FontModifier::SansSerif => self.sans_serif,
+            FontModifier::Blackboard => self.contains(Self::BLACKBOARD),
+            FontModifier::Fraktur => self.contains(Self::FRAKTUR),
+            FontModifier::Script => self.contains(Self::SCRIPT),
+            FontModifier::Bold => self.contains(Self::BOLD),
+            FontModifier::Capitals => self.contains(Self::CAPITALS),
+            FontModifier::Monospaced => self.contains(Self::MONOSPACED),
+            FontModifier::Italic => self.contains(Self::ITALIC),
+            FontModifier::Oblique => self.contains(Self::OBLIQUE),
+            FontModifier::SansSerif => self.contains(Self::SANS_SERIF),
         }
     }
 
+    #[inline]
+    fn maps(self) -> [Option<&'static Map<char, char>>; 8] {
+        let mut ret = [None; 8];
+        let mut curr = 0;
+        macro_rules! add {
+            ($slf:ident,$map:ident) => {
+                if self.has(FontModifier::$slf) {
+                    ret[curr] = Some(&$map);
+                    curr += 1;
+                }
+            };
+        }
+        add!(Blackboard, BLACKBOARD);
+        add!(Fraktur, FRAKTUR);
+        add!(Script, SCRIPT);
+        add!(Bold, BOLD);
+        add!(Capitals, CAPITAL);
+        add!(Monospaced, MONOSPACED);
+        if self.has(FontModifier::Italic) || self.has(FontModifier::Oblique) {
+            ret[curr] = Some(&ITALIC);
+            curr += 1;
+        }
+        if self.has(FontModifier::SansSerif) {
+            ret[curr] = Some(&SANS);
+        }
+        ret
+    }
+    /*
     #[inline]
     fn map<F: FnMut(&Map<char, char>)>(&self, mut f: F) {
         if self.has(FontModifier::Blackboard) {
@@ -178,12 +166,13 @@ impl ModifierSeq {
             f(&SANS);
         }
     }
+     */
 }
 impl From<&[FontModifier]> for ModifierSeq {
     fn from(mods: &[FontModifier]) -> Self {
         let mut s = Self::empty();
         for m in mods {
-            s.add(*m);
+            s = s.add(*m);
         }
         s
     }
@@ -195,13 +184,15 @@ pub struct CharConverter<'a, S: AsRef<str>> {
 }
 impl<S: AsRef<str>> Display for CharConverter<'_, S> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let map = self.maps.maps();
         let chars = self.iter.as_ref().chars();
         for mut c in chars {
-            self.maps.map(|m| {
-                if let Some(nc) = m.get(&c) {
+            let mut map = map.into_iter();
+            while let Some(Some(map)) = map.next() {
+                if let Some(nc) = map.get(&c) {
                     c = *nc;
                 }
-            });
+            }
             f.write_char(c)?;
         }
         Ok(())
@@ -278,7 +269,7 @@ impl<S: AsRef<str>> FontModifiable for &'_ S {
         Self: 'b,
     {
         CharConverter {
-            maps: ModifierSeq::blackboard(),
+            maps: ModifierSeq::BLACKBOARD,
             iter: self,
         }
     }
@@ -287,7 +278,7 @@ impl<S: AsRef<str>> FontModifiable for &'_ S {
         Self: 'b,
     {
         CharConverter {
-            maps: ModifierSeq::fraktur(),
+            maps: ModifierSeq::FRAKTUR,
             iter: self,
         }
     }
@@ -296,7 +287,7 @@ impl<S: AsRef<str>> FontModifiable for &'_ S {
         Self: 'b,
     {
         CharConverter {
-            maps: ModifierSeq::script(),
+            maps: ModifierSeq::SCRIPT,
             iter: self,
         }
     }
@@ -305,7 +296,7 @@ impl<S: AsRef<str>> FontModifiable for &'_ S {
         Self: 'b,
     {
         CharConverter {
-            maps: ModifierSeq::bold(),
+            maps: ModifierSeq::BOLD,
             iter: self,
         }
     }
@@ -314,7 +305,7 @@ impl<S: AsRef<str>> FontModifiable for &'_ S {
         Self: 'b,
     {
         CharConverter {
-            maps: ModifierSeq::capitals(),
+            maps: ModifierSeq::CAPITALS,
             iter: self,
         }
     }
@@ -323,7 +314,7 @@ impl<S: AsRef<str>> FontModifiable for &'_ S {
         Self: 'b,
     {
         CharConverter {
-            maps: ModifierSeq::monospaced(),
+            maps: ModifierSeq::MONOSPACED,
             iter: self,
         }
     }
@@ -332,7 +323,7 @@ impl<S: AsRef<str>> FontModifiable for &'_ S {
         Self: 'b,
     {
         CharConverter {
-            maps: ModifierSeq::italic(),
+            maps: ModifierSeq::ITALIC,
             iter: self,
         }
     }
@@ -341,7 +332,7 @@ impl<S: AsRef<str>> FontModifiable for &'_ S {
         Self: 'b,
     {
         CharConverter {
-            maps: ModifierSeq::oblique(),
+            maps: ModifierSeq::OBLIQUE,
             iter: self,
         }
     }
@@ -350,7 +341,7 @@ impl<S: AsRef<str>> FontModifiable for &'_ S {
         Self: 'b,
     {
         CharConverter {
-            maps: ModifierSeq::sans_serif(),
+            maps: ModifierSeq::SANS_SERIF,
             iter: self,
         }
     }
@@ -370,7 +361,7 @@ impl<S: AsRef<str>> FontModifiable for CharConverter<'_, S> {
         Self: 'b,
     {
         for m in mods {
-            self.maps.add(*m);
+            self.maps = self.maps.add(*m);
         }
         self
     }
@@ -378,63 +369,63 @@ impl<S: AsRef<str>> FontModifiable for CharConverter<'_, S> {
     where
         Self: 'b,
     {
-        self.maps.add(FontModifier::Blackboard);
+        self.maps = self.maps.add(FontModifier::Blackboard);
         self
     }
     fn make_fraktur<'b>(mut self) -> CharConverter<'b, S>
     where
         Self: 'b,
     {
-        self.maps.add(FontModifier::Fraktur);
+        self.maps = self.maps.add(FontModifier::Fraktur);
         self
     }
     fn make_script<'b>(mut self) -> CharConverter<'b, S>
     where
         Self: 'b,
     {
-        self.maps.add(FontModifier::Script);
+        self.maps = self.maps.add(FontModifier::Script);
         self
     }
     fn make_bold<'b>(mut self) -> CharConverter<'b, S>
     where
         Self: 'b,
     {
-        self.maps.add(FontModifier::Bold);
+        self.maps = self.maps.add(FontModifier::Bold);
         self
     }
     fn make_smallcaps<'b>(mut self) -> CharConverter<'b, S>
     where
         Self: 'b,
     {
-        self.maps.add(FontModifier::Capitals);
+        self.maps = self.maps.add(FontModifier::Capitals);
         self
     }
     fn make_monospaced<'b>(mut self) -> CharConverter<'b, S>
     where
         Self: 'b,
     {
-        self.maps.add(FontModifier::Monospaced);
+        self.maps = self.maps.add(FontModifier::Monospaced);
         self
     }
     fn make_italic<'b>(mut self) -> CharConverter<'b, S>
     where
         Self: 'b,
     {
-        self.maps.add(FontModifier::Italic);
+        self.maps = self.maps.add(FontModifier::Italic);
         self
     }
     fn make_oblique<'b>(mut self) -> CharConverter<'b, S>
     where
         Self: 'b,
     {
-        self.maps.add(FontModifier::Oblique);
+        self.maps = self.maps.add(FontModifier::Oblique);
         self
     }
     fn make_sans<'b>(mut self) -> CharConverter<'b, S>
     where
         Self: 'b,
     {
-        self.maps.add(FontModifier::SansSerif);
+        self.maps = self.maps.add(FontModifier::SansSerif);
         self
     }
 }

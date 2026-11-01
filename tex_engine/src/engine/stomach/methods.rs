@@ -290,10 +290,10 @@ pub fn do_char<ET: EngineTypes>(
             ET::Stomach::do_mathchar(engine, code, Some(token))
         }
         CommandCode::Superscript if engine.stomach.data_mut().mode().is_math() => {
-            do_superscript(engine, &token)?
+            do_superscript(engine, &token)?;
         }
         CommandCode::Subscript if engine.stomach.data_mut().mode().is_math() => {
-            do_subscript(engine, &token)?
+            do_subscript(engine, &token)?;
         }
         CommandCode::Escape
         | CommandCode::Primitive
@@ -623,13 +623,14 @@ fn do_xscript<ET: EngineTypes>(
     match engine.stomach.data_mut().open_lists.last_mut() {
         Some(NodeList::Math { children, .. }) => match children.list_mut().last() {
             Some(MathNode::Atom(a)) if script.invalid(a) => {
-                engine.general_error(format!(
-                    "Double {}script",
+                let msg = format!(
+                    "Double {}script: {a:?}",
                     match script {
                         Script::Super => "super",
                         Script::Sub => "sub",
                     }
-                ))?;
+                );
+                engine.general_error(msg)?;
                 return Ok(());
             }
             Some(MathNode::Atom(_)) => (),

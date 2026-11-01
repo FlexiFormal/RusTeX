@@ -873,6 +873,17 @@ impl<ET: EngineTypes> EngineReferences<'_, ET> {
                 let mc = MathChar::from_u32(code,self.state, Some(char));
                 return f(s,self,mc)
             },
+           ResolvedToken::Cmd(Some(TeXCommand::Char { char, code:CommandCode::Other | CommandCode::Letter } | TeXCommand::CharDef(char))) => {
+               let char = *char;
+               let code = self.state.get_mathcode(char);
+               if code == 32768 {
+                   self.mouth.requeue(ET::Token::from_char_cat(char, CommandCode::Active));
+                   continue
+               }
+               let mc = MathChar::from_u32(code,self.state, Some(char));
+               return f(s,self,mc)
+           },
+
             ResolvedToken::Cmd(Some(TeXCommand::MathChar(u))) => {
                 let mc = MathChar::from_u32(*u, self.state,None);
                 return f(s,self,mc)
@@ -882,11 +893,12 @@ impl<ET: EngineTypes> EngineReferences<'_, ET> {
                 match Delimiter::from_int(int,self.state) {
                     either::Left(d) => return f(s,self,d.small),
                     either::Right((d,i)) => {
-                        self.general_error(format!("Bad delimiter code ({})",i))?;
+                        self.general_error(format!("Bad delimiter code ({i})"))?;
                         return f(s,self,d.small)
                     }
                 }
             }
+            //ResolvedToken::Cmd(None) if self.aux.memory.cs_interner().resolve()
             _ => return Err(TeXError::General("Begingroup or math character expected\nTODO: Better error message".to_string()))
         );
         TeXError::file_end_while_use(self.aux, self.state, self.mouth, in_token)

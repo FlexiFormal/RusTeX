@@ -4,16 +4,16 @@ use crate::commands::primitives::PRIMITIVES;
 use crate::commands::{
     ActiveConditional, CharOrPrimitive, PrimitiveCommand, ResolvedToken, TeXCommand,
 };
+use crate::engine::EngineAux;
 use crate::engine::gullet::Gullet;
 use crate::engine::mouth::Mouth;
 use crate::engine::state::State;
-use crate::engine::EngineAux;
 use crate::engine::{EngineReferences, EngineTypes};
 use crate::tex::catcodes::CommandCode;
 use crate::tex::characters::Character;
 use crate::tex::numerics::TeXDimen;
 use crate::tex::numerics::{
-    MuDim, MuSkip, MuStretchShrink, NumSet, Skip, StretchShrink, STRETCH_SHRINK_UNITS,
+    MuDim, MuSkip, MuStretchShrink, NumSet, STRETCH_SHRINK_UNITS, Skip, StretchShrink,
 };
 use crate::tex::tokens::control_sequences::{CSHandler, ResolvedCSName};
 use crate::tex::tokens::token_lists::TokenList;
@@ -136,8 +136,8 @@ fn read_delimited_argument<ET: EngineTypes>(
                 }
                 continue;
             }
-            CommandCode::Escape if !long && t.is_cs(&par) => {
-                TeXError::paragraph_ended(engine.aux, engine.state, engine.mouth, token)?
+            CommandCode::Escape if !long && t != *last && t.is_cs(&par) => {
+                TeXError::paragraph_ended(engine.aux, engine.state, engine.mouth, token)?;
             }
             _ => (),
         }
@@ -145,16 +145,15 @@ fn read_delimited_argument<ET: EngineTypes>(
             arg.push(t);
             if arg.ends_with(delim) {
                 arg.truncate(arg.len() - delim.len());
-                if let Some(Some(n)) = remove_braces {
-                    if arg.len() == n {
-                        arg.pop();
-                        arg.drain(..1).next();
-                    }
+                if let Some(Some(n)) = remove_braces
+                    && arg.len() == n
+                {
+                    arg.pop();
+                    arg.drain(..1).next();
                 }
-                if ends_with_bgroup {
-                    if let Some(a) = engine.gullet.get_align_data() {
-                        a.ingroups -= 1
-                    }
+
+                if ends_with_bgroup && let Some(a) = engine.gullet.get_align_data() {
+                    a.ingroups -= 1;
                 }
                 return Ok(());
             }
@@ -1060,52 +1059,32 @@ pub fn read_dim_command<ET: EngineTypes>(
             cmd: PrimitiveCommand::PrimitiveDim,
         } => {
             let val = engine.state.get_primitive_dim(name);
-            if is_negative {
-                Ok(-val)
-            } else {
-                Ok(val)
-            }
+            if is_negative { Ok(-val) } else { Ok(val) }
         }
         TeXCommand::Primitive {
             cmd: PrimitiveCommand::Dim { read, .. },
             ..
         } => {
             let val = read(engine, token)?;
-            if is_negative {
-                Ok(-val)
-            } else {
-                Ok(val)
-            }
+            if is_negative { Ok(-val) } else { Ok(val) }
         }
         TeXCommand::SkipRegister(u) => {
             let val = engine.state.get_skip_register(u).base;
-            if is_negative {
-                Ok(-val)
-            } else {
-                Ok(val)
-            }
+            if is_negative { Ok(-val) } else { Ok(val) }
         }
         TeXCommand::Primitive {
             name,
             cmd: PrimitiveCommand::PrimitiveSkip,
         } => {
             let val = engine.state.get_primitive_skip(name).base;
-            if is_negative {
-                Ok(-val)
-            } else {
-                Ok(val)
-            }
+            if is_negative { Ok(-val) } else { Ok(val) }
         }
         TeXCommand::Primitive {
             cmd: PrimitiveCommand::Skip { read, .. },
             ..
         } => {
             let val = read(engine, token)?.base;
-            if is_negative {
-                Ok(-val)
-            } else {
-                Ok(val)
-            }
+            if is_negative { Ok(-val) } else { Ok(val) }
         }
         _ => {
             TeXError::missing_number(engine.aux, engine.state, engine.mouth)?;
@@ -2123,7 +2102,7 @@ impl<ET: EngineTypes> EngineReferences<'_, ET> {
                 _ => {
                     return Err(TeXError::General(
                         "Control sequence expected\n TODO: Better error message".to_string(),
-                    ))
+                    ));
                 }
             }
         }
