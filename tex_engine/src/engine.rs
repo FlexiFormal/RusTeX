@@ -15,12 +15,12 @@ use crate::engine::utils::outputs::{LogOutputs, Outputs};
 use crate::tex;
 use crate::tex::catcodes::CommandCode;
 use crate::tex::characters::Character;
-use crate::tex::nodes::vertical::VNode;
 use crate::tex::nodes::CustomNodeTrait;
+use crate::tex::nodes::vertical::VNode;
 use crate::tex::numerics::{Dim32, Mu, MuDim, NumSet, Numeric, TeXDimen, TeXInt};
-use crate::tex::tokens::control_sequences::{CSName, InternedCSName};
 use crate::tex::tokens::Token;
-use crate::utils::errors::{ErrorHandler, ErrorThrower, TeXError, TeXResult};
+use crate::tex::tokens::control_sequences::{CSName, InternedCSName};
+use crate::utils::errors::{ErrorHandler, ErrorThrower, TeXError, TeXErrorI, TeXResult};
 use chrono::{Datelike, Timelike};
 use std::convert::Infallible;
 use std::fmt::Debug;
@@ -63,12 +63,12 @@ pub trait EngineTypes: Sized + Copy + Clone + Debug + 'static {
     type CustomNode: CustomNodeTrait<Self>;
     type Font: Font<Char = Self::Char, Int = Self::Int, Dim = Self::Dim, CS = Self::CSName>;
     type FontSystem: FontSystem<
-        Font = Self::Font,
-        Char = Self::Char,
-        Int = Self::Int,
-        Dim = Self::Dim,
-        CS = Self::CSName,
-    >;
+            Font = Self::Font,
+            Char = Self::Char,
+            Int = Self::Int,
+            Dim = Self::Dim,
+            CS = Self::CSName,
+        >;
 }
 /// Auxiliary components passed around to [`PrimitiveCommand`](crate::commands::PrimitiveCommand)s.
 pub struct EngineAux<ET: EngineTypes> {
@@ -202,7 +202,7 @@ pub trait TeXEngine: Sized {
             .file_stem()
             .and_then(|s| s.to_str().map(ToString::to_string))
         else {
-            return Err(TeXError::General(format!("Invalid init file {s}")));
+            return Err(TeXErrorI::General(format!("Invalid init file {s}")).into());
         };
         comps.aux.jobname = filename;
         comps.push_file(file);
@@ -265,7 +265,7 @@ pub trait TeXEngine: Sized {
             let mut comps = self.get_engine_refs();
             let file = comps.filesystem.get(s);
             let Some(parent) = file.path().parent() else {
-                return Err(TeXError::General(format!("Invalid file {s}")));
+                return Err(TeXErrorI::General(format!("Invalid file {s}")).into());
             };
             comps.filesystem.set_pwd(parent.to_path_buf());
             let Some(filename) = file
@@ -273,7 +273,7 @@ pub trait TeXEngine: Sized {
                 .file_stem()
                 .and_then(|s| s.to_str().map(ToString::to_string))
             else {
-                return Err(TeXError::General(format!("Invalid init file {s}")));
+                return Err(TeXErrorI::General(format!("Invalid init file {s}")).into());
             };
             comps.aux.jobname = filename;
             comps.push_file(file);

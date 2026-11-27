@@ -3,7 +3,7 @@
 */
 
 use crate::commands::methods::MacroParser;
-use crate::commands::primitives::{PrimitiveIdentifier, PRIMITIVES};
+use crate::commands::primitives::{PRIMITIVES, PrimitiveIdentifier};
 use crate::engine::fontsystem::Font;
 use crate::engine::fontsystem::FontSystem;
 use crate::engine::mouth::strings::InputTokenizer;
@@ -12,12 +12,12 @@ use crate::engine::{EngineAux, EngineReferences, EngineTypes};
 use crate::prelude::CSHandler;
 use crate::tex::catcodes::{CategoryCodeScheme, CommandCode};
 use crate::tex::characters::StringLineSource;
-use crate::tex::nodes::boxes::{BoxInfo, TeXBox};
 use crate::tex::nodes::WhatsitFunction;
+use crate::tex::nodes::boxes::{BoxInfo, TeXBox};
 use crate::tex::numerics::{MuSkip, Skip, TeXInt};
+use crate::tex::tokens::Token;
 use crate::tex::tokens::control_sequences::CSName;
 use crate::tex::tokens::token_lists::{CharWrite, StringCharWrite, TokenList};
-use crate::tex::tokens::Token;
 use crate::utils::errors::TeXResult;
 use either::Either;
 use std::fmt::Display;

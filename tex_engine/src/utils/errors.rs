@@ -12,15 +12,30 @@ use crate::engine::utils::memory::MemoryManager;
 use crate::engine::{EngineAux, EngineReferences, EngineTypes};
 use crate::prelude::{Mouth, TeXMode};
 use crate::tex::characters::{Character, StringLineSource};
-use crate::tex::tokens::control_sequences::CSHandler;
 use crate::tex::tokens::StandardToken;
 use crate::tex::tokens::Token;
+use crate::tex::tokens::control_sequences::CSHandler;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum TeXError<ET: EngineTypes> {
+#[error(transparent)]
+pub struct TeXError<ET: EngineTypes>(Box<TeXErrorI<ET>>);
+impl<ET: EngineTypes, E: Into<TeXErrorI<ET>>> From<E> for TeXError<ET> {
+    #[inline]
+    fn from(value: E) -> Self {
+        Self(Box::new(value.into()))
+    }
+}
+impl<ET: EngineTypes> TeXError<ET> {
+    pub fn general(s: impl Into<String>) -> Self {
+        Self(Box::new(TeXErrorI::General(s.into())))
+    }
+}
+
+#[derive(Debug, Error)]
+pub enum TeXErrorI<ET: EngineTypes> {
     #[error(transparent)]
     InvalidCharacter(#[from] InvalidCharacter<ET::Char>),
     #[error("Use of {0} doesn't match its definition")]
@@ -70,7 +85,7 @@ pub enum TeXError<ET: EngineTypes> {
     EndInsideGroup,
      */
 }
-impl<ET: EngineTypes> From<String> for TeXError<ET> {
+impl<ET: EngineTypes> From<String> for TeXErrorI<ET> {
     #[inline]
     fn from(value: String) -> Self {
         Self::General(value)
@@ -87,7 +102,7 @@ macro_rules! throw {
                 Ok(())
             },
             Ok(None) => Ok(()),
-            _ => Err($err)
+            _ => Err($err.into())
         }
     }};
 }
@@ -101,7 +116,7 @@ impl<ET: EngineTypes> TeXError<ET> {
         name: PrimitiveIdentifier,
     ) -> TeXResult<(), ET> {
         let line_no = mouth.line_number();
-        throw!(aux,state,mouth,incomplete_conditional(name,line_no) => Self::IncompleteConditional{name,line_no})
+        throw!(aux,state,mouth,incomplete_conditional(name,line_no) => TeXErrorI::IncompleteConditional{name,line_no})
     }
     /// #### Errors
     /// because that's what it's supposed to do
@@ -114,7 +129,7 @@ impl<ET: EngineTypes> TeXError<ET> {
         in_macro: &ET::Token,
     ) -> TeXResult<(), ET> {
         throw!(aux,state,mouth,wrong_definition(found,expected,in_macro) =>
-            Self::WrongDefinition(Token::display(in_macro,aux.memory.cs_interner(),state.get_catcode_scheme(),state.get_escape_char()).to_string())
+            TeXErrorI::WrongDefinition(Token::display(in_macro,aux.memory.cs_interner(),state.get_catcode_scheme(),state.get_escape_char()).to_string())
         )
     }
     /// #### Errors
@@ -125,7 +140,7 @@ impl<ET: EngineTypes> TeXError<ET> {
         mouth: &mut M,
         in_macro: &ET::Token,
     ) -> TeXResult<(), ET> {
-        throw!(aux,state,mouth,file_end_while_use(in_macro) => Self::FileEndedWhileScanningUseOf(Token::display(in_macro,aux.memory.cs_interner(),state.get_catcode_scheme(),state.get_escape_char()).to_string()))
+        throw!(aux,state,mouth,file_end_while_use(in_macro) => TeXErrorI::FileEndedWhileScanningUseOf(Token::display(in_macro,aux.memory.cs_interner(),state.get_catcode_scheme(),state.get_escape_char()).to_string()))
     }
     /// #### Errors
     /// because that's what it's supposed to do
@@ -135,7 +150,7 @@ impl<ET: EngineTypes> TeXError<ET> {
         mouth: &mut M,
         token: &ET::Token,
     ) -> TeXResult<(), ET> {
-        throw!(aux,state,mouth,undefined(token) => Self::Undefined(
+        throw!(aux,state,mouth,undefined(token) => TeXErrorI::Undefined(
             match token.to_enum() {
                 StandardToken::ControlSequence(cs) =>
                     format!("control sequence {}{}",ET::Char::display_opt(state.get_escape_char()),aux.memory.cs_interner().resolve(&cs)),
@@ -154,7 +169,7 @@ impl<ET: EngineTypes> TeXError<ET> {
         name: PrimitiveIdentifier,
         mode: TeXMode,
     ) -> TeXResult<(), ET> {
-        throw!(aux,state,mouth,not_allowed_in_mode(name,mode) => Self::NotAllowedInMode{name,mode})
+        throw!(aux,state,mouth,not_allowed_in_mode(name,mode) => TeXErrorI::NotAllowedInMode{name,mode})
     }
     /// #### Errors
     /// because that's what it's supposed to do
@@ -163,7 +178,7 @@ impl<ET: EngineTypes> TeXError<ET> {
         state: &ET::State,
         mouth: &mut M,
     ) -> TeXResult<(), ET> {
-        throw!(aux,state,mouth,missing_begingroup() => Self::MissingBegingroup)
+        throw!(aux,state,mouth,missing_begingroup() => TeXErrorI::MissingBegingroup)
     }
     /// #### Errors
     /// because that's what it's supposed to do
@@ -172,7 +187,7 @@ impl<ET: EngineTypes> TeXError<ET> {
         state: &ET::State,
         mouth: &mut M,
     ) -> TeXResult<(), ET> {
-        throw!(aux,state,mouth,missing_endgroup() => Self::MissingEndgroup)
+        throw!(aux,state,mouth,missing_endgroup() => TeXErrorI::MissingEndgroup)
     }
     /// #### Errors
     /// because that's what it's supposed to do
@@ -181,7 +196,7 @@ impl<ET: EngineTypes> TeXError<ET> {
         state: &ET::State,
         mouth: &mut M,
     ) -> TeXResult<(), ET> {
-        throw!(aux,state,mouth,missing_number() => Self::MissingNumber)
+        throw!(aux,state,mouth,missing_number() => TeXErrorI::MissingNumber)
     }
     /// #### Errors
     /// because that's what it's supposed to do
@@ -190,7 +205,7 @@ impl<ET: EngineTypes> TeXError<ET> {
         state: &ET::State,
         mouth: &mut M,
     ) -> TeXResult<(), ET> {
-        throw!(aux,state,mouth,missing_number() => Self::MissingUnit)
+        throw!(aux,state,mouth,missing_number() => TeXErrorI::MissingUnit)
     }
     /// #### Errors
     /// because that's what it's supposed to do
@@ -200,7 +215,7 @@ impl<ET: EngineTypes> TeXError<ET> {
         mouth: &mut M,
         kws: &'static [&'static str],
     ) -> TeXResult<(), ET> {
-        throw!(aux,state,mouth,missing_keyword(kws) => Self::MissingKeyword(kws))
+        throw!(aux,state,mouth,missing_keyword(kws) => TeXErrorI::MissingKeyword(kws))
     }
     /// #### Errors
     /// because that's what it's supposed to do
@@ -209,7 +224,7 @@ impl<ET: EngineTypes> TeXError<ET> {
         state: &ET::State,
         mouth: &mut M,
     ) -> TeXResult<(), ET> {
-        throw!(aux,state,mouth,missing_dollar() => Self::MissingDollar)
+        throw!(aux,state,mouth,missing_dollar() => TeXErrorI::MissingDollar)
     }
     /// #### Errors
     /// because that's what it's supposed to do
@@ -219,7 +234,7 @@ impl<ET: EngineTypes> TeXError<ET> {
         mouth: &mut M,
         t: &ET::Token,
     ) -> TeXResult<(), ET> {
-        throw!(aux,state,mouth,paragraph_ended(t) => Self::ParagraphEnded(
+        throw!(aux,state,mouth,paragraph_ended(t) => TeXErrorI::ParagraphEnded(
             match t.to_enum() {
                 StandardToken::ControlSequence(cs) =>
                     format!("control sequence {}{}",ET::Char::display_opt(state.get_escape_char()),aux.memory.cs_interner().resolve(&cs)),
@@ -295,7 +310,7 @@ impl<C: Character> From<TooManyCloseBraces> for GulletError<C> {
         Self::TooManyCloseBraces
     }
 }
-impl<ET: EngineTypes> From<GulletError<ET::Char>> for TeXError<ET> {
+impl<ET: EngineTypes> From<GulletError<ET::Char>> for TeXErrorI<ET> {
     fn from(e: GulletError<ET::Char>) -> Self {
         match e {
             GulletError::InvalidChar(c) => Self::InvalidCharacter(InvalidCharacter(c)),
@@ -338,7 +353,7 @@ impl<ET: EngineTypes> RecoverableError<ET> for TooManyCloseBraces {
         split!(self, aux, state, mouth, too_many_closebraces())
     }
 }
-impl<ET: EngineTypes> From<TooManyCloseBraces> for TeXError<ET> {
+impl<ET: EngineTypes> From<TooManyCloseBraces> for TeXErrorI<ET> {
     fn from(_: TooManyCloseBraces) -> Self {
         Self::TooManyCloseBraces
     }
@@ -563,6 +578,6 @@ impl<ET: EngineTypes> EngineReferences<'_, ET> {
     /// because that's what it's supposed to do
     #[inline]
     pub fn general_error(&mut self, msg: String) -> TeXResult<(), ET> {
-        throw!(self.aux,self.state,self.mouth,other(&msg) => TeXError::General(msg))
+        throw!(self.aux,self.state,self.mouth,other(&msg) => TeXErrorI::General(msg))
     }
 }

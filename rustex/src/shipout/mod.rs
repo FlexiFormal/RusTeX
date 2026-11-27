@@ -73,7 +73,7 @@ pub fn shipout(engine: Refs, n: VNode<Types>) -> Res<()> {
                 println!("{}", c.display());
             }*/
             ShipoutState::split_state(engine, |state| state.do_vlist(&mut children))
-                .map_err(|e| TeXError::General(format!("Not allowed in V-Mode: {e:?}")))?;
+                .map_err(|e| TeXError::general(format!("Not allowed in V-Mode: {e:?}")))?;
             /*
                         println!("--------------------------------------------");
                         println!("{:?}",engine.aux.extension.state.output);

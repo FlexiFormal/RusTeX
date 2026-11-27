@@ -37,7 +37,7 @@ use crate::tex::tokens::control_sequences::{CSHandler, ResolvedCSName};
 use crate::tex::tokens::token_lists::CharWrite;
 use crate::tex::tokens::token_lists::Otherize;
 use crate::tex::tokens::{StandardToken, Token};
-use crate::utils::errors::{TeXError, TeXResult};
+use crate::utils::errors::{TeXError, TeXErrorI, TeXResult};
 use crate::{add_node, expand_loop};
 use either::Either;
 use std::cmp::Ordering;
@@ -556,7 +556,7 @@ pub fn def<ET: EngineTypes>(
     engine.iterate(
         |_, _, t| parser.do_signature_token(t),
         |_, _, _| {
-            Err(TeXError::General(
+            Err(TeXError::general(
                 "Unexpected Token in `\\def`-signature".to_string(),
             ))
         },
@@ -592,7 +592,7 @@ pub fn edef<ET: EngineTypes>(
     engine.iterate(
         |_, _, t| parser.do_signature_token(t),
         |_, _, _| {
-            Err(TeXError::General(
+            Err(TeXError::general(
                 "Unexpected token in `\\edef`-signature".to_string(),
             ))
         },
@@ -782,13 +782,13 @@ pub fn outer<ET: EngineTypes>(
             n => {
                 let s = n.display(engine.state.get_escape_char()).to_string();
                 engine.requeue(token)?;
-                return Err(TeXError::General(format!("You can't use a prefix with '{}'",s)))
+                return Err(TeXError::general(format!("You can't use a prefix with '{}'",s)))
             }
         }
         _ => {
             let s = token.display(engine.aux.memory.cs_interner(),engine.state.get_catcode_scheme(),engine.state.get_escape_char()).to_string();
             engine.requeue(token)?;
-            return Err(TeXError::General(format!("You can't use a prefix with '{}'",s)))
+            return Err(TeXError::general(format!("You can't use a prefix with '{}'",s)))
         }
     );
     TeXError::file_end_while_use(engine.aux, engine.state, engine.mouth, &tk)
@@ -816,13 +816,13 @@ pub fn long<ET: EngineTypes>(
             n => {
                 let s = n.display(engine.state.get_escape_char()).to_string();
                 engine.requeue(token)?;
-                return Err(TeXError::General(format!("You can't use a prefix with '{}'",s)))
+                return Err(TeXError::general(format!("You can't use a prefix with '{}'",s)))
             }
         }
         _ => {
             let s = token.display(engine.aux.memory.cs_interner(),engine.state.get_catcode_scheme(),engine.state.get_escape_char()).to_string();
             engine.requeue(token)?;
-            return Err(TeXError::General(format!("You can't use a prefix with '{}'",s)))
+            return Err(TeXError::general(format!("You can't use a prefix with '{}'",s)))
         }
     );
     TeXError::file_end_while_use(engine.aux, engine.state, engine.mouth, &tk)
@@ -865,13 +865,13 @@ macro_rules! modify_num {
                 _ => {
                     let s = token.display($engine.aux.memory.cs_interner(),$engine.state.get_catcode_scheme(),$engine.state.get_escape_char()).to_string();
                     $engine.requeue(token)?;
-                    return Err(TeXError::General(format!("Unexpected token in \\divide/\\multiply: {s}")))
+                    return Err(TeXError::general(format!("Unexpected token in \\divide/\\multiply: {s}")))
                 }
             }
             _ => {
                 let s = token.display($engine.aux.memory.cs_interner(),$engine.state.get_catcode_scheme(),$engine.state.get_escape_char()).to_string();
                 $engine.requeue(token)?;
-                return Err(TeXError::General(format!("Unexpected token in \\divide/\\multiply: {s}")))
+                return Err(TeXError::general(format!("Unexpected token in \\divide/\\multiply: {s}")))
             }
         );
     };
@@ -902,21 +902,21 @@ pub fn divide<ET: EngineTypes>(
         |a, e| {
             let b = e.read_int(false, &tk)?;
             if b == ET::Int::default() {
-                return Err(TeXError::General("Division by zero".to_string()));
+                return Err(TeXError::general("Division by zero".to_string()));
             }
             Ok(a / b)
         },
         |a, e| {
             let b = e.read_int(false, &tk)?;
             if b == ET::Int::default() {
-                return Err(TeXError::General("Division by zero".to_string()));
+                return Err(TeXError::general("Division by zero".to_string()));
             }
             Ok(a / b)
         },
         |a, e| {
             let b = e.read_int(false, &tk)?;
             if b == ET::Int::default() {
-                return Err(TeXError::General("Division by zero".to_string()));
+                return Err(TeXError::general("Division by zero".to_string()));
             }
             Ok(a / b)
         }
@@ -966,12 +966,12 @@ pub fn r#else<ET: EngineTypes>(
             return Ok(());
         }
         Some(ActiveConditional::Else(_)) => {
-            return Err(TeXError::General(
+            return Err(TeXError::general(
                 "Unexpected `\\else` in `\\else`-branch".to_string(),
             ));
         }
         _ => {
-            return Err(TeXError::General(
+            return Err(TeXError::general(
                 "Unexpected `\\else` outside of a condition".to_string(),
             ));
         }
@@ -1771,7 +1771,7 @@ pub fn futurelet<ET: EngineTypes>(
         StandardToken::Character(c, CommandCode::Active) => CSOrActiveChar::Active(c),
         StandardToken::ControlSequence(cs) => CSOrActiveChar::Name(cs),
         _ => {
-            return Err(TeXError::General(
+            return Err(TeXError::general(
                 "Control sequence expected after \\futurelet".to_string(),
             ));
         }
@@ -1779,17 +1779,13 @@ pub fn futurelet<ET: EngineTypes>(
     let first = match engine.mouth.get_next(engine.aux, engine.state)? {
         Some(t) => t,
         _ => {
-            return Err(TeXError::FileEndedWhileScanningUseOf(
-                "futurelet".to_string(),
-            ));
+            return Err(TeXErrorI::FileEndedWhileScanningUseOf("futurelet".to_string()).into());
         }
     };
     let second = match engine.mouth.get_next(engine.aux, engine.state)? {
         Some(t) => t,
         _ => {
-            return Err(TeXError::FileEndedWhileScanningUseOf(
-                "futurelet".to_string(),
-            ));
+            return Err(TeXErrorI::FileEndedWhileScanningUseOf("futurelet".to_string()).into());
         }
     };
     let cmd = match second.to_enum() {
@@ -1864,7 +1860,7 @@ pub fn mathchardef<ET: EngineTypes>(
         StandardToken::Character(c, CommandCode::Active) => CSOrActiveChar::Active(c),
         StandardToken::ControlSequence(cs) => CSOrActiveChar::Name(cs),
         _ => {
-            return Err(TeXError::General(
+            return Err(TeXError::general(
                 "Expected control sequence after \\mathchardef".to_string(),
             ));
         }
@@ -1912,7 +1908,7 @@ pub fn right<ET: EngineTypes>(
     tk: ET::Token,
 ) -> TeXResult<(), ET> {
     if engine.state.get_group_type() != Some(GroupType::LeftRight) {
-        return Err(TeXError::General(
+        return Err(TeXError::general(
             "\\right outside of \\left\\right group".to_string(),
         ));
     }
@@ -1943,7 +1939,7 @@ pub fn right<ET: EngineTypes>(
             );
         }
         _ => {
-            return Err(TeXError::General(
+            return Err(TeXError::general(
                 "Unexpected open list in \\right".to_string(),
             ));
         }
@@ -2063,7 +2059,7 @@ pub fn noexpand<ET: EngineTypes>(
         Some(t) if t == ET::Token::eof() => return Ok(()),
         Some(t) => t,
         _ => {
-            return Err(TeXError::General(
+            return Err(TeXError::general(
                 "control sequence expected after \\noexpand".to_string(),
             ));
         }
@@ -2433,7 +2429,7 @@ pub fn string<ET: EngineTypes>(
                     }
                 }
             }
-            _ => return Err(TeXError::EmergencyStop),
+            _ => return Err(TeXErrorI::EmergencyStop.into()),
         }
     }
     Ok(())
@@ -2538,7 +2534,7 @@ pub fn par<ET: EngineTypes>(
     if mode == TeXMode::Horizontal {
         return ET::Stomach::close_paragraph(engine);
     }
-    Err(TeXError::General(
+    Err(TeXError::general(
         "\\par not allowed in math mode".to_string(),
     ))
 }
@@ -2869,7 +2865,7 @@ pub fn lastbox<ET: EngineTypes>(
     _tk: ET::Token,
 ) -> TeXResult<Either<Option<TeXBox<ET>>, BoxInfo<ET>>, ET> {
     if engine.stomach.data_mut().mode() == TeXMode::Vertical {
-        return Err(TeXError::General(
+        return Err(TeXError::general(
             "\\lastbox not allowed outside of vertical mode".to_string(),
         ));
     }
@@ -3178,7 +3174,7 @@ pub fn vsplit<ET: EngineTypes>(
         ),
         _ => {
             if !engine.read_keyword(b"to")? {
-                return Err(TeXError::General(
+                return Err(TeXError::general(
                     "`to` expected after \\vsplit".to_string(),
                 ));
             }
@@ -3187,7 +3183,7 @@ pub fn vsplit<ET: EngineTypes>(
         }
     };
     if !engine.read_keyword(b"to")? {
-        return Err(TeXError::General(
+        return Err(TeXError::general(
             "`to` expected after \\vsplit".to_string(),
         ));
     }
@@ -3491,7 +3487,7 @@ pub fn mathaccent<ET: EngineTypes>(
 ) -> TeXResult<(), ET> {
     let i = engine.read_int(false, &tk)?.into();
     if i < 0 || i > 32767 as i64 {
-        return Err(TeXError::General(format!("Illegal math accent number {i}")));
+        return Err(TeXError::general(format!("Illegal math accent number {i}")));
     }
     let char = MathChar::from_u32(i as u32, engine.state, None);
     engine.read_char_or_math_group(
@@ -3536,7 +3532,7 @@ pub fn radical<ET: EngineTypes>(
 ) -> TeXResult<(), ET> {
     let i = engine.read_int(false, &tk)?;
     if i.into() < 0 || i.into() > u32::MAX as i64 {
-        return Err(TeXError::General(format!("Illegal radical number {i}")));
+        return Err(TeXError::general(format!("Illegal radical number {i}")));
     }
     let char = Delimiter::from_int(i, engine.state).left().unwrap().small; // MathChar::from_u32(i as u32, engine.state, None);
     engine.read_char_or_math_group(
@@ -3601,7 +3597,7 @@ fn do_eqno<ET: EngineTypes>(
             };
             *main = children;
         }
-        _ => return Err(TeXError::General("\\eqno outside of math mode".to_string())),
+        _ => return Err(TeXError::general("\\eqno outside of math mode".to_string())),
     }
     Ok(())
 }
@@ -3651,7 +3647,7 @@ pub fn over<ET: EngineTypes>(
             }
         }
         Some(NodeList::Math { .. }) => {
-            return Err(TeXError::General(
+            return Err(TeXError::general(
                 "Incompatible list for \\over".to_string(),
             ));
         }
@@ -3697,7 +3693,7 @@ pub fn overwithdelims<ET: EngineTypes>(
             }
         }
         Some(NodeList::Math { .. }) => {
-            return Err(TeXError::General(
+            return Err(TeXError::general(
                 "Incompatible list for \\overwithdelims".to_string(),
             ));
         }
@@ -3738,7 +3734,7 @@ pub fn above<ET: EngineTypes>(
             }
         }
         Some(NodeList::Math { .. }) => {
-            return Err(TeXError::General(
+            return Err(TeXError::general(
                 "Incompatible list for \\above".to_string(),
             ));
         }
@@ -3785,7 +3781,7 @@ pub fn abovewithdelims<ET: EngineTypes>(
             }
         }
         Some(NodeList::Math { .. }) => {
-            return Err(TeXError::General(
+            return Err(TeXError::general(
                 "Incompatible list for \\abovewithdelims".to_string(),
             ));
         }
@@ -3825,7 +3821,7 @@ pub fn atop<ET: EngineTypes>(
             }
         }
         Some(NodeList::Math { .. }) => {
-            return Err(TeXError::General(
+            return Err(TeXError::general(
                 "Incompatible list for \\atop".to_string(),
             ));
         }
@@ -3871,7 +3867,7 @@ pub fn atopwithdelims<ET: EngineTypes>(
             }
         }
         Some(NodeList::Math { .. }) => {
-            return Err(TeXError::General(
+            return Err(TeXError::general(
                 "Incompatible list for \\atopwithdelims".to_string(),
             ));
         }
@@ -4237,7 +4233,7 @@ pub fn end_template<ET: EngineTypes>(
             crate::expand_loop!(engine,token,
                 ResolvedToken::Tk{code:CommandCode::EndGroup,..} |
                 ResolvedToken::Cmd(Some(TeXCommand::Char {code:CommandCode::EndGroup,..})) => {
-                    return Err(TeXError::General("Unexpected end group character in alignment".to_string()))
+                    return Err(TeXError::general("Unexpected end group character in alignment".to_string()))
                 }
                 ResolvedToken::Tk{code:CommandCode::Space,..} => (),
                 /*ResolvedToken::Cmd {cmd:Some(Command::Unexpandable(Unexpandable {name,..})),..}
@@ -4576,7 +4572,7 @@ pub fn register_tex_primitives<E: TeXEngine>(engine: &mut E) {
     register_unexpandable(engine, "showlists", CommandScope::Any, |_, _| Ok(())); // TODO
     register_unexpandable(engine, "crcr", CommandScope::Any, |_, _| Ok(()));
     register_unexpandable(engine, "cr", CommandScope::Any, |_, _| {
-        Err(TeXError::General("Unexpected \\cr".to_string()))
+        Err(TeXError::general("Unexpected \\cr".to_string()))
     });
     register_unexpandable(engine, END_TEMPLATE, CommandScope::Any, end_template);
     register_unexpandable(

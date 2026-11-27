@@ -1639,7 +1639,7 @@ where
     ET::CustomNode: From<PDFNode<ET>>,
 {
     let CSOrActiveChar::Name(par) = engine.read_control_sequence(&tk)? else {
-        return TeXResult::Err(TeXError::General(
+        return TeXResult::Err(TeXError::general(
             "expected control sequence after \\partokenname".to_string(),
         ));
     };

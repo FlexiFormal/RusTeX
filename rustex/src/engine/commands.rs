@@ -227,7 +227,7 @@ fn parse_annotations(
             s = v[1..].trim_start();
             n.trim()
         } else {
-            return Err(TeXError::General(format!("Invalid annotation: {orig}")));
+            return Err(TeXError::general(format!("Invalid annotation: {orig}")));
         };
         let delim = if s.starts_with('"') {
             s = &s[1..];
@@ -236,20 +236,20 @@ fn parse_annotations(
             s = &s[1..];
             '\''
         } else {
-            return Err(TeXError::General(format!("Invalid annotation: {orig}")));
+            return Err(TeXError::general(format!("Invalid annotation: {orig}")));
         };
         let val = if let Some(i) = s.find(delim) {
             let (v, r) = s.split_at(i);
             s = r[1..].trim_start();
             v.trim()
         } else {
-            return Err(TeXError::General(format!("Invalid annotation: {orig}")));
+            return Err(TeXError::general(format!("Invalid annotation: {orig}")));
         };
         if style == Some(true) {
             styles.insert(key.to_string(), val.to_string());
         } else if style == Some(false) {
             if !val.is_empty() {
-                return Err(TeXError::General("Invalid class annotation".to_string()));
+                return Err(TeXError::general("Invalid class annotation".to_string()));
             }
             classes.insert(key.to_string());
         } else {

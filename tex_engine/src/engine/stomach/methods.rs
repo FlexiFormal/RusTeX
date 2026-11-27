@@ -19,7 +19,7 @@ use crate::tex::nodes::{BoxTarget, ListTarget, NodeList, NodeTrait};
 use crate::tex::numerics::Skip;
 use crate::tex::numerics::TeXDimen;
 use crate::tex::tokens::Token;
-use crate::utils::errors::{TeXError, TeXResult};
+use crate::utils::errors::{TeXError, TeXErrorI, TeXResult};
 
 #[doc(hidden)]
 #[macro_export]
@@ -417,7 +417,7 @@ fn open_math<ET: EngineTypes>(engine: &mut EngineReferences<ET>) -> TeXResult<()
                         (false, PRIMITIVES.everymath)
                     }
                 }
-                None => return Err(TeXError::EmergencyStop),
+                None => return Err(TeXErrorI::EmergencyStop.into()),
             }
         }
         _ => (false, PRIMITIVES.everymath),
@@ -480,7 +480,7 @@ fn close_math<ET: EngineTypes>(engine: &mut EngineReferences<ET>) -> TeXResult<(
 fn close_group_in_m<ET: EngineTypes>(engine: &mut EngineReferences<ET>) -> TeXResult<(), ET> {
     let ls = engine.stomach.data_mut().open_lists.pop();
     if !engine.stomach.data_mut().mode().is_math() {
-        return Err(TeXError::TooManyCloseBraces);
+        return Err(TeXErrorI::TooManyCloseBraces.into());
     }
     match ls {
         Some(NodeList::Math {

@@ -7,7 +7,7 @@ use crate::engine::utils::outputs::Outputs;
 use crate::engine::{EngineAux, EngineTypes};
 use crate::tex::characters::{Character, StringLineSource, TextLine, TextLineSource};
 use crate::tex::tokens::control_sequences::CSName;
-use crate::utils::errors::{TeXError, TeXResult};
+use crate::utils::errors::{TeXError, TeXErrorI, TeXResult};
 use crate::utils::{HMap, Ptr};
 use std::path::{Path, PathBuf};
 
@@ -264,7 +264,7 @@ impl<C: Character> FileSystem for NoOutputFileSystem<C> {
                     Err(e) => Err(e.into()),
                 }
             }
-            _ => Err(TeXError::EmergencyStop),
+            _ => Err(TeXErrorI::EmergencyStop.into()),
         }
     }
     fn readline<ET: EngineTypes<Char = <Self::File as File>::Char>, F: FnMut(ET::Token)>(
@@ -279,7 +279,7 @@ impl<C: Character> FileSystem for NoOutputFileSystem<C> {
                 f.readline(cont);
                 Ok(())
             }
-            _ => Err(TeXError::EmergencyStop),
+            _ => Err(TeXErrorI::EmergencyStop.into()),
         }
     }
     fn eof(&self, idx: u8) -> bool {
@@ -405,11 +405,7 @@ impl<C: Character> File for VirtualFile<C> {
         match &self.source {
             Some(src) => {
                 let cnt = src.iter().map(|s| s.len()).sum::<usize>() + src.len();
-                if cnt == 0 {
-                    0
-                } else {
-                    cnt - 1
-                }
+                if cnt == 0 { 0 } else { cnt - 1 }
             }
             None => match std::fs::metadata(&self.path) {
                 Ok(md) => md.len() as usize,

@@ -17,8 +17,24 @@ use tex_engine::pdflatex::commands::register_pdftex_primitives;
 notes   5:31
 profile 1:38 / 1:38     ==> 1:43
 thesis  0:15
+
+2:28, 2:30, 2:26 ==> 2:21, 2:22
  */
 fn main() {
+    use tex_engine::tex::tokens::CompactToken;
+    use tex_engine::utils::errors::InvalidCharacter;
+    use tex_engine::utils::errors::TeXError;
+    use tex_engine::utils::errors::TeXResult;
+    /*println!(
+        "Token: {}\nOption<Token>: {}\nInvalidCharacter: {}\nResult: {}\nAlternative: {}\nTeXResult: {}\nBoxed: {}",
+        std::mem::size_of::<CompactToken>(),
+        std::mem::size_of::<Option<CompactToken>>(),
+        std::mem::size_of::<InvalidCharacter<u8>>(),
+        std::mem::size_of::<Result<Option<CompactToken>, InvalidCharacter<u8>>>(),
+        std::mem::size_of::<Result<CompactToken, Option<InvalidCharacter<u8>>>>(),
+        std::mem::size_of::<TeXResult<(), rustex_lib::engine::Types>>(),
+        std::mem::size_of::<Result<(), Box<TeXError<rustex_lib::engine::Types>>>>()
+    );*/
     run();
     //test_css();
     //profile()

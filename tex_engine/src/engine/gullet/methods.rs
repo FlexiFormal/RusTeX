@@ -18,7 +18,7 @@ use crate::tex::numerics::{
 use crate::tex::tokens::control_sequences::{CSHandler, ResolvedCSName};
 use crate::tex::tokens::token_lists::TokenList;
 use crate::tex::tokens::{StandardToken, Token};
-use crate::utils::errors::{TeXError, TeXResult};
+use crate::utils::errors::{TeXError, TeXErrorI, TeXResult};
 use either::Either;
 
 /// processes the parameter signature `params` of a [`Macro`](crate::commands::Macro) by reading the relevant arguments;
@@ -116,14 +116,15 @@ fn read_delimited_argument<ET: EngineTypes>(
                 } else {
                     engine.read_until_endgroup(token, |a, s, t| {
                         if t.is_cs(&par) {
-                            Err(TeXError::ParagraphEnded(
+                            Err(TeXErrorI::ParagraphEnded(
                                 t.display(
                                     a.memory.cs_interner(),
                                     s.get_catcode_scheme(),
                                     s.get_escape_char(),
                                 )
                                 .to_string(),
-                            ))
+                            )
+                            .into())
                         } else {
                             arg.push(t);
                             Ok(())
@@ -199,14 +200,15 @@ fn read_argument<ET: EngineTypes>(
                         engine.state,
                         |a, t| {
                             if t.is_cs(&par) {
-                                Err(TeXError::ParagraphEnded(
+                                Err(TeXErrorI::ParagraphEnded(
                                     t.display(
                                         a.memory.cs_interner(),
                                         engine.state.get_catcode_scheme(),
                                         engine.state.get_escape_char(),
                                     )
                                     .to_string(),
-                                ))
+                                )
+                                .into())
                             } else {
                                 arg.push(t);
                                 Ok(())
@@ -590,7 +592,7 @@ pub fn read_numeric<ET: EngineTypes>(
             }
             (Ok(b'+'),CommandCode::Other) => (),
             (Ok(b),CommandCode::Other) => return Ok(NumContinuation{is_negative,next:either::Left(b)}),
-            _ => return Err(TeXError::General(format!(
+            _ => return Err(TeXError::general(format!(
                 "Unexpected token when reading numeric:{}\nTODO: Better error message",
                 token.display(engine.aux.memory.cs_interner(),engine.state.get_catcode_scheme(),engine.state.get_escape_char())
             )))
@@ -605,7 +607,7 @@ pub fn read_numeric<ET: EngineTypes>(
             }
             (Ok(b'+'),CommandCode::Other) => (),
             (Ok(b),CommandCode::Other) => return Ok(NumContinuation{is_negative,next:either::Left(b)}),
-            _ => return Err(TeXError::General(format!(
+            _ => return Err(TeXError::general(format!(
                 "Unexpected token when reading numeric:{}\nTODO: Better error message",
                 token.display(engine.aux.memory.cs_interner(),engine.state.get_catcode_scheme(),engine.state.get_escape_char())
             )))
@@ -865,7 +867,7 @@ fn read_hex_int<ET: EngineTypes>(
                 let ret = if is_negative {-ret} else {ret};
                 match ret.try_into() {
                     Ok(v) => return Ok(v),
-                    _ => return Err(TeXError::General(format!("Integer out of range: {}\nTODO: Better error message",ret)))
+                    _ => return Err(TeXError::general(format!("Integer out of range: {}\nTODO: Better error message",ret)))
                 }
             }
             _ if !empty => {
@@ -873,7 +875,7 @@ fn read_hex_int<ET: EngineTypes>(
                 let ret = if is_negative {-ret} else {ret};
                 match ret.try_into() {
                     Ok(v) => return Ok(v),
-                    _ => return Err(TeXError::General(format!("Integer out of range: {}\nTODO: Better error message",ret)))
+                    _ => return Err(TeXError::general(format!("Integer out of range: {}\nTODO: Better error message",ret)))
                 }
             }
             _ => {
@@ -886,7 +888,7 @@ fn read_hex_int<ET: EngineTypes>(
             let ret = if is_negative {-ret} else {ret};
             match ret.try_into() {
                 Ok(v) => return Ok(v),
-                _ => return Err(TeXError::General(format!("Integer out of range: {}\nTODO: Better error message",ret)))
+                _ => return Err(TeXError::general(format!("Integer out of range: {}\nTODO: Better error message",ret)))
             }
         }
         ResolvedToken::Cmd(_) if !empty => {
@@ -894,7 +896,7 @@ fn read_hex_int<ET: EngineTypes>(
             let ret = if is_negative {-ret} else {ret};
             match ret.try_into() {
                 Ok(v) => return Ok(v),
-                _ => return Err(TeXError::General(format!("Integer out of range: {}\nTODO: Better error message",ret)))
+                _ => return Err(TeXError::general(format!("Integer out of range: {}\nTODO: Better error message",ret)))
             }
         }
         _ => {
@@ -910,7 +912,7 @@ fn read_hex_int<ET: EngineTypes>(
         let ret = if is_negative { -ret } else { ret };
         match ret.try_into() {
             Ok(v) => Ok(v),
-            _ => Err(TeXError::General(format!(
+            _ => Err(TeXError::general(format!(
                 "Integer out of range: {}\nTODO: Better error message",
                 ret
             ))),
@@ -2100,7 +2102,7 @@ impl<ET: EngineTypes> EngineReferences<'_, ET> {
                     ..
                 } => (),
                 _ => {
-                    return Err(TeXError::General(
+                    return Err(TeXError::general(
                         "Control sequence expected\n TODO: Better error message".to_string(),
                     ));
                 }

@@ -12,3 +12,4 @@
     }
 }
 \makeatother
+\expandafter\def\csname @missingfileerror\endcsname#1#2{\errmessage{^^J! LaTeX Error: File `#1.#2' not found.^^J^^J}\input #1.#2\relax}

@@ -21,7 +21,7 @@ use crate::tex::numerics::{MuSkip, NumSet, Numeric, Skip, StretchShrink};
 use crate::tex::tokens::control_sequences::{CSHandler, ResolvedCSName};
 use crate::tex::tokens::token_lists::{CharWrite, Otherize};
 use crate::tex::tokens::{StandardToken, Token};
-use crate::utils::errors::{TeXError, TeXResult};
+use crate::utils::errors::{TeXError, TeXErrorI, TeXResult};
 use either::Either;
 
 #[allow(non_snake_case)]
@@ -65,13 +65,15 @@ fn expr_inner<ET: EngineTypes, R: Numeric<<ET::Num as NumSet>::Int>>(
                                 Ok(int)
                             }
                         }
-                        _ => Err(TeXError::General(
+                        _ => Err(TeXErrorI::General(
                             "Closing Parenthesis expected\nTODO: Better error message".to_string(),
-                        )),
+                        )
+                        .into()),
                     },
-                    _ => Err(TeXError::General(
+                    _ => Err(TeXErrorI::General(
                         "Closing Parenthesis expected\nTODO: Better error message".to_string(),
-                    )),
+                    )
+                    .into()),
                 }
             } else {
                 byte(engine, is_negative, b)
@@ -503,13 +505,13 @@ pub fn protected<ET: EngineTypes>(
             r => {
                 let s = r.display(engine.state.get_escape_char()).to_string();
                 engine.requeue(token)?;
-                return Err(TeXError::General(format!("You can't use a prefix with '{}'",s)))
+                return Err(TeXErrorI::General(format!("You can't use a prefix with '{}'",s)).into())
             }
         }
         _ => {
             let s = token.display(engine.aux.memory.cs_interner(),engine.state.get_catcode_scheme(),engine.state.get_escape_char()).to_string();
             engine.requeue(token)?;
-            return Err(TeXError::General(format!("You can't use a prefix with '{}'",s)))
+            return Err(TeXErrorI::General(format!("You can't use a prefix with '{}'",s)).into())
         }
     );
     TeXError::file_end_while_use(engine.aux, engine.state, engine.mouth, &tk)

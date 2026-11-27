@@ -18,7 +18,7 @@ use crate::tex::tokens::control_sequences::CSHandler;
 use crate::tex::tokens::token_lists::MacroExpansion;
 use crate::tex::tokens::{StandardToken, Token};
 use crate::utils::errors::{
-    GulletError, RecoverableError, TeXError, TeXResult, TooManyCloseBraces,
+    GulletError, RecoverableError, TeXError, TeXErrorI, TeXResult, TooManyCloseBraces,
 };
 use either::Either;
 use std::marker::PhantomData;
@@ -80,7 +80,7 @@ pub trait Gullet<ET: EngineTypes> {
                 state,
                 |aux, t| {
                     if let Some(false) = data.check_token(&t) {
-                        return Err(TeXError::TooManyCloseBraces);
+                        return Err(TeXErrorI::TooManyCloseBraces.into());
                     }
                     cont(aux, state, t)
                 },
